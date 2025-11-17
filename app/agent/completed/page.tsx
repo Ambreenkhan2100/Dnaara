@@ -41,8 +41,13 @@ export default function AgentCompletedPage() {
             <RequestsTable
                 data={completed}
                 onView={handleView}
-                emptyMessage="No completed requests"
             />
+
+            {completed.length === 0 && (
+                <div className="text-center text-muted-foreground my-8">
+                    No completed requests
+                </div>
+            )}
 
             <Dialog open={viewDialogOpen} onOpenChange={setViewDialogOpen}>
                 <DialogContent className="max-w-2xl">
