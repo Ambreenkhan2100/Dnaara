@@ -13,6 +13,7 @@ interface RequestsTableProps {
     actions?: (request: Request) => React.ReactNode;
     searchPlaceholder?: string;
     filterSlot?: React.ReactNode;
+    emptyMessage?: string;
 }
 
 export function RequestsTable({
@@ -21,6 +22,7 @@ export function RequestsTable({
     actions,
     searchPlaceholder = 'Search requests...',
     filterSlot,
+    emptyMessage = 'No requests found',
 }: RequestsTableProps) {
     return (
         <DataTable
@@ -65,7 +67,7 @@ export function RequestsTable({
                     {actions && actions(row)}
                 </>
             )}
-            emptyMessage="No requests found"
+            emptyMessage={emptyMessage}
         />
     );
 }
