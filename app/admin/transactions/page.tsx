@@ -91,8 +91,7 @@ export default function AdminTransactionsPage() {
                     </SelectTrigger>
                     <SelectContent>
                         <SelectItem value="all">All Status</SelectItem>
-                        <SelectItem value="UPCOMING">Upcoming</SelectItem>
-                        <SelectItem value="PENDING">Pending</SelectItem>
+                        <SelectItem value="ASSIGNED">Assigned</SelectItem>
                         <SelectItem value="CONFIRMED">Confirmed</SelectItem>
                         <SelectItem value="COMPLETED">Completed</SelectItem>
                     </SelectContent>
@@ -108,8 +107,7 @@ export default function AdminTransactionsPage() {
                         </SelectTrigger>
                         <SelectContent>
                             <SelectItem value="all">All Status</SelectItem>
-                            <SelectItem value="UPCOMING">Upcoming</SelectItem>
-                            <SelectItem value="PENDING">Pending</SelectItem>
+                            <SelectItem value="ASSIGNED">Assigned</SelectItem>
                             <SelectItem value="CONFIRMED">Confirmed</SelectItem>
                             <SelectItem value="COMPLETED">Completed</SelectItem>
                         </SelectContent>
@@ -117,7 +115,7 @@ export default function AdminTransactionsPage() {
                 }
                 actions={(request) => (
                     <>
-                        {request.status === 'PENDING' && (
+                        {request.status === 'ASSIGNED' && (
                             <>
                                 <Button
                                     variant="outline"

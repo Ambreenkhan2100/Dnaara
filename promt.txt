@@ -1,0 +1,33 @@
+@page.tsx 
+
+1)Modify the importer page to have 4 tabs:
+SHIPMENTS, AGENTS and PAYMENTS.
+
+2)Create a Shipments page. It will have 4 tabs: ' SHIPMENTS ASSIGNED', 'SHIPMENTS CONFIRMED',  SHIPMENTS COMPLETED,  ALL SHIPMENTS
+
+3) On the Shipments page add a button called  Create new shipment. I will take the user to a new page where they can add a user.
+Create new shipment will take following fields:
+Choose the type of Shipment- Air/Sea/Land
+Port of Shipment
+Port of Destination
+Expected Date of Arrival 
+Bill no (show airway bill for air; B/L for sea, Waybill for land)
+Bayan no
+Upload Bayan copy
+Expected Duty charges
+Additional comments 
+Assign agent
+
+
+4) On Shipments page also create a search for the shipments and show a list of shipments and redirect them to their respective page based on the status.
+
+5)On Shipments Assigned page the Importer can view and edit details until confirmed. Create UI accordingly.
+
+6) On  SHIPMENTS CONFIRMED page Importer can view but cannot edit the the previous request. But has the option to respond to any further updates on the same shipment from the agent. Can also add a comment and upload a document.
+Create a view where the importer can recieve comments or view media files/ documents uploaded by agent. 
+
+7) on  SHIPMENTS COMPLETED page view shipments.
+
+8) On  ALL SHIPMENTS view all shipments with search and filter.
+
+Create dummy data with respective to the shipments details provided.

@@ -24,8 +24,7 @@ export default function AdminDashboard() {
 
     const requestsByStatus = useMemo(() => {
         return {
-            UPCOMING: requests.filter((r) => r.status === 'UPCOMING').length,
-            PENDING: requests.filter((r) => r.status === 'PENDING').length,
+            ASSIGNED: requests.filter((r) => r.status === 'ASSIGNED').length,
             CONFIRMED: requests.filter((r) => r.status === 'CONFIRMED').length,
             COMPLETED: requests.filter((r) => r.status === 'COMPLETED').length,
         };
@@ -52,10 +51,9 @@ export default function AdminDashboard() {
             <KPIGrid>
                 <StatCard title="Total Importers" value={importers.length} />
                 <StatCard title="Total Agents" value={agents.length} />
-                <StatCard
-                    title="Total Requests"
-                    value={requests.length}
-                />
+                <StatCard title="Assigned Requests" value={requestsByStatus.ASSIGNED} />
+                <StatCard title="Confirmed Requests" value={requestsByStatus.CONFIRMED} />
+                <StatCard title="Completed Requests" value={requestsByStatus.COMPLETED} />
                 <StatCard
                     title="Total Balances"
                     value={`AED ${totalBalances.toLocaleString()}`}

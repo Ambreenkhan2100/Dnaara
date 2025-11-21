@@ -11,9 +11,8 @@ export default function AgentDashboard() {
 
     const requestsByStatus = useMemo(() => {
         return {
-            UPCOMING: upcoming.length,
-            PENDING: pending.filter((r) => r.status === 'PENDING').length,
-            CONFIRMED: pending.filter((r) => r.status === 'CONFIRMED').length,
+            ASSIGNED: upcoming.length,
+            CONFIRMED: pending.length,
             COMPLETED: completed.length,
         };
     }, [upcoming, pending, completed]);
@@ -37,9 +36,8 @@ export default function AgentDashboard() {
             </div>
 
             <KPIGrid>
-                <StatCard title="Upcoming Requests" value={requestsByStatus.UPCOMING} />
-                <StatCard title="Pending Requests" value={requestsByStatus.PENDING} />
-                <StatCard title="Confirmed Requests" value={requestsByStatus.CONFIRMED} />
+                <StatCard title="New Requests" value={requestsByStatus.ASSIGNED} />
+                <StatCard title="In Progress" value={requestsByStatus.CONFIRMED} />
                 <StatCard title="Completed Requests" value={requestsByStatus.COMPLETED} />
             </KPIGrid>
         </div>

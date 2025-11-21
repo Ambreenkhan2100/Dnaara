@@ -3,8 +3,7 @@
 import { create } from 'zustand';
 import { requests } from '@/lib/mock/requests';
 import { importers } from '@/lib/mock/users';
-import type { Request } from '@/types';
-import type { RequestStatus } from '@/lib/status';
+import type { Request, RequestStatus } from '@/types';
 
 interface LinkedImporter {
     id: string;
@@ -36,8 +35,8 @@ export const useAgentStore = create<AgentState>((set) => ({
         { id: 'i2', name: 'Fatima Al-Zahra', crNumber: 'CR-23456', status: 'active' },
         { id: 'i4', name: 'Sara Al-Ahmad', crNumber: 'CR-45678', status: 'active' },
     ],
-    upcoming: requests.filter((r) => !r.agentId || r.status === 'UPCOMING'),
-    pending: requests.filter((r) => r.agentId === 'ag1' && (r.status === 'PENDING' || r.status === 'CONFIRMED')),
+    upcoming: requests.filter((r) => r.agentId === 'ag1' && r.status === 'ASSIGNED'),
+    pending: requests.filter((r) => r.agentId === 'ag1' && r.status === 'CONFIRMED'),
     completed: requests.filter((r) => r.agentId === 'ag1' && r.status === 'COMPLETED'),
 
     acceptRequest: (id) =>

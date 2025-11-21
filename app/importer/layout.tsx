@@ -3,7 +3,6 @@
 import { useRoleStore } from '@/lib/store/useRoleStore';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
-import { SideNav } from '@/components/nav/side-nav';
 
 export default function ImporterLayout({
     children,
@@ -25,9 +24,8 @@ export default function ImporterLayout({
 
     return (
         <div className="flex">
-            <SideNav role="importer" />
             <div className="flex-1">
-                <div className="container max-w-7xl px-6 py-6">
+                <div className="container max-w-7xl px-6 py-6 mx-auto">
                     {children}
                 </div>
             </div>

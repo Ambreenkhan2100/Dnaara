@@ -1,6 +1,5 @@
 'use client';
 
-import { StatCard } from './stat-card';
 import { cn } from '@/lib/utils';
 
 interface KPIGridProps {
