@@ -25,9 +25,8 @@ export default function AgentLayout({
 
     return (
         <div className="flex">
-            <SideNav role="agent" />
             <div className="flex-1">
-                <div className="container max-w-7xl px-6 py-6">
+                <div className="container max-w-7xl px-6 py-6 mx-auto">
                     {children}
                 </div>
             </div>
