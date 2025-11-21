@@ -30,8 +30,3 @@ Additional comments
 9) Create the payments page but leave it blank for now. It will be added later.
 
 Create dummy data with respective to the shipments details provided.
-
-
-
-
-

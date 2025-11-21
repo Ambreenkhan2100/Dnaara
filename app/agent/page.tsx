@@ -1,22 +1,12 @@
 'use client';
 
-import { useAgentStore } from '@/lib/store/useAgentStore';
-import { KPIGrid } from '@/components/shared/kpi-grid';
-import { StatCard } from '@/components/shared/stat-card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage } from '@/components/ui/breadcrumb';
-import { useMemo } from 'react';
+import { ShipmentsView } from './components/shipments-view';
+import { ImportersView } from './components/importers-view';
+import { PaymentsView } from './components/payments-view';
 
 export default function AgentDashboard() {
-    const { upcoming, pending, completed } = useAgentStore();
-
-    const requestsByStatus = useMemo(() => {
-        return {
-            ASSIGNED: upcoming.length,
-            CONFIRMED: pending.length,
-            COMPLETED: completed.length,
-        };
-    }, [upcoming, pending, completed]);
-
     return (
         <div className="space-y-6">
             <Breadcrumb>
@@ -30,16 +20,32 @@ export default function AgentDashboard() {
                 </BreadcrumbList>
             </Breadcrumb>
 
-            <div>
-                <h1 className="text-3xl font-bold">Agent Dashboard</h1>
-                <p className="text-muted-foreground">Overview of your requests</p>
+            <div className="flex items-center justify-between">
+                <div>
+                    <h1 className="text-3xl font-bold">Agent Dashboard</h1>
+                    <p className="text-muted-foreground">Manage your shipments and operations</p>
+                </div>
             </div>
 
-            <KPIGrid>
-                <StatCard title="New Requests" value={requestsByStatus.ASSIGNED} />
-                <StatCard title="In Progress" value={requestsByStatus.CONFIRMED} />
-                <StatCard title="Completed Requests" value={requestsByStatus.COMPLETED} />
-            </KPIGrid>
+            <Tabs defaultValue="shipments" className="space-y-6">
+                <TabsList className="grid w-full grid-cols-3 lg:w-[400px]">
+                    <TabsTrigger value="shipments">SHIPMENTS</TabsTrigger>
+                    <TabsTrigger value="importers">IMPORTERS</TabsTrigger>
+                    <TabsTrigger value="payments">PAYMENTS</TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="shipments" className="space-y-4">
+                    <ShipmentsView />
+                </TabsContent>
+
+                <TabsContent value="importers" className="space-y-4">
+                    <ImportersView />
+                </TabsContent>
+
+                <TabsContent value="payments" className="space-y-4">
+                    <PaymentsView />
+                </TabsContent>
+            </Tabs>
         </div>
     );
 }
