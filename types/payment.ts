@@ -16,6 +16,9 @@ export interface PaymentRequest {
     importerId: string;
     amount: number;
     description: string;
+    billNumber?: string;
+    bayanNumber?: string;
+    paymentDeadline?: string;
     status: PaymentStatus;
     createdAt: string;
     updatedAt: string;

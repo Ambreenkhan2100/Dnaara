@@ -3,19 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import {
-    LayoutDashboard,
-    Users,
-    FileText,
-    Wallet,
-    User,
-    Bell,
-    TrendingUp,
-    Calendar,
-    CheckCircle,
-    Clock,
-    Building2,
-} from 'lucide-react';
+import { LayoutDashboard, Users, FileText, Wallet, User, Bell, TrendingUp, Calendar, CheckCircle, Clock, Building2 } from 'lucide-react';
 
 interface NavItem {
     title: string;

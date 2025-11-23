@@ -35,3 +35,25 @@ export type LinkAgentInput = z.infer<typeof linkAgentSchema>;
 export type FinalBayanInput = z.infer<typeof finalBayanSchema>;
 export type CreateUserInput = z.infer<typeof createUserSchema>;
 
+export const addImporterSchema = z.object({
+    companyName: z.string().min(1, 'Company Name is required'),
+    name: z.string().min(1, 'Importer Name is required'),
+    email: z.string().email('Invalid email address'),
+    phone: z.string().min(1, 'Phone number is required'),
+    linkAccount: z.boolean(),
+});
+
+export type AddImporterInput = z.infer<typeof addImporterSchema>;
+
+export const createPaymentSchema = z.object({
+    amount: z.coerce.number().min(1, 'Amount must be greater than 0'),
+    description: z.string().min(1, 'Description is required'),
+    shipmentId: z.string().min(1, 'Shipment is required'),
+    importerId: z.string().min(1, 'Importer is required'),
+    billNumber: z.string().optional(),
+    bayanNumber: z.string().optional(),
+    paymentDeadline: z.string().optional(),
+});
+
+export type CreatePaymentInput = z.infer<typeof createPaymentSchema>;
+

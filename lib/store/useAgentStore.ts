@@ -3,11 +3,15 @@
 import { create } from 'zustand';
 import { requests } from '@/lib/mock/requests';
 import { importers } from '@/lib/mock/users';
-import type { Request, RequestStatus } from '@/types';
+import type { Request, RequestStatus, PaymentRequest } from '@/types';
+import type { CreatePaymentInput } from '@/lib/schemas';
 
 interface LinkedImporter {
     id: string;
     name: string;
+    companyName: string;
+    email: string;
+    phone: string;
     crNumber: string;
     status: 'active' | 'pending' | 'disabled';
 }
@@ -17,6 +21,7 @@ interface AgentState {
     upcoming: Request[];
     pending: Request[];
     completed: Request[];
+    payments: PaymentRequest[];
 
     // Actions
     acceptRequest: (id: string, comment?: string) => void;
@@ -28,13 +33,42 @@ interface AgentState {
         dutyAmount: number;
         notes?: string;
     }) => void;
+    addImporter: (importer: Omit<LinkedImporter, 'id' | 'status' | 'crNumber'> & { linkAccount: boolean }) => void;
+    createPayment: (payment: CreatePaymentInput) => void;
+    updatePayment: (id: string, data: Partial<PaymentRequest>) => void;
+    deletePayment: (id: string) => void;
+    addPaymentComment: (id: string, comment: string) => void;
 }
 
 export const useAgentStore = create<AgentState>((set) => ({
     linkedImporters: [
-        { id: 'i1', name: 'Ahmed Al-Mansoori', crNumber: 'CR-12345', status: 'active' },
-        { id: 'i2', name: 'Fatima Al-Zahra', crNumber: 'CR-23456', status: 'active' },
-        { id: 'i4', name: 'Sara Al-Ahmad', crNumber: 'CR-45678', status: 'active' },
+        {
+            id: 'i1',
+            name: 'Ahmed Al-Mansoori',
+            companyName: 'Al-Mansoori Trading',
+            email: 'ahmed@almansoori.com',
+            phone: '+966 50 123 4567',
+            crNumber: 'CR-12345',
+            status: 'active'
+        },
+        {
+            id: 'i2',
+            name: 'Fatima Al-Zahra',
+            companyName: 'Zahra Imports',
+            email: 'fatima@zahra.com',
+            phone: '+966 50 234 5678',
+            crNumber: 'CR-23456',
+            status: 'active'
+        },
+        {
+            id: 'i4',
+            name: 'Sara Al-Ahmad',
+            companyName: 'Sara Co.',
+            email: 'sara@saraco.com',
+            phone: '+966 50 345 6789',
+            crNumber: 'CR-45678',
+            status: 'active'
+        },
     ],
     upcoming: [
         {
@@ -164,6 +198,112 @@ export const useAgentStore = create<AgentState>((set) => ({
                         updatedAt: new Date().toISOString(),
                     })),
             ],
+        })),
+
+    addImporter: (importer) =>
+        set((state) => ({
+            linkedImporters: [
+                ...state.linkedImporters,
+                {
+                    id: `i${state.linkedImporters.length + 10}`,
+                    ...importer,
+                    crNumber: 'CR-NEW', // Mock CR number
+                    status: importer.linkAccount ? 'pending' : 'active',
+                },
+            ],
+        })),
+
+    payments: [
+        {
+            id: 'pay-1',
+            shipmentId: 'req-1',
+            agentId: 'ag1',
+            agentName: 'Logistics Pro',
+            importerId: 'i1',
+            amount: 5000,
+            description: 'Customs Duty Payment',
+            billNumber: 'BL-123456',
+            bayanNumber: 'BAY-7890',
+            paymentDeadline: '2023-11-30T00:00:00Z',
+            status: 'REQUESTED',
+            createdAt: '2023-11-22T10:00:00Z',
+            updatedAt: '2023-11-22T10:00:00Z',
+            comments: []
+        },
+        {
+            id: 'pay-2',
+            shipmentId: 'req-4',
+            agentId: 'ag1',
+            agentName: 'Logistics Pro',
+            importerId: 'i1',
+            amount: 15000,
+            description: 'Final Settlement',
+            billNumber: 'BL-998877',
+            bayanNumber: 'BAY-1122',
+            status: 'COMPLETED',
+            createdAt: '2023-10-25T14:00:00Z',
+            updatedAt: '2023-10-26T09:00:00Z',
+            comments: [
+                {
+                    id: 'c1',
+                    userId: 'i1',
+                    userName: 'Ahmed Al-Mansoori',
+                    content: 'Payment processed via bank transfer',
+                    createdAt: '2023-10-26T09:00:00Z'
+                }
+            ]
+        }
+    ] as any[], // Using any[] temporarily to avoid import issues, will fix types
+
+    createPayment: (payment) =>
+        set((state) => ({
+            payments: [
+                ...state.payments,
+                {
+                    id: `pay-${Date.now()}`,
+                    ...payment,
+                    agentId: 'ag1',
+                    agentName: 'Logistics Pro', // Mock agent name
+                    status: 'REQUESTED',
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString(),
+                    comments: []
+                }
+            ]
+        })),
+
+    updatePayment: (id, data) =>
+        set((state) => ({
+            payments: state.payments.map((p) =>
+                p.id === id ? { ...p, ...data, updatedAt: new Date().toISOString() } : p
+            )
+        })),
+
+    deletePayment: (id) =>
+        set((state) => ({
+            payments: state.payments.filter((p) => p.id !== id)
+        })),
+
+    addPaymentComment: (id, comment) =>
+        set((state) => ({
+            payments: state.payments.map((p) => {
+                if (p.id === id) {
+                    return {
+                        ...p,
+                        comments: [
+                            ...p.comments,
+                            {
+                                id: `c-${Date.now()}`,
+                                userId: 'ag1',
+                                userName: 'Logistics Pro',
+                                content: comment,
+                                createdAt: new Date().toISOString()
+                            }
+                        ]
+                    };
+                }
+                return p;
+            })
         })),
 }));
 
