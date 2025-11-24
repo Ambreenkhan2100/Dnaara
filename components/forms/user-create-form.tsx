@@ -115,7 +115,7 @@ export function UserCreateForm({ onSuccess }: UserCreateFormProps) {
                         <FormItem>
                             <FormLabel>Phone (Optional)</FormLabel>
                             <FormControl>
-                                <Input type="tel" placeholder="+971501234567" {...field} />
+                                <Input type="tel" placeholder="+966501234567" {...field} />
                             </FormControl>
                             <FormMessage />
                         </FormItem>
