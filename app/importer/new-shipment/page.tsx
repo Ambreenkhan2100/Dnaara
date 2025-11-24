@@ -192,7 +192,7 @@ export default function NewShipmentPage() {
                                 <Input
                                     id="dutyCharges"
                                     type="number"
-                                    placeholder="AED"
+                                    placeholder="SAR"
                                     value={formData.dutyCharges}
                                     onChange={e => setFormData(prev => ({ ...prev, dutyCharges: e.target.value }))}
                                 />

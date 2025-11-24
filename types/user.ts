@@ -10,6 +10,7 @@ export interface BaseUser {
 }
 
 export interface Importer extends BaseUser {
+    type: 'importer';
     businessName: string;
     crNumber: string;
     documents?: {
@@ -20,6 +21,7 @@ export interface Importer extends BaseUser {
 }
 
 export interface Agent extends BaseUser {
+    type: 'agent';
     companyName: string;
     commercialLicenseNumber: string;
     documents?: {
@@ -30,6 +32,7 @@ export interface Agent extends BaseUser {
 }
 
 export interface Admin extends BaseUser {
+    type: 'admin';
     role: 'admin';
 }
 

@@ -6,6 +6,7 @@ export const admins: Admin[] = [
         name: 'Dnaara Admin',
         email: 'admin@dnaara.com',
         role: 'admin',
+        type: 'admin',
         status: 'active',
         createdAt: '2024-01-01T00:00:00Z',
     },
@@ -18,6 +19,7 @@ export const importers: Importer[] = [
         email: 'ahmed@almansoori.com',
         phone: '+971501234567',
         status: 'active',
+        type: 'importer',
         businessName: 'Al-Mansoori Trading LLC',
         crNumber: 'CR-12345',
         documents: {
@@ -32,6 +34,7 @@ export const importers: Importer[] = [
         email: 'fatima@zahraimports.com',
         phone: '+971502345678',
         status: 'active',
+        type: 'importer',
         businessName: 'Zahra Imports FZE',
         crNumber: 'CR-23456',
         documents: {
@@ -45,6 +48,7 @@ export const importers: Importer[] = [
         email: 'mohammed@hassan.com',
         phone: '+971503456789',
         status: 'pending',
+        type: 'importer',
         businessName: 'Hassan Trading Co.',
         crNumber: 'CR-34567',
         createdAt: '2024-02-01T00:00:00Z',
@@ -54,6 +58,7 @@ export const importers: Importer[] = [
         name: 'Sara Al-Ahmad',
         email: 'sara@ahmad.com',
         status: 'active',
+        type: 'importer',
         businessName: 'Ahmad International',
         crNumber: 'CR-45678',
         documents: {
@@ -68,6 +73,7 @@ export const importers: Importer[] = [
         email: 'khalid@rashid.com',
         phone: '+971505678901',
         status: 'active',
+        type: 'importer',
         businessName: 'Rashid Global Trading',
         crNumber: 'CR-56789',
         createdAt: '2024-02-15T00:00:00Z',
@@ -81,6 +87,7 @@ export const agents: Agent[] = [
         email: 'ali@customs.com',
         phone: '+971506789012',
         status: 'active',
+        type: 'agent',
         companyName: 'Ali Customs Services LLC',
         commercialLicenseNumber: 'CL-1001',
         documents: {
@@ -95,6 +102,7 @@ export const agents: Agent[] = [
         email: 'info@dubaiclearance.com',
         phone: '+971507890123',
         status: 'active',
+        type: 'agent',
         companyName: 'Dubai Clearance Pro FZE',
         commercialLicenseNumber: 'CL-1002',
         documents: {
@@ -107,6 +115,7 @@ export const agents: Agent[] = [
         name: 'Express Customs',
         email: 'contact@expresscustoms.com',
         status: 'pending',
+        type: 'agent',
         companyName: 'Express Customs LLC',
         commercialLicenseNumber: 'CL-1003',
         createdAt: '2024-02-05T00:00:00Z',
@@ -117,6 +126,7 @@ export const agents: Agent[] = [
         email: 'info@globallogistics.com',
         phone: '+971509012345',
         status: 'active',
+        type: 'agent',
         companyName: 'Global Logistics Clearance FZE',
         commercialLicenseNumber: 'CL-1004',
         documents: {
@@ -131,6 +141,7 @@ export const agents: Agent[] = [
         email: 'support@fasttrack.com',
         phone: '+971510123456',
         status: 'active',
+        type: 'agent',
         companyName: 'Fast Track Customs LLC',
         commercialLicenseNumber: 'CL-1005',
         createdAt: '2024-02-12T00:00:00Z',

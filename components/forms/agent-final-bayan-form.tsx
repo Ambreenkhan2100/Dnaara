@@ -79,7 +79,7 @@ export function AgentFinalBayanForm({ requestId, onSuccess }: AgentFinalBayanFor
                     name="dutyAmount"
                     render={({ field }) => (
                         <FormItem>
-                            <FormLabel>Duty Amount (AED)</FormLabel>
+                            <FormLabel>Duty Amount (SAR)</FormLabel>
                             <FormControl>
                                 <Input
                                     type="number"

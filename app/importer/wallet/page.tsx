@@ -49,7 +49,7 @@ export default function ImporterWalletPage() {
                     <CardTitle>Available Balance</CardTitle>
                 </CardHeader>
                 <CardContent>
-                    <div className="text-4xl font-bold">AED {walletBalance.toLocaleString()}</div>
+                    <div className="text-4xl font-bold">SAR {walletBalance.toLocaleString()}</div>
                     <p className="text-sm text-muted-foreground mt-2">Read-only (backend integration pending)</p>
                 </CardContent>
             </Card>
@@ -78,7 +78,7 @@ export default function ImporterWalletPage() {
                                 header: 'Amount',
                                 accessor: (row) => (
                                     <span className={row.amount > 0 ? 'text-green-600' : 'text-red-600'}>
-                                        {row.amount > 0 ? '+' : ''}AED {row.amount.toLocaleString()}
+                                        {row.amount > 0 ? '+' : ''}SAR {row.amount.toLocaleString()}
                                     </span>
                                 ),
                             },

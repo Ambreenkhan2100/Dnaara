@@ -109,7 +109,7 @@ export function PaymentsView() {
                 <div className="grid grid-cols-2 gap-4 text-sm">
                     <div className="flex items-center text-muted-foreground">
                         <DollarSign className="mr-2 h-4 w-4" />
-                        AED {payment.amount.toLocaleString()}
+                        SAR {payment.amount.toLocaleString()}
                     </div>
                     <div className="flex items-center text-muted-foreground">
                         <Calendar className="mr-2 h-4 w-4" />
@@ -219,7 +219,7 @@ export function PaymentsView() {
                             <div className="grid grid-cols-2 gap-4 text-sm">
                                 <div>
                                     <p className="font-medium">Amount</p>
-                                    <p>AED {selectedPayment.amount.toLocaleString()}</p>
+                                    <p>SAR {selectedPayment.amount.toLocaleString()}</p>
                                 </div>
                                 <div>
                                     <p className="font-medium">Status</p>

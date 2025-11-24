@@ -84,7 +84,7 @@ export default function AgentCompletedPage() {
                                     <p className="text-sm font-medium text-muted-foreground">Duty Amount</p>
                                     <p className="text-sm">
                                         {selectedRequest.dutyAmount !== undefined
-                                            ? `AED ${selectedRequest.dutyAmount.toLocaleString()}`
+                                            ? `SAR ${selectedRequest.dutyAmount.toLocaleString()}`
                                             : '—'}
                                     </p>
                                 </div>

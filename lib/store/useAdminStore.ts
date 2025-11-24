@@ -3,14 +3,18 @@
 import { create } from 'zustand';
 import { admins, importers, agents } from '@/lib/mock/users';
 import { requests } from '@/lib/mock/requests';
-import { balances } from '@/lib/mock/balances';
+import { balances, agentBalances, type AgentBalance } from '@/lib/mock/balances';
+import { shipments } from '@/lib/mock/shipments';
 import type { Importer, Agent, Admin, Request, Balance } from '@/types';
 import type { RequestStatus } from '@/lib/status';
+import { payments } from '@/lib/mock/payments';
+import type { PaymentRequest, PaymentStatus } from '@/types';
 
 interface AdminState {
     users: (Importer | Agent | Admin)[];
     requests: Request[];
     balances: Balance[];
+    agentBalances: AgentBalance[];
 
     // Actions
     approveUser: (id: string) => void;
@@ -20,12 +24,25 @@ interface AdminState {
     rejectRequest: (id: string) => void;
     returnRequest: (id: string) => void;
     adjustBalance: (importerId: string, amount: number) => void;
+    adjustAgentBalance: (agentId: string, amount: number) => void;
+
+    // Shipments
+    shipments: any[]; // Using any[] temporarily, will define proper Shipment type
+    createShipment: (shipment: any) => void;
+    updateShipment: (id: string, data: any) => void;
+    deleteShipment: (id: string) => void;
+
+    // Payments
+    payments: PaymentRequest[];
+    createPayment: (payment: Partial<PaymentRequest>) => void;
+    updatePaymentStatus: (id: string, status: PaymentStatus) => void;
 }
 
 export const useAdminStore = create<AdminState>((set) => ({
     users: [...admins, ...importers, ...agents],
     requests: [...requests],
     balances: [...balances],
+    agentBalances: [...agentBalances],
 
     approveUser: (id) =>
         set((state) => ({
@@ -88,6 +105,65 @@ export const useAdminStore = create<AdminState>((set) => ({
                 bal.importerId === importerId
                     ? { ...bal, available: amount, lastUpdated: new Date().toISOString() }
                     : bal
+            ),
+        })),
+
+    adjustAgentBalance: (agentId, amount) =>
+        set((state) => ({
+            agentBalances: state.agentBalances.map((bal) =>
+                bal.agentId === agentId
+                    ? { ...bal, available: amount, lastUpdated: new Date().toISOString() }
+                    : bal
+            ),
+        })),
+
+    // Shipments
+    shipments: [...shipments],
+    createShipment: (shipment) =>
+        set((state) => ({
+            shipments: [
+                ...state.shipments,
+                {
+                    id: `ship-${Date.now()}`,
+                    status: 'AT_PORT',
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString(),
+                    ...shipment,
+                } as any, // Temporary any cast until types are fully aligned
+            ],
+        })),
+    updateShipment: (id, data) =>
+        set((state) => ({
+            shipments: state.shipments.map((s) =>
+                s.id === id ? { ...s, ...data, updatedAt: new Date().toISOString() } : s
+            ),
+        })),
+    deleteShipment: (id) =>
+        set((state) => ({
+            shipments: state.shipments.filter((s) => s.id !== id),
+        })),
+
+    // Payments
+    payments: [...payments],
+    createPayment: (payment) =>
+        set((state) => ({
+            payments: [
+                ...state.payments,
+                {
+                    id: `pay-${Date.now()}`,
+                    status: 'REQUESTED',
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString(),
+                    comments: [],
+                    ...payment,
+                } as PaymentRequest,
+            ],
+        })),
+
+    updatePaymentStatus: (id, status) =>
+        set((state) => ({
+            payments: state.payments.map((p) =>
+                p.id === id ? { ...p, status, updatedAt: new Date().toISOString() } : p
             ),
         })),
 }));

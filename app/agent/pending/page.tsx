@@ -121,7 +121,7 @@ export default function AgentPendingPage() {
                                 {selectedRequest.dutyAmount !== undefined && (
                                     <div>
                                         <p className="text-sm font-medium text-muted-foreground">Duty Amount</p>
-                                        <p className="text-sm">AED {selectedRequest.dutyAmount.toLocaleString()}</p>
+                                        <p className="text-sm">SAR {selectedRequest.dutyAmount.toLocaleString()}</p>
                                     </div>
                                 )}
                             </div>

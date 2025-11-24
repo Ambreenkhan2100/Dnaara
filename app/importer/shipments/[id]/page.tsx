@@ -137,7 +137,7 @@ export default function ShipmentDetailsPage() {
                                     )}
                                 </div>
                                 <div className="space-y-2">
-                                    <Label>Duty Charges (AED)</Label>
+                                    <Label>Duty Charges (SAR)</Label>
                                     {isEditing ? (
                                         <Input
                                             type="number"

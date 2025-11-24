@@ -7,42 +7,70 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { createPaymentSchema, type CreatePaymentInput } from '@/lib/schemas';
-import { useAgentStore } from '@/lib/store/useAgentStore';
+import { createAdminPaymentSchema, type CreateAdminPaymentInput } from '@/lib/schemas';
+import { useAdminStore } from '@/lib/store/useAdminStore';
 import { toast } from 'sonner';
-import { useEffect } from 'react';
-import type { PaymentRequest } from '@/types';
+import { useState, useEffect } from 'react';
 
-interface AgentPaymentFormProps {
+interface AdminPaymentFormProps {
     onSuccess?: () => void;
-    initialData?: PaymentRequest;
 }
 
-export function AgentPaymentForm({ onSuccess, initialData }: AgentPaymentFormProps) {
-    const { createPayment, updatePayment, linkedImporters, upcoming, pending, completed } = useAgentStore();
+export function AdminPaymentForm({ onSuccess }: AdminPaymentFormProps) {
+    const { shipments, createPayment } = useAdminStore();
+    const [selectedType, setSelectedType] = useState<'air' | 'sea' | 'land'>('sea');
 
-    // Combine all shipments for selection
-    const allShipments = [...upcoming, ...pending, ...completed];
-
-    const form = useForm<CreatePaymentInput>({
-        resolver: zodResolver(createPaymentSchema) as any,
+    const form = useForm<CreateAdminPaymentInput>({
+        resolver: zodResolver(createAdminPaymentSchema) as any,
         defaultValues: {
-            amount: initialData?.amount || 0,
-            description: initialData?.description || '',
-            shipmentId: initialData?.shipmentId || '',
-            importerId: initialData?.importerId || '',
-            billNumber: initialData?.billNumber || '',
-            bayanNumber: initialData?.bayanNumber || '',
-            paymentDeadline: initialData?.paymentDeadline || '',
+            shipmentType: 'sea',
+            shipmentId: '',
+            billNumber: '',
+            bayanNumber: '',
+            amount: 0,
+            paymentDeadline: '',
+            comments: '',
         },
     });
 
+    // Watch for shipment selection to auto-fill bill/bayan numbers if available
     const selectedShipmentId = form.watch('shipmentId');
-    const selectedShipment = allShipments.find(s => s.id === selectedShipmentId);
+
+    useEffect(() => {
+        if (selectedShipmentId) {
+            const shipment = shipments.find(s => s.id === selectedShipmentId);
+            if (shipment) {
+                form.setValue('billNumber', shipment.billNumber || '');
+                form.setValue('bayanNumber', shipment.bayanNumber || '');
+                form.setValue('shipmentType', shipment.type as any);
+                setSelectedType(shipment.type as any);
+            }
+        }
+    }, [selectedShipmentId, shipments, form]);
+
+    const onSubmit = (data: CreateAdminPaymentInput) => {
+        const shipment = shipments.find(s => s.id === data.shipmentId);
+
+        createPayment({
+            shipmentId: data.shipmentId,
+            agentId: shipment?.agentId || 'unknown',
+            agentName: shipment?.agentName || 'Unknown Agent',
+            importerId: shipment?.importerId || 'unknown',
+            amount: data.amount,
+            description: `Payment for ${data.shipmentId}`,
+            billNumber: data.billNumber,
+            bayanNumber: data.bayanNumber,
+            paymentDeadline: data.paymentDeadline,
+            status: 'REQUESTED',
+        });
+
+        toast.success('Payment request created successfully');
+        form.reset();
+        onSuccess?.();
+    };
 
     const getBillLabel = () => {
-        if (!selectedShipment) return 'Bill Number';
-        switch (selectedShipment.type) {
+        switch (selectedType) {
             case 'air': return 'Airway Bill Number';
             case 'sea': return 'Bill of Lading Number';
             case 'land': return 'Waybill Number';
@@ -50,39 +78,34 @@ export function AgentPaymentForm({ onSuccess, initialData }: AgentPaymentFormPro
         }
     };
 
-    const onSubmit = (data: CreatePaymentInput) => {
-        if (initialData) {
-            updatePayment(initialData.id, data);
-            toast.success('Payment updated successfully');
-        } else {
-            createPayment(data);
-            toast.success('Payment created successfully');
-        }
-        form.reset();
-        onSuccess?.();
-    };
+    const filteredShipments = shipments.filter(s => s.type === selectedType);
 
     return (
         <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                 <FormField
                     control={form.control}
-                    name="importerId"
+                    name="shipmentType"
                     render={({ field }) => (
                         <FormItem>
-                            <FormLabel>Importer</FormLabel>
-                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <FormLabel>Shipment Type</FormLabel>
+                            <Select
+                                onValueChange={(val) => {
+                                    field.onChange(val);
+                                    setSelectedType(val as any);
+                                    form.setValue('shipmentId', ''); // Reset shipment selection on type change
+                                }}
+                                defaultValue={field.value}
+                            >
                                 <FormControl>
                                     <SelectTrigger>
-                                        <SelectValue placeholder="Select Importer" />
+                                        <SelectValue placeholder="Select Type" />
                                     </SelectTrigger>
                                 </FormControl>
                                 <SelectContent>
-                                    {linkedImporters.map((importer) => (
-                                        <SelectItem key={importer.id} value={importer.id}>
-                                            {importer.name}
-                                        </SelectItem>
-                                    ))}
+                                    <SelectItem value="sea">Sea Freight</SelectItem>
+                                    <SelectItem value="air">Air Freight</SelectItem>
+                                    <SelectItem value="land">Land Freight</SelectItem>
                                 </SelectContent>
                             </Select>
                             <FormMessage />
@@ -96,16 +119,16 @@ export function AgentPaymentForm({ onSuccess, initialData }: AgentPaymentFormPro
                     render={({ field }) => (
                         <FormItem>
                             <FormLabel>Shipment</FormLabel>
-                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <Select onValueChange={field.onChange} value={field.value}>
                                 <FormControl>
                                     <SelectTrigger>
                                         <SelectValue placeholder="Select Shipment" />
                                     </SelectTrigger>
                                 </FormControl>
                                 <SelectContent>
-                                    {allShipments.map((shipment) => (
+                                    {filteredShipments.map((shipment) => (
                                         <SelectItem key={shipment.id} value={shipment.id}>
-                                            {shipment.id} - {shipment.type} ({shipment.status})
+                                            {shipment.id} - {shipment.billNumber}
                                         </SelectItem>
                                     ))}
                                 </SelectContent>
@@ -151,7 +174,7 @@ export function AgentPaymentForm({ onSuccess, initialData }: AgentPaymentFormPro
                         name="amount"
                         render={({ field }) => (
                             <FormItem>
-                                <FormLabel>Amount (SAR)</FormLabel>
+                                <FormLabel>Final Amount Payable</FormLabel>
                                 <FormControl>
                                     <Input type="number" placeholder="0.00" {...field} />
                                 </FormControl>
@@ -167,7 +190,7 @@ export function AgentPaymentForm({ onSuccess, initialData }: AgentPaymentFormPro
                             <FormItem>
                                 <FormLabel>Payment Deadline</FormLabel>
                                 <FormControl>
-                                    <Input type="datetime-local" {...field} />
+                                    <Input type="date" {...field} />
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>
@@ -177,12 +200,12 @@ export function AgentPaymentForm({ onSuccess, initialData }: AgentPaymentFormPro
 
                 <FormField
                     control={form.control}
-                    name="description"
+                    name="comments"
                     render={({ field }) => (
                         <FormItem>
-                            <FormLabel>Description</FormLabel>
+                            <FormLabel>Additional Comments</FormLabel>
                             <FormControl>
-                                <Textarea placeholder="Payment description..." {...field} />
+                                <Textarea placeholder="Add any comments here..." {...field} />
                             </FormControl>
                             <FormMessage />
                         </FormItem>
@@ -190,7 +213,7 @@ export function AgentPaymentForm({ onSuccess, initialData }: AgentPaymentFormPro
                 />
 
                 <Button type="submit" className="w-full" style={{ backgroundColor: '#0bad85' }}>
-                    {initialData ? 'Update Payment' : 'Create Payment'}
+                    Create Payment Request
                 </Button>
             </form>
         </Form>

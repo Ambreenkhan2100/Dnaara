@@ -3,40 +3,27 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import { LayoutDashboard, Users, FileText, Wallet, User, Bell, TrendingUp, Calendar, CheckCircle, Clock, Building2 } from 'lucide-react';
+import { Users, Wallet, Bell, TrendingUp, Package, Building2, CreditCard } from 'lucide-react';
 
 interface NavItem {
     title: string;
     href: string;
-    icon: React.ComponentType<{ className?: string }>;
+    icon: any;
 }
 
 const adminNavItems: NavItem[] = [
-    { title: 'Overview', href: '/admin', icon: LayoutDashboard },
-    { title: 'Users', href: '/admin/users', icon: Users },
-    { title: 'Transactions', href: '/admin/transactions', icon: FileText },
-    { title: 'Balances', href: '/admin/balances', icon: Wallet },
+    { title: 'Shipments', href: '/admin/shipments', icon: Package },
+    { title: 'Agents', href: '/admin/agents', icon: Users },
+    { title: 'Importers', href: '/admin/importers', icon: Building2 },
+    { title: 'Payments', href: '/admin/payments', icon: CreditCard },
+    { title: 'Balance', href: '/admin/balance', icon: Wallet },
     { title: 'Reports', href: '/admin/reports', icon: TrendingUp },
     { title: 'Notifications', href: '/admin/notifications', icon: Bell },
 ];
 
-const importerNavItems: NavItem[] = [
-    { title: 'Overview', href: '/importer', icon: LayoutDashboard },
-    { title: 'Agents', href: '/importer/agents', icon: Users },
-    { title: 'Upcoming', href: '/importer/upcoming', icon: Calendar },
-    { title: 'Requests', href: '/importer/requests', icon: FileText },
-    { title: 'Profile', href: '/importer/profile', icon: User },
-    { title: 'Wallet', href: '/importer/wallet', icon: Wallet },
-];
+const importerNavItems: NavItem[] = [];
 
-const agentNavItems: NavItem[] = [
-    { title: 'Overview', href: '/agent', icon: LayoutDashboard },
-    { title: 'Importers', href: '/agent/importers', icon: Building2 },
-    { title: 'Upcoming', href: '/agent/upcoming', icon: Calendar },
-    { title: 'Pending', href: '/agent/pending', icon: Clock },
-    { title: 'Completed', href: '/agent/completed', icon: CheckCircle },
-    { title: 'Profile', href: '/agent/profile', icon: User },
-];
+const agentNavItems: NavItem[] = [];
 
 interface SideNavProps {
     role: 'admin' | 'importer' | 'agent';

@@ -57,3 +57,52 @@ export const createPaymentSchema = z.object({
 
 export type CreatePaymentInput = z.infer<typeof createPaymentSchema>;
 
+export const createAdminShipmentSchema = z.object({
+    importerId: z.string().min(1, 'Importer is required'),
+    agentId: z.string().min(1, 'Agent is required'),
+    type: z.enum(['air', 'sea', 'land']),
+    portOfShipment: z.string().min(1, 'Port of Shipment is required'),
+    portOfDestination: z.string().min(1, 'Port of Destination is required'),
+    expectedArrival: z.string().min(1, 'Expected Arrival Date is required'),
+    billNumber: z.string().min(1, 'Bill Number is required'),
+    bayanNumber: z.string().min(1, 'Bayan Number is required'),
+    bayanFile: z.any().optional(), // File upload handling
+    dutyAmount: z.coerce.number().min(0, 'Duty Amount must be positive'),
+    comments: z.string().optional(),
+    notifyImporter: z.boolean().default(false),
+    notifyAgent: z.boolean().default(false),
+});
+
+export type CreateAdminShipmentInput = z.infer<typeof createAdminShipmentSchema>;
+
+export const addAgentSchema = z.object({
+    companyName: z.string().min(1, 'Company Name is required'),
+    name: z.string().min(1, 'Agent Name is required'),
+    email: z.string().email('Invalid email address'),
+    phone: z.string().min(1, 'Phone number is required'),
+    sendInvite: z.boolean(),
+});
+
+export type AddAgentInput = z.infer<typeof addAgentSchema>;
+
+export const addAdminImporterSchema = z.object({
+    companyName: z.string().min(1, 'Company Name is required'),
+    name: z.string().min(1, 'Importer Name is required'),
+    email: z.string().email('Invalid email address'),
+    phone: z.string().min(1, 'Phone number is required'),
+    sendInvite: z.boolean(),
+});
+
+export type AddAdminImporterInput = z.infer<typeof addAdminImporterSchema>;
+
+export const createAdminPaymentSchema = z.object({
+    shipmentType: z.enum(['air', 'sea', 'land']),
+    shipmentId: z.string().min(1, 'Shipment is required'),
+    billNumber: z.string().min(1, 'Bill Number is required'),
+    bayanNumber: z.string().min(1, 'Bayan Number is required'),
+    amount: z.coerce.number().min(1, 'Amount must be positive'),
+    paymentDeadline: z.string().min(1, 'Payment Deadline is required'),
+    comments: z.string().optional(),
+});
+
+export type CreateAdminPaymentInput = z.infer<typeof createAdminPaymentSchema>;
