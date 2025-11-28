@@ -15,6 +15,7 @@ import { toast } from 'sonner';
 import type { PaymentRequest } from '@/types';
 import { AgentPaymentForm } from '@/components/forms/agent-payment-form';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { PaymentDetailsDialog } from '@/components/dialogs/payment-details-dialog';
 
 export function PaymentsView() {
     const { payments, deletePayment, addPaymentComment } = useAgentStore();
@@ -146,7 +147,7 @@ export function PaymentsView() {
                         className="max-w-sm"
                     />
                 </div>
-                <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
+                {/* <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
                     <DialogTrigger asChild>
                         <Button style={{ backgroundColor: '#0bad85' }}>
                             <Plus className="mr-2 h-4 w-4" />
@@ -162,7 +163,7 @@ export function PaymentsView() {
                         </DialogHeader>
                         <AgentPaymentForm onSuccess={() => setCreateDialogOpen(false)} />
                     </DialogContent>
-                </Dialog>
+                </Dialog> */}
             </div>
 
             <Tabs defaultValue="requested" className="space-y-6">
@@ -209,83 +210,19 @@ export function PaymentsView() {
             </Dialog>
 
             {/* View Details Dialog */}
-            <Dialog open={!!selectedPayment && !editDialogOpen} onOpenChange={(open) => !open && setSelectedPayment(null)}>
-                <DialogContent className="sm:max-w-[500px]">
-                    <DialogHeader>
-                        <DialogTitle>Payment Details</DialogTitle>
-                    </DialogHeader>
-                    {selectedPayment && (
-                        <div className="space-y-4">
-                            <div className="grid grid-cols-2 gap-4 text-sm">
-                                <div>
-                                    <p className="font-medium">Amount</p>
-                                    <p>SAR {selectedPayment.amount.toLocaleString()}</p>
-                                </div>
-                                <div>
-                                    <p className="font-medium">Status</p>
-                                    <Badge>{selectedPayment.status}</Badge>
-                                </div>
-                                <div>
-                                    <p className="font-medium">Bill Number</p>
-                                    <p>{selectedPayment.billNumber || '-'}</p>
-                                </div>
-                                <div>
-                                    <p className="font-medium">Bayan Number</p>
-                                    <p>{selectedPayment.bayanNumber || '-'}</p>
-                                </div>
-                                <div>
-                                    <p className="font-medium">Payment Deadline</p>
-                                    <p>{selectedPayment.paymentDeadline ? format(new Date(selectedPayment.paymentDeadline), 'PPP p') : '-'}</p>
-                                </div>
-                                <div>
-                                    <p className="font-medium">Agent</p>
-                                    <p>{selectedPayment.agentName}</p>
-                                </div>
-                                <div className="col-span-2">
-                                    <p className="font-medium">Description</p>
-                                    <p className="text-muted-foreground">{selectedPayment.description}</p>
-                                </div>
-                                <div>
-                                    <p className="font-medium">Date</p>
-                                    <p>{format(new Date(selectedPayment.createdAt), 'PPP')}</p>
-                                </div>
-                            </div>
-
-                            <div className="border-t pt-4">
-                                <h4 className="mb-2 font-medium">Comments</h4>
-                                <div className="space-y-4 max-h-[200px] overflow-y-auto mb-4">
-                                    {selectedPayment.comments.length === 0 ? (
-                                        <p className="text-sm text-muted-foreground">No comments yet.</p>
-                                    ) : (
-                                        selectedPayment.comments.map((c) => (
-                                            <div key={c.id} className="bg-muted p-2 rounded-md text-sm">
-                                                <div className="flex justify-between mb-1">
-                                                    <span className="font-medium">{c.userName}</span>
-                                                    <span className="text-xs text-muted-foreground">
-                                                        {format(new Date(c.createdAt), 'MMM dd, HH:mm')}
-                                                    </span>
-                                                </div>
-                                                <p>{c.content}</p>
-                                            </div>
-                                        ))
-                                    )}
-                                </div>
-                                <div className="flex gap-2">
-                                    <Textarea
-                                        placeholder="Add a comment..."
-                                        value={comment}
-                                        onChange={(e) => setComment(e.target.value)}
-                                        className="min-h-[60px]"
-                                    />
-                                    <Button onClick={handleAddComment} size="sm" className="self-end">
-                                        Post
-                                    </Button>
-                                </div>
-                            </div>
-                        </div>
-                    )}
-                </DialogContent>
-            </Dialog>
+            <PaymentDetailsDialog
+                open={!!selectedPayment && !editDialogOpen}
+                onOpenChange={(open) => !open && setSelectedPayment(null)}
+                payment={selectedPayment}
+                shipment={
+                    selectedPayment
+                        ? [...useAgentStore.getState().upcoming, ...useAgentStore.getState().pending, ...useAgentStore.getState().completed].find(
+                            (s) => s.id === selectedPayment.shipmentId
+                        )
+                        : undefined
+                }
+                onAddComment={addPaymentComment}
+            />
         </div>
     );
 }

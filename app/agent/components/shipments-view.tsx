@@ -9,10 +9,12 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Plus, Search, FileText, MapPin, Calendar, DollarSign, Truck, Ship, Plane } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useAgentStore } from '@/lib/store/useAgentStore';
 import type { Request } from '@/types';
+import { AgentPaymentForm } from '@/components/forms/agent-payment-form';
 
 export function ShipmentsView() {
     const router = useRouter();
@@ -21,6 +23,9 @@ export function ShipmentsView() {
     const [selectedRequest, setSelectedRequest] = useState<Request | null>(null);
     const [actionNote, setActionNote] = useState('');
     const [updateFile, setUpdateFile] = useState<File | null>(null);
+    const [updateStatus, setUpdateStatus] = useState('');
+    const [updateDialogRequestId, setUpdateDialogRequestId] = useState<string | null>(null);
+    const [paymentDialogRequestId, setPaymentDialogRequestId] = useState<string | null>(null);
 
     const allShipments = [...upcoming, ...pending, ...completed];
 
@@ -59,7 +64,9 @@ export function ShipmentsView() {
         updateShipment(id, actionNote, updateFile || undefined);
         setActionNote('');
         setUpdateFile(null);
+        setUpdateStatus('');
         setSelectedRequest(null);
+        setUpdateDialogRequestId(null);
     };
 
     const ShipmentCard = ({ request, showActions = false, showUpdate = false }: { request: Request, showActions?: boolean, showUpdate?: boolean }) => (
@@ -131,7 +138,10 @@ export function ShipmentsView() {
                     </Dialog>
                 )}
                 {showUpdate && (
-                    <Dialog>
+                    <Dialog
+                        open={updateDialogRequestId === request.id}
+                        onOpenChange={(open) => setUpdateDialogRequestId(open ? request.id : null)}
+                    >
                         <DialogTrigger asChild>
                             <Button size="sm" onClick={() => setSelectedRequest(request)}>Add Update</Button>
                         </DialogTrigger>
@@ -141,6 +151,21 @@ export function ShipmentsView() {
                                 <DialogDescription>Add a note or file to update the status.</DialogDescription>
                             </DialogHeader>
                             <div className="space-y-4 py-4">
+                                <div className="space-y-2">
+                                    <Label>Status</Label>
+                                    <Select value={updateStatus} onValueChange={setUpdateStatus}>
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Select status" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="At the port">At the port</SelectItem>
+                                            <SelectItem value="Clearing in progress">Clearing in progress</SelectItem>
+                                            <SelectItem value="On Hold by customs">On Hold by customs</SelectItem>
+                                            <SelectItem value="Completed by customs">Completed by customs</SelectItem>
+                                            <SelectItem value="Rejected by customs">Rejected by customs</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
                                 <div className="space-y-2">
                                     <Label>Update Note</Label>
                                     <Textarea
@@ -157,6 +182,29 @@ export function ShipmentsView() {
                             <DialogFooter>
                                 <Button onClick={() => handleUpdate(request.id)}>Submit Update</Button>
                             </DialogFooter>
+                        </DialogContent>
+                    </Dialog>
+                )}
+                {showUpdate && (
+                    <Dialog
+                        open={paymentDialogRequestId === request.id}
+                        onOpenChange={(open) => setPaymentDialogRequestId(open ? request.id : null)}
+                    >
+                        <DialogTrigger asChild>
+                            <Button size="sm" variant="outline" onClick={() => setSelectedRequest(request)}>Add Payment</Button>
+                        </DialogTrigger>
+                        <DialogContent className="max-w-2xl">
+                            <DialogHeader>
+                                <DialogTitle>Create Payment Request</DialogTitle>
+                                <DialogDescription>
+                                    Create a payment request for {request.importerName}
+                                </DialogDescription>
+                            </DialogHeader>
+                            <AgentPaymentForm
+                                prefilledImporterId={request.importerId}
+                                prefilledShipmentId={request.id}
+                                onSuccess={() => setPaymentDialogRequestId(null)}
+                            />
                         </DialogContent>
                     </Dialog>
                 )}

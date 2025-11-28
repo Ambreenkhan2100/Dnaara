@@ -5,6 +5,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ShipmentsView } from './components/shipments-view';
 import { AgentsView } from './components/agents-view';
 import { PaymentsView } from './components/payments-view';
+import { NotificationsView } from './components/notifications-view';
+import { ReportsView } from './components/reports-view';
 
 export default function ImporterDashboard() {
     return (
@@ -28,10 +30,12 @@ export default function ImporterDashboard() {
             </div>
 
             <Tabs defaultValue="shipments" className="space-y-6">
-                <TabsList className="grid w-full grid-cols-3 lg:w-[400px]">
+                <TabsList className="grid w-full grid-cols-5 lg:w-[600px]">
                     <TabsTrigger value="shipments">SHIPMENTS</TabsTrigger>
                     <TabsTrigger value="agents">AGENTS</TabsTrigger>
                     <TabsTrigger value="payments">PAYMENTS</TabsTrigger>
+                    <TabsTrigger value="notifications">NOTIFICATIONS</TabsTrigger>
+                    <TabsTrigger value="reports">REPORTS</TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="shipments" className="space-y-4">
@@ -44,6 +48,14 @@ export default function ImporterDashboard() {
 
                 <TabsContent value="payments" className="space-y-4">
                     <PaymentsView />
+                </TabsContent>
+
+                <TabsContent value="notifications" className="space-y-4">
+                    <NotificationsView />
+                </TabsContent>
+
+                <TabsContent value="reports" className="space-y-4">
+                    <ReportsView />
                 </TabsContent>
             </Tabs>
         </div>

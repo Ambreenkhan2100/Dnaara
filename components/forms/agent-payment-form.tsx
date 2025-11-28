@@ -16,9 +16,11 @@ import type { PaymentRequest } from '@/types';
 interface AgentPaymentFormProps {
     onSuccess?: () => void;
     initialData?: PaymentRequest;
+    prefilledImporterId?: string;
+    prefilledShipmentId?: string;
 }
 
-export function AgentPaymentForm({ onSuccess, initialData }: AgentPaymentFormProps) {
+export function AgentPaymentForm({ onSuccess, initialData, prefilledImporterId, prefilledShipmentId }: AgentPaymentFormProps) {
     const { createPayment, updatePayment, linkedImporters, upcoming, pending, completed } = useAgentStore();
 
     // Combine all shipments for selection
@@ -29,8 +31,8 @@ export function AgentPaymentForm({ onSuccess, initialData }: AgentPaymentFormPro
         defaultValues: {
             amount: initialData?.amount || 0,
             description: initialData?.description || '',
-            shipmentId: initialData?.shipmentId || '',
-            importerId: initialData?.importerId || '',
+            shipmentId: initialData?.shipmentId || prefilledShipmentId || '',
+            importerId: initialData?.importerId || prefilledImporterId || '',
             billNumber: initialData?.billNumber || '',
             bayanNumber: initialData?.bayanNumber || '',
             paymentDeadline: initialData?.paymentDeadline || '',
@@ -65,55 +67,59 @@ export function AgentPaymentForm({ onSuccess, initialData }: AgentPaymentFormPro
     return (
         <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                <FormField
-                    control={form.control}
-                    name="importerId"
-                    render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>Importer</FormLabel>
-                            <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                <FormControl>
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Select Importer" />
-                                    </SelectTrigger>
-                                </FormControl>
-                                <SelectContent>
-                                    {linkedImporters.map((importer) => (
-                                        <SelectItem key={importer.id} value={importer.id}>
-                                            {importer.name}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                            <FormMessage />
-                        </FormItem>
-                    )}
-                />
+                {!prefilledImporterId && (
+                    <FormField
+                        control={form.control}
+                        name="importerId"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Importer</FormLabel>
+                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                    <FormControl>
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Select Importer" />
+                                        </SelectTrigger>
+                                    </FormControl>
+                                    <SelectContent>
+                                        {linkedImporters.map((importer) => (
+                                            <SelectItem key={importer.id} value={importer.id}>
+                                                {importer.name}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                )}
 
-                <FormField
-                    control={form.control}
-                    name="shipmentId"
-                    render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>Shipment</FormLabel>
-                            <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                <FormControl>
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Select Shipment" />
-                                    </SelectTrigger>
-                                </FormControl>
-                                <SelectContent>
-                                    {allShipments.map((shipment) => (
-                                        <SelectItem key={shipment.id} value={shipment.id}>
-                                            {shipment.id} - {shipment.type} ({shipment.status})
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                            <FormMessage />
-                        </FormItem>
-                    )}
-                />
+                {!prefilledShipmentId && (
+                    <FormField
+                        control={form.control}
+                        name="shipmentId"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Shipment</FormLabel>
+                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                    <FormControl>
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Select Shipment" />
+                                        </SelectTrigger>
+                                    </FormControl>
+                                    <SelectContent>
+                                        {allShipments.map((shipment) => (
+                                            <SelectItem key={shipment.id} value={shipment.id}>
+                                                {shipment.id} - {shipment.type} ({shipment.status})
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                )}
 
                 <div className="grid grid-cols-2 gap-4">
                     <FormField
