@@ -36,6 +36,7 @@ interface AdminState {
     payments: PaymentRequest[];
     createPayment: (payment: Partial<PaymentRequest>) => void;
     updatePaymentStatus: (id: string, status: PaymentStatus) => void;
+    addPaymentComment: (paymentId: string, comment: string) => void;
 }
 
 export const useAdminStore = create<AdminState>((set) => ({
@@ -164,6 +165,28 @@ export const useAdminStore = create<AdminState>((set) => ({
         set((state) => ({
             payments: state.payments.map((p) =>
                 p.id === id ? { ...p, status, updatedAt: new Date().toISOString() } : p
+            ),
+        })),
+
+    addPaymentComment: (paymentId, comment) =>
+        set((state) => ({
+            payments: state.payments.map((p) =>
+                p.id === paymentId
+                    ? {
+                        ...p,
+                        comments: [
+                            ...p.comments,
+                            {
+                                id: `comment-${Date.now()}`,
+                                userId: 'admin-1',
+                                content: comment,
+                                userName: 'Admin',
+                                createdAt: new Date().toISOString(),
+                            },
+                        ],
+                        updatedAt: new Date().toISOString(),
+                    }
+                    : p
             ),
         })),
 }));

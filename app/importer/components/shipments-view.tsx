@@ -6,23 +6,48 @@ import { useImporterStore } from '@/lib/store/useImporterStore';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Plus, Search, Filter } from 'lucide-react';
+import { Plus, Search } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 
 import type { Request } from '@/types';
+import { ShipmentFilter, FilterState } from '@/components/shared/shipment-filter';
+import { isWithinInterval, parseISO, startOfDay, endOfDay } from 'date-fns';
 
 export function ShipmentsView() {
     const router = useRouter();
-    const { requests } = useImporterStore();
+    const { requests, linkedAgents } = useImporterStore();
     const [searchQuery, setSearchQuery] = useState('');
+    const [filters, setFilters] = useState<FilterState>({});
 
-    const filteredRequests = requests.filter(req =>
-        req.billNumber?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        req.bayanNumber?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        req.portOfShipment?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        req.portOfDestination?.toLowerCase().includes(searchQuery.toLowerCase())
-    );
+    const filteredRequests = requests.filter(req => {
+        const matchesSearch =
+            req.billNumber?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            req.bayanNumber?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            req.portOfShipment?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            req.portOfDestination?.toLowerCase().includes(searchQuery.toLowerCase());
+
+        if (!matchesSearch) return false;
+
+        // Apply filters
+        if (filters.type && filters.type !== 'all') {
+            if (req.type.toLowerCase() !== filters.type.toLowerCase()) return false;
+        }
+
+        if (filters.agentId) {
+            if (req.agentId !== filters.agentId) return false;
+        }
+
+        if (filters.dateRange?.from) {
+            const reqDate = parseISO(req.createdAt);
+            const from = startOfDay(filters.dateRange.from);
+            const to = filters.dateRange.to ? endOfDay(filters.dateRange.to) : endOfDay(from);
+
+            if (!isWithinInterval(reqDate, { start: from, end: to })) return false;
+        }
+
+        return true;
+    });
 
     const assignedShipments = filteredRequests.filter(r => r.status === 'ASSIGNED');
     const confirmedShipments = filteredRequests.filter(r => r.status === 'CONFIRMED');
@@ -93,9 +118,11 @@ export function ShipmentsView() {
                         onChange={(e) => setSearchQuery(e.target.value)}
                     />
                 </div>
-                <Button variant="outline" size="icon">
-                    <Filter className="h-4 w-4" />
-                </Button>
+                <ShipmentFilter
+                    agents={linkedAgents}
+                    onFilterChange={setFilters}
+                    initialFilters={filters}
+                />
             </div>
 
             <Tabs defaultValue="assigned" className="space-y-4">

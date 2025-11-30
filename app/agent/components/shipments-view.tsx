@@ -15,27 +15,51 @@ import { useRouter } from 'next/navigation';
 import { useAgentStore } from '@/lib/store/useAgentStore';
 import type { Request } from '@/types';
 import { AgentPaymentForm } from '@/components/forms/agent-payment-form';
+import { ShipmentFilter, FilterState } from '@/components/shared/shipment-filter';
+import { isWithinInterval, parseISO, startOfDay, endOfDay } from 'date-fns';
 
 export function ShipmentsView() {
     const router = useRouter();
-    const { upcoming, pending, completed, acceptRequest, rejectRequest, updateShipment } = useAgentStore();
+    const { upcoming, pending, completed, acceptRequest, rejectRequest, updateShipment, linkedImporters } = useAgentStore();
     const [searchQuery, setSearchQuery] = useState('');
-    const [selectedRequest, setSelectedRequest] = useState<Request | null>(null);
     const [actionNote, setActionNote] = useState('');
     const [updateFile, setUpdateFile] = useState<File | null>(null);
     const [updateStatus, setUpdateStatus] = useState('');
     const [updateDialogRequestId, setUpdateDialogRequestId] = useState<string | null>(null);
     const [paymentDialogRequestId, setPaymentDialogRequestId] = useState<string | null>(null);
+    const [filters, setFilters] = useState<FilterState>({});
 
     const allShipments = [...upcoming, ...pending, ...completed];
 
     const filteredShipments = (shipments: Request[]) => {
-        return shipments.filter(s =>
-            s.importerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            s.billNo?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            s.bayanNo?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            s.id.toLowerCase().includes(searchQuery.toLowerCase())
-        );
+        return shipments.filter(s => {
+            const matchesSearch =
+                s.importerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                s.billNo?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                s.bayanNo?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                s.id.toLowerCase().includes(searchQuery.toLowerCase());
+
+            if (!matchesSearch) return false;
+
+            // Apply filters
+            if (filters.type && filters.type !== 'all') {
+                if (s.type.toLowerCase() !== filters.type.toLowerCase()) return false;
+            }
+
+            if (filters.agentId) { // Using agentId field for importer filtering as per generic component design
+                if (s.importerId !== filters.agentId) return false;
+            }
+
+            if (filters.dateRange?.from) {
+                const reqDate = parseISO(s.createdAt);
+                const from = startOfDay(filters.dateRange.from);
+                const to = filters.dateRange.to ? endOfDay(filters.dateRange.to) : endOfDay(from);
+
+                if (!isWithinInterval(reqDate, { start: from, end: to })) return false;
+            }
+
+            return true;
+        });
     };
 
     const getIcon = (type: string) => {
@@ -50,13 +74,11 @@ export function ShipmentsView() {
     const handleAccept = (id: string) => {
         acceptRequest(id, actionNote);
         setActionNote('');
-        setSelectedRequest(null);
     };
 
     const handleReject = (id: string) => {
         rejectRequest(id, actionNote);
         setActionNote('');
-        setSelectedRequest(null);
     };
 
     const handleUpdate = (id: string) => {
@@ -65,7 +87,8 @@ export function ShipmentsView() {
         setActionNote('');
         setUpdateFile(null);
         setUpdateStatus('');
-        setSelectedRequest(null);
+        setUpdateFile(null);
+        setUpdateStatus('');
         setUpdateDialogRequestId(null);
     };
 
@@ -113,7 +136,7 @@ export function ShipmentsView() {
                 {showActions && (
                     <Dialog>
                         <DialogTrigger asChild>
-                            <Button variant="outline" size="sm" onClick={() => setSelectedRequest(request)}>Review</Button>
+                            <Button variant="outline" size="sm">Review</Button>
                         </DialogTrigger>
                         <DialogContent>
                             <DialogHeader>
@@ -143,7 +166,7 @@ export function ShipmentsView() {
                         onOpenChange={(open) => setUpdateDialogRequestId(open ? request.id : null)}
                     >
                         <DialogTrigger asChild>
-                            <Button size="sm" onClick={() => setSelectedRequest(request)}>Add Update</Button>
+                            <Button size="sm">Add Update</Button>
                         </DialogTrigger>
                         <DialogContent>
                             <DialogHeader>
@@ -191,7 +214,7 @@ export function ShipmentsView() {
                         onOpenChange={(open) => setPaymentDialogRequestId(open ? request.id : null)}
                     >
                         <DialogTrigger asChild>
-                            <Button size="sm" variant="outline" onClick={() => setSelectedRequest(request)}>Add Payment</Button>
+                            <Button size="sm" variant="outline">Add Payment</Button>
                         </DialogTrigger>
                         <DialogContent className="max-w-2xl">
                             <DialogHeader>
@@ -224,6 +247,12 @@ export function ShipmentsView() {
                         onChange={(e) => setSearchQuery(e.target.value)}
                     />
                 </div>
+                <ShipmentFilter
+                    agents={linkedImporters} // Passing importers as agents (generic entities)
+                    onFilterChange={setFilters}
+                    initialFilters={filters}
+                    entityLabel="Importer"
+                />
                 <Button onClick={() => router.push('/agent/shipments/create')}>
                     <Plus className="mr-2 h-4 w-4" />
                     Create new shipment

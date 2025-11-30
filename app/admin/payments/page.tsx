@@ -2,20 +2,24 @@
 
 import { useState, useMemo } from 'react';
 import { useAdminStore } from '@/lib/store/useAdminStore';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Search, Plus, CreditCard, Calendar, FileText, DollarSign } from 'lucide-react';
+import { Search, Plus, Calendar, FileText } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/components/ui/dialog';
 import { AdminPaymentForm } from '@/components/forms/admin-payment-form';
+import { PaymentDetailsDialog } from '@/components/dialogs/payment-details-dialog';
 import { format } from 'date-fns';
+import type { PaymentRequest } from '@/types';
 
 export default function AdminPaymentsPage() {
-    const { payments, updatePaymentStatus } = useAdminStore();
+    const { payments, updatePaymentStatus, shipments, addPaymentComment } = useAdminStore();
     const [searchQuery, setSearchQuery] = useState('');
     const [createDialogOpen, setCreateDialogOpen] = useState(false);
+    const [selectedPayment, setSelectedPayment] = useState<PaymentRequest | null>(null);
+    const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
 
     const getPaymentsByStatus = (status: string) => {
         let filtered = payments;
@@ -29,8 +33,25 @@ export default function AdminPaymentsPage() {
         );
     };
 
-    const renderPaymentCard = (payment: any) => (
-        <Card key={payment.id} className="mb-4 hover:shadow-md transition-shadow">
+    const handleCardClick = (payment: PaymentRequest) => {
+        setSelectedPayment(payment);
+        setDetailsDialogOpen(true);
+    };
+
+    const handleAddComment = (paymentId: string, comment: string) => {
+        addPaymentComment(paymentId, comment);
+    };
+
+    const getShipmentForPayment = (shipmentId: string) => {
+        return shipments.find(s => s.id === shipmentId);
+    };
+
+    const renderPaymentCard = (payment: PaymentRequest) => (
+        <Card
+            key={payment.id}
+            className="mb-4 hover:shadow-md transition-shadow cursor-pointer"
+            onClick={() => handleCardClick(payment)}
+        >
             <CardContent className="p-6">
                 <div className="flex items-start justify-between">
                     <div className="space-y-1">
@@ -89,7 +110,7 @@ export default function AdminPaymentsPage() {
                 {payment.comments && payment.comments.length > 0 && (
                     <div className="mt-4 p-3 bg-muted/50 rounded-md text-sm space-y-2">
                         <span className="font-semibold block">Comments:</span>
-                        {payment.comments.map((comment: any) => (
+                        {payment.comments.map((comment: PaymentRequest['comments'][number]) => (
                             <div key={comment.id} className="text-muted-foreground">
                                 <span className="font-medium text-foreground">{comment.userName}:</span> {comment.content}
                             </div>
@@ -182,6 +203,15 @@ export default function AdminPaymentsPage() {
                     </TabsContent>
                 </Tabs>
             </div>
+
+            {/* Payment Details Dialog */}
+            <PaymentDetailsDialog
+                open={detailsDialogOpen}
+                onOpenChange={setDetailsDialogOpen}
+                payment={selectedPayment}
+                shipment={selectedPayment ? getShipmentForPayment(selectedPayment.shipmentId) : undefined}
+                onAddComment={handleAddComment}
+            />
         </div>
     );
 }
