@@ -36,11 +36,7 @@ export type FinalBayanInput = z.infer<typeof finalBayanSchema>;
 export type CreateUserInput = z.infer<typeof createUserSchema>;
 
 export const addImporterSchema = z.object({
-    companyName: z.string().min(1, 'Company Name is required'),
-    name: z.string().min(1, 'Importer Name is required'),
     email: z.string().email('Invalid email address'),
-    phone: z.string().min(1, 'Phone number is required'),
-    linkAccount: z.boolean(),
 });
 
 export type AddImporterInput = z.infer<typeof addImporterSchema>;

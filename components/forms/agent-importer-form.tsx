@@ -2,10 +2,9 @@
 
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
 import { addImporterSchema, type AddImporterInput } from '@/lib/schemas';
 import { useAgentStore } from '@/lib/store/useAgentStore';
 import { toast } from 'sonner';
@@ -20,11 +19,7 @@ export function AgentImporterForm({ onSuccess }: AgentImporterFormProps) {
     const form = useForm<AddImporterInput>({
         resolver: zodResolver(addImporterSchema),
         defaultValues: {
-            companyName: '',
-            name: '',
             email: '',
-            phone: '',
-            linkAccount: false,
         },
     });
 
@@ -40,32 +35,6 @@ export function AgentImporterForm({ onSuccess }: AgentImporterFormProps) {
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                 <FormField
                     control={form.control}
-                    name="companyName"
-                    render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>Company Name</FormLabel>
-                            <FormControl>
-                                <Input placeholder="Company Name" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                        </FormItem>
-                    )}
-                />
-                <FormField
-                    control={form.control}
-                    name="name"
-                    render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>Importer Name</FormLabel>
-                            <FormControl>
-                                <Input placeholder="Importer Name" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                        </FormItem>
-                    )}
-                />
-                <FormField
-                    control={form.control}
                     name="email"
                     render={({ field }) => (
                         <FormItem>
@@ -74,41 +43,6 @@ export function AgentImporterForm({ onSuccess }: AgentImporterFormProps) {
                                 <Input type="email" placeholder="importer@example.com" {...field} />
                             </FormControl>
                             <FormMessage />
-                        </FormItem>
-                    )}
-                />
-                <FormField
-                    control={form.control}
-                    name="phone"
-                    render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>Importer Phone Number</FormLabel>
-                            <FormControl>
-                                <Input placeholder="+966..." {...field} />
-                            </FormControl>
-                            <FormMessage />
-                        </FormItem>
-                    )}
-                />
-                <FormField
-                    control={form.control}
-                    name="linkAccount"
-                    render={({ field }) => (
-                        <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
-                            <FormControl>
-                                <Checkbox
-                                    checked={field.value}
-                                    onChange={field.onChange}
-                                />
-                            </FormControl>
-                            <div className="space-y-1 leading-none">
-                                <FormLabel>
-                                    Link Account
-                                </FormLabel>
-                                <FormDescription>
-                                    Send an invitation to link this email to an existing account.
-                                </FormDescription>
-                            </div>
                         </FormItem>
                     )}
                 />

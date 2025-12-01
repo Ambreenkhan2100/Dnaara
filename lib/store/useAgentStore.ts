@@ -33,7 +33,7 @@ interface AgentState {
         dutyAmount: number;
         notes?: string;
     }) => void;
-    addImporter: (importer: Omit<LinkedImporter, 'id' | 'status' | 'crNumber'> & { linkAccount: boolean }) => void;
+    addImporter: (importer: { email: string }) => void;
     createPayment: (payment: CreatePaymentInput) => void;
     updatePayment: (id: string, data: Partial<PaymentRequest>) => void;
     deletePayment: (id: string) => void;
@@ -102,6 +102,84 @@ export const useAgentStore = create<AgentState>((set) => ({
             dutyAmount: 1200,
             createdAt: '2023-11-21T09:00:00Z',
             updatedAt: '2023-11-21T09:00:00Z',
+        },
+        {
+            id: 'req-at-port-1',
+            importerId: 'i1',
+            importerName: 'Ahmed Al-Mansoori',
+            agentId: 'ag1',
+            status: 'ASSIGNED',
+            type: 'sea',
+            portOfShipment: 'Singapore',
+            portOfDestination: 'King Abdulaziz Port',
+            expectedArrival: '2025-12-01',
+            billNo: 'BL-SG-KAP-789',
+            bayanNo: 'BAY-2025-789',
+            dutyAmount: 8500,
+            createdAt: '2025-11-15T08:00:00Z',
+            updatedAt: '2025-12-01T14:00:00Z',
+            updates: [
+                {
+                    date: '2025-12-01T14:00:00Z',
+                    note: 'Shipment has arrived and is now at the port awaiting customs clearance',
+                    author: 'Agent'
+                }
+            ]
+        },
+        {
+            id: 'req-at-port-2',
+            importerId: 'i4',
+            importerName: 'Sara Al-Ahmad',
+            agentId: 'ag1',
+            status: 'ASSIGNED',
+            type: 'air',
+            portOfShipment: 'Frankfurt Airport',
+            portOfDestination: 'King Khalid International Airport',
+            expectedArrival: '2025-11-30',
+            billNo: 'AWB-FRA-RUH-456',
+            bayanNo: 'BAY-2025-456',
+            dutyAmount: 3200,
+            createdAt: '2025-11-20T10:00:00Z',
+            updatedAt: '2025-11-30T18:00:00Z',
+            updates: [
+                {
+                    date: '2025-11-30T18:00:00Z',
+                    note: 'Cargo at port, ready for inspection',
+                    author: 'Agent'
+                }
+            ]
+        },
+        {
+            id: 'req-upcoming-1',
+            importerId: 'i2',
+            importerName: 'Fatima Al-Zahra',
+            agentId: 'ag1',
+            status: 'ASSIGNED',
+            type: 'land',
+            portOfShipment: 'Kuwait City',
+            portOfDestination: 'Riyadh',
+            expectedArrival: '2025-12-02T10:00:00Z', // Tomorrow morning (within 24 hours)
+            billNo: 'WB-KWT-RUH-321',
+            bayanNo: 'BAY-2025-321',
+            dutyAmount: 1800,
+            createdAt: '2025-11-28T09:00:00Z',
+            updatedAt: '2025-11-28T09:00:00Z',
+        },
+        {
+            id: 'req-upcoming-2',
+            importerId: 'i1',
+            importerName: 'Ahmed Al-Mansoori',
+            agentId: 'ag1',
+            status: 'ASSIGNED',
+            type: 'air',
+            portOfShipment: 'Paris CDG',
+            portOfDestination: 'King Fahd International Airport',
+            expectedArrival: '2025-12-02T06:00:00Z', // Tomorrow early morning (within 24 hours)
+            billNo: 'AWB-CDG-DMM-654',
+            bayanNo: 'BAY-2025-654',
+            dutyAmount: 4500,
+            createdAt: '2025-11-25T12:00:00Z',
+            updatedAt: '2025-11-25T12:00:00Z',
         }
     ] as Request[],
     pending: [
@@ -206,9 +284,12 @@ export const useAgentStore = create<AgentState>((set) => ({
                 ...state.linkedImporters,
                 {
                     id: `i${state.linkedImporters.length + 10}`,
+                    name: 'Pending',
+                    companyName: 'Pending',
+                    phone: '',
                     ...importer,
                     crNumber: 'CR-NEW', // Mock CR number
-                    status: importer.linkAccount ? 'pending' : 'active',
+                    status: 'pending',
                 },
             ],
         })),

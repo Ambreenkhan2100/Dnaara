@@ -12,7 +12,7 @@ import { Badge } from '@/components/ui/badge';
 
 import type { Request } from '@/types';
 import { ShipmentFilter, FilterState } from '@/components/shared/shipment-filter';
-import { isWithinInterval, parseISO, startOfDay, endOfDay } from 'date-fns';
+import { isWithinInterval, parseISO, startOfDay, endOfDay, addHours, isBefore } from 'date-fns';
 
 export function ShipmentsView() {
     const router = useRouter();
@@ -49,9 +49,28 @@ export function ShipmentsView() {
         return true;
     });
 
+    // Helper function to check if shipment is at port (based on updates)
+    const isAtPort = (shipment: Request) => {
+        return shipment.updates?.some(update =>
+            update.note.toLowerCase().includes('at the port') ||
+            update.note.toLowerCase().includes('at port')
+        ) || false;
+    };
+
+    // Helper function to check if shipment is upcoming (arriving within 24 hours)
+    const isUpcoming = (shipment: Request) => {
+        if (!shipment.expectedArrival && !shipment.expectedArrivalDate) return false;
+        const arrivalDate = parseISO(shipment.expectedArrival || shipment.expectedArrivalDate || '');
+        const now = new Date();
+        const next24Hours = addHours(now, 24);
+        return isBefore(arrivalDate, next24Hours) && isBefore(now, arrivalDate);
+    };
+
     const assignedShipments = filteredRequests.filter(r => r.status === 'ASSIGNED');
     const confirmedShipments = filteredRequests.filter(r => r.status === 'CONFIRMED');
     const completedShipments = filteredRequests.filter(r => r.status === 'COMPLETED');
+    const atPortShipments = filteredRequests.filter(r => r.status === 'ASSIGNED' && isAtPort(r));
+    const upcomingShipments = filteredRequests.filter(r => r.status === 'ASSIGNED' && isUpcoming(r) && !isAtPort(r));
 
     const ShipmentCard = ({ shipment }: { shipment: Request }) => (
         <Card className="mb-4 cursor-pointer hover:bg-accent/50 transition-colors" onClick={() => {
@@ -127,11 +146,29 @@ export function ShipmentsView() {
 
             <Tabs defaultValue="assigned" className="space-y-4">
                 <TabsList>
+                    <TabsTrigger value="at_port">At Port ({atPortShipments.length})</TabsTrigger>
+                    <TabsTrigger value="upcoming">Upcoming ({upcomingShipments.length})</TabsTrigger>
                     <TabsTrigger value="assigned">Assigned ({assignedShipments.length})</TabsTrigger>
                     <TabsTrigger value="confirmed">Confirmed ({confirmedShipments.length})</TabsTrigger>
                     <TabsTrigger value="completed">Completed ({completedShipments.length})</TabsTrigger>
                     <TabsTrigger value="all">All Shipments ({filteredRequests.length})</TabsTrigger>
                 </TabsList>
+
+                <TabsContent value="at_port" className="space-y-4">
+                    {atPortShipments.length === 0 ? (
+                        <div className="text-center py-10 text-muted-foreground">No shipments at port found.</div>
+                    ) : (
+                        atPortShipments.map(req => <ShipmentCard key={req.id} shipment={req} />)
+                    )}
+                </TabsContent>
+
+                <TabsContent value="upcoming" className="space-y-4">
+                    {upcomingShipments.length === 0 ? (
+                        <div className="text-center py-10 text-muted-foreground">No upcoming shipments found.</div>
+                    ) : (
+                        upcomingShipments.map(req => <ShipmentCard key={req.id} shipment={req} />)
+                    )}
+                </TabsContent>
 
                 <TabsContent value="assigned" className="space-y-4">
                     {assignedShipments.length === 0 ? (
