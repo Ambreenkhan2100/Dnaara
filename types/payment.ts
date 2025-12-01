@@ -24,3 +24,14 @@ export interface PaymentRequest {
     updatedAt: string;
     comments: PaymentComment[];
 }
+
+export interface WalletTransaction {
+    id: string;
+    agentId: string;
+    importerId: string;
+    amount: number;
+    type: 'CREDIT' | 'DEBIT';
+    description: string;
+    date: string;
+    referenceId?: string; // e.g., payment ID or shipment ID
+}

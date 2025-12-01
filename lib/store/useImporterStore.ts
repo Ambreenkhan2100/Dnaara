@@ -4,7 +4,7 @@ import { create } from 'zustand';
 import { requests } from '@/lib/mock/requests';
 import { balances } from '@/lib/mock/balances';
 import { agents } from '@/lib/mock/users';
-import type { Request, RequestStatus, PaymentRequest } from '@/types';
+import type { Request, RequestStatus, PaymentRequest, WalletTransaction } from '@/types';
 import { payments } from '@/lib/mock/payments';
 
 interface LinkedAgent {
@@ -14,6 +14,7 @@ interface LinkedAgent {
     companyName?: string;
     phone?: string;
     status: 'linked' | 'invited';
+    minimumBalance?: number;
 }
 
 interface ImporterState {
@@ -21,6 +22,7 @@ interface ImporterState {
     walletBalance: number;
     requests: Request[];
     payments: PaymentRequest[];
+    transactions: WalletTransaction[];
 
     // Actions
     linkAgentByEmail: (email: string) => void;
@@ -41,6 +43,7 @@ interface ImporterState {
     uploadPreBayan: (requestId: string, fileName: string) => void;
     uploadWaybill: (requestId: string, fileName: string) => void;
     addPaymentComment: (paymentId: string, comment: string) => void;
+    updateAgentMinimumBalance: (agentId: string, amount: number) => void;
 }
 
 const getInitialBalance = (importerId: string): number => {
@@ -56,7 +59,8 @@ export const useImporterStore = create<ImporterState>((set, get) => ({
             name: 'Ali Customs Services',
             companyName: 'Ali Customs Services LLC',
             phone: '+971506789012',
-            status: 'linked'
+            status: 'linked',
+            minimumBalance: 1000
         },
         {
             id: 'ag2',
@@ -156,6 +160,46 @@ export const useImporterStore = create<ImporterState>((set, get) => ({
         }
     ], // Filter by current importer
     payments: payments.filter((p) => p.importerId === 'i1'),
+    transactions: [
+        {
+            id: 'tx-1',
+            agentId: 'ag1',
+            importerId: 'i1',
+            amount: 5000,
+            type: 'CREDIT',
+            description: 'Initial Wallet Top-up',
+            date: '2024-01-15T10:00:00Z',
+        },
+        {
+            id: 'tx-2',
+            agentId: 'ag1',
+            importerId: 'i1',
+            amount: 1500,
+            type: 'DEBIT',
+            description: 'Payment for Shipment #BL-MUM-JED-101',
+            date: '2024-02-20T10:00:00Z',
+            referenceId: 'pay-001'
+        },
+        {
+            id: 'tx-3',
+            agentId: 'ag2',
+            importerId: 'i1',
+            amount: 2000,
+            type: 'CREDIT',
+            description: 'Wallet Top-up',
+            date: '2024-01-20T14:00:00Z',
+        },
+        {
+            id: 'tx-4',
+            agentId: 'ag2',
+            importerId: 'i1',
+            amount: 500,
+            type: 'DEBIT',
+            description: 'Payment for Shipment #AWB-HKG-JED-202',
+            date: '2024-02-19T09:00:00Z',
+            referenceId: 'pay-002'
+        }
+    ],
 
     linkAgentByEmail: (email) =>
         set((state) => {
@@ -279,6 +323,13 @@ export const useImporterStore = create<ImporterState>((set, get) => ({
                         ],
                     }
                     : p
+            ),
+        })),
+
+    updateAgentMinimumBalance: (agentId, amount) =>
+        set((state) => ({
+            linkedAgents: state.linkedAgents.map((agent) =>
+                agent.id === agentId ? { ...agent, minimumBalance: amount } : agent
             ),
         })),
 }));
