@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage } from '@/components/ui/breadcrumb';
 import { Download } from 'lucide-react';
+import { ReportsDashboard } from '@/components/shared/reports-dashboard';
 
 export default function AdminReportsPage() {
     return (
@@ -26,8 +27,9 @@ export default function AdminReportsPage() {
                 <h1 className="text-3xl font-bold">Reports</h1>
                 <p className="text-muted-foreground">Generate and export platform reports</p>
             </div>
+            <ReportsDashboard />;
 
-            <div className="space-y-4 rounded-lg border p-6">
+            {/* <div className="space-y-4 rounded-lg border p-6">
                 <div className="grid gap-4 md:grid-cols-3">
                     <div className="space-y-2">
                         <Label>Date From</Label>
@@ -89,7 +91,7 @@ export default function AdminReportsPage() {
                         </Tooltip>
                     </TooltipProvider>
                 </div>
-            </div>
+            </div> */}
         </div>
     );
 }

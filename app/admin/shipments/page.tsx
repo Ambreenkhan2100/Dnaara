@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Search, Plus, Edit, Trash2, Calendar, MapPin, Ship, Plane, Truck } from 'lucide-react';
+import Link from 'next/link';
 import { format } from 'date-fns';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/components/ui/dialog';
 import { toast } from 'sonner';
@@ -21,7 +22,7 @@ export default function AdminShipmentsPage() {
     const { shipments, deleteShipment, users } = useAdminStore();
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedShipment, setSelectedShipment] = useState<ShipmentRequest | null>(null);
-    const [createDialogOpen, setCreateDialogOpen] = useState(false);
+    // const [createDialogOpen, setCreateDialogOpen] = useState(false); // Removed
     const [editDialogOpen, setEditDialogOpen] = useState(false);
     const [filters, setFilters] = useState<FilterState>({});
 
@@ -86,23 +87,14 @@ export default function AdminShipmentsPage() {
                     </p>
                 </div>
                 <div className="flex items-center space-x-2">
-                    <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
-                        <DialogTrigger asChild>
+                    <div className="flex items-center space-x-2">
+                        <Link href="/admin/shipments/create">
                             <Button style={{ backgroundColor: '#0bad85' }}>
                                 <Plus className="mr-2 h-4 w-4" />
                                 Add Shipment
                             </Button>
-                        </DialogTrigger>
-                        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-                            <DialogHeader>
-                                <DialogTitle>Create New Shipment</DialogTitle>
-                                <DialogDescription>
-                                    Add a new shipment record to the system.
-                                </DialogDescription>
-                            </DialogHeader>
-                            <AdminShipmentForm onSuccess={() => setCreateDialogOpen(false)} />
-                        </DialogContent>
-                    </Dialog>
+                        </Link>
+                    </div>
                 </div>
             </div>
 

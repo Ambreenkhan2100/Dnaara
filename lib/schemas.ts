@@ -67,6 +67,14 @@ export const createAdminShipmentSchema = z.object({
     comments: z.string().optional(),
     notifyImporter: z.boolean().default(false),
     notifyAgent: z.boolean().default(false),
+    numberOfPallets: z.number().optional(),
+    trucks: z.array(z.object({
+        id: z.string(),
+        vehicleNumber: z.string(),
+        driverName: z.string(),
+        driverMobileOrigin: z.string(),
+        driverMobileDestination: z.string(),
+    })).optional(),
 });
 
 export type CreateAdminShipmentInput = z.infer<typeof createAdminShipmentSchema>;
