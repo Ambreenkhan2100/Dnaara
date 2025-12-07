@@ -13,6 +13,35 @@ import { toast } from 'sonner';
 import { useEffect } from 'react';
 import type { PaymentRequest } from '@/types';
 
+const SEA_PAYMENT_OPTIONS = [
+    'Customs Duty',
+    'Port & Handling Fee',
+    'Demurrage',
+    'Detention',
+    'Shipping Line Charges',
+    'Broker & Clearance Fee',
+    'Other Charges',
+];
+
+const AIR_PAYMENT_OPTIONS = [
+    'Customs Duty',
+    'Handling & Carrier Charges',
+    'SAL Charges',
+    'Inspection Fee',
+    'Broker & Clearance Fee',
+    'Delivery Fee',
+    'Other Charges',
+];
+
+const LAND_PAYMENT_OPTIONS = [
+    'Customs Duty',
+    'Customs Service Fee',
+    'Border Fee',
+    'Transport & Carrier Fee',
+    'Broker & Clearance Fee',
+    'Other Charges',
+];
+
 interface AgentPaymentFormProps {
     onSuccess?: () => void;
     initialData?: PaymentRequest;
@@ -36,8 +65,12 @@ export function AgentPaymentForm({ onSuccess, initialData, prefilledImporterId, 
             billNumber: initialData?.billNumber || '',
             bayanNumber: initialData?.bayanNumber || '',
             paymentDeadline: initialData?.paymentDeadline || '',
+            paymentType: initialData?.paymentType || '',
+            otherPaymentName: initialData?.otherPaymentName || '',
         },
     });
+
+    const paymentType = form.watch('paymentType');
 
     const selectedShipmentId = form.watch('shipmentId');
     const selectedShipment = allShipments.find(s => s.id === selectedShipmentId);
@@ -49,6 +82,16 @@ export function AgentPaymentForm({ onSuccess, initialData, prefilledImporterId, 
             case 'sea': return 'Bill of Lading Number';
             case 'land': return 'Waybill Number';
             default: return 'Bill Number';
+        }
+    };
+
+    const getPaymentOptions = () => {
+        if (!selectedShipment) return [];
+        switch (selectedShipment.type) {
+            case 'sea': return SEA_PAYMENT_OPTIONS;
+            case 'air': return AIR_PAYMENT_OPTIONS;
+            case 'land': return LAND_PAYMENT_OPTIONS;
+            default: return [];
         }
     };
 
@@ -115,6 +158,49 @@ export function AgentPaymentForm({ onSuccess, initialData, prefilledImporterId, 
                                         ))}
                                     </SelectContent>
                                 </Select>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                )}
+
+                {selectedShipment && (
+                    <FormField
+                        control={form.control}
+                        name="paymentType"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Payment Type</FormLabel>
+                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                    <FormControl>
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Select Payment Type" />
+                                        </SelectTrigger>
+                                    </FormControl>
+                                    <SelectContent>
+                                        {getPaymentOptions().map((option) => (
+                                            <SelectItem key={option} value={option}>
+                                                {option}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                )}
+
+                {paymentType === 'Other Charges' && (
+                    <FormField
+                        control={form.control}
+                        name="otherPaymentName"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Other Payment Name (Optional)</FormLabel>
+                                <FormControl>
+                                    <Input placeholder="Enter payment name" {...field} />
+                                </FormControl>
                                 <FormMessage />
                             </FormItem>
                         )}

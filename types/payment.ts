@@ -19,6 +19,8 @@ export interface PaymentRequest {
     billNumber?: string;
     bayanNumber?: string;
     paymentDeadline?: string;
+    paymentType?: string;
+    otherPaymentName?: string;
     status: PaymentStatus;
     createdAt: string;
     updatedAt: string;
