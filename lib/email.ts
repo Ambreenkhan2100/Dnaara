@@ -2,7 +2,7 @@ import nodemailer from 'nodemailer';
 
 const transporter = nodemailer.createTransport({
     host: 'smtp.sendgrid.net',
-    port: 587,
+    port: 25,
     auth: {
         user: 'apikey',
         pass: process.env.SENDGRID_API_KEY,
@@ -12,7 +12,7 @@ const transporter = nodemailer.createTransport({
 export const sendEmail = async (to: string, subject: string, html: string) => {
     try {
         const info = await transporter.sendMail({
-            from: '"Dnaara" <no-reply@dnaara.com>', // Update with your verified sender
+            from: 'burhanuddinlimdiwala5123@gmail.com', // Update with your verified sender
             to,
             subject,
             html,

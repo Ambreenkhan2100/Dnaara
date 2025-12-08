@@ -51,7 +51,7 @@ export default function SignupPage() {
             const data = await res.json();
             if (!res.ok) throw new Error(data.error);
             toast.success('OTP sent to your email');
-            setStep(3);
+            setStep(2);
         } catch (error: any) {
             toast.error(error.message);
         } finally {
@@ -92,15 +92,14 @@ export default function SignupPage() {
                 <CardHeader>
                     <CardTitle className="text-2xl font-bold text-center">Create an Account</CardTitle>
                     <CardDescription className="text-center">
-                        {step === 1 && 'Select your role to get started'}
-                        {step === 2 && 'Enter your business details'}
-                        {step === 3 && 'Verify your email'}
+                        {step === 1 && 'Enter your business details'}
+                        {step === 2 && 'Verify your email'}
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
                     {step === 1 && (
-                        <div className="space-y-4">
-                            <div className="space-y-2">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="space-y-2 col-span-2">
                                 <Label>I am a...</Label>
                                 <Select onValueChange={handleRoleSelect} value={formData.role}>
                                     <SelectTrigger>
@@ -112,17 +111,6 @@ export default function SignupPage() {
                                     </SelectContent>
                                 </Select>
                             </div>
-                            <Button
-                                className="w-full"
-                                onClick={() => formData.role ? setStep(2) : toast.error('Please select a role')}
-                            >
-                                Next
-                            </Button>
-                        </div>
-                    )}
-
-                    {step === 2 && (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div className="space-y-2">
                                 <Label>Legal Business Name</Label>
                                 <Input name="legalBusinessName" value={formData.legalBusinessName} onChange={handleChange} required />
@@ -152,14 +140,30 @@ export default function SignupPage() {
                                 <Input name="nationalId" value={formData.nationalId} onChange={handleChange} required />
                             </div>
                             <div className="space-y-2">
-                                <Label>Company Email</Label>
-                                <Input type="email" name="companyEmail" value={formData.companyEmail} onChange={handleChange} required />
+                                <Label htmlFor="companyEmail">Company Email</Label>
+                                <Input
+                                    id="companyEmail"
+                                    type="email"
+                                    name="companyEmail"
+                                    value={formData.companyEmail}
+                                    onChange={handleChange}
+                                    required
+                                    suppressHydrationWarning
+                                />
                             </div>
                             <div className="space-y-2">
-                                <Label>Password</Label>
-                                <Input type="password" name="password" value={formData.password} onChange={handleChange} required />
+                                <Label htmlFor="password">Password</Label>
+                                <Input
+                                    id="password"
+                                    type="password"
+                                    name="password"
+                                    value={formData.password}
+                                    onChange={handleChange}
+                                    required
+                                    suppressHydrationWarning
+                                />
                             </div>
-                            <div className="md:col-span-2 flex gap-2 mt-4">
+                            <div className="flex flex-row w-full gap-2 mt-4">
                                 <Button variant="outline" onClick={() => setStep(1)} className="w-full">Back</Button>
                                 <Button onClick={sendOtp} className="w-full" disabled={loading}>
                                     {loading ? 'Sending OTP...' : 'Next'}
@@ -168,15 +172,15 @@ export default function SignupPage() {
                         </div>
                     )}
 
-                    {step === 3 && (
-                        <form onSubmit={handleRegister} className="space-y-4">
+                    {step === 2 && (
+                        <form onSubmit={handleRegister} className="space-y-4 flex flex-col items-stretch">
                             <div className="space-y-2">
                                 <Label>Enter OTP sent to {formData.companyEmail}</Label>
                                 <Input name="otp" value={formData.otp} onChange={handleChange} placeholder="123456" required maxLength={6} />
                             </div>
-                            <div className="flex gap-2">
-                                <Button type="button" variant="outline" onClick={() => setStep(2)} className="w-full">Back</Button>
-                                <Button type="submit" className="w-full" disabled={loading}>
+                            <div className="flex gap-2 flex-row w-full max-w-full">
+                                <Button type="button" className='w-1/2' variant="outline" onClick={() => setStep(1)}>Back</Button>
+                                <Button type="submit" className='w-1/2' disabled={loading}>
                                     {loading ? 'Verifying...' : 'Register'}
                                 </Button>
                             </div>
