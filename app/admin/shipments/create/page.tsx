@@ -78,10 +78,7 @@ export default function CreateAdminShipmentPage() {
                 <CardContent>
                     <CreateShipmentForm
                         role="admin"
-                        importers={importers}
-                        agents={agents}
                         onSubmit={handleSubmit}
-                        isSubmitting={false} // Store doesn't expose loading state for this action currently
                         onCancel={() => router.push('/admin/shipments')}
                     />
                 </CardContent>

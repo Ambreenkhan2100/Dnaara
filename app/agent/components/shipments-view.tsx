@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -13,14 +13,15 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Plus, Search, FileText, MapPin, Calendar, DollarSign, Truck, Ship, Plane } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useAgentStore } from '@/lib/store/useAgentStore';
-import type { Request } from '@/types';
+import { Shipment, ShipmentStatusEnum } from '@/types/shipment';
 import { AgentPaymentForm } from '@/components/forms/agent-payment-form';
 import { ShipmentFilter, FilterState } from '@/components/shared/shipment-filter';
-import { isWithinInterval, parseISO, startOfDay, endOfDay, addHours, isBefore } from 'date-fns';
+import { isWithinInterval, parseISO, startOfDay, endOfDay, addDays, isBefore, isAfter } from 'date-fns';
+import { toast } from 'sonner';
 
 export function ShipmentsView() {
     const router = useRouter();
-    const { upcoming, pending, completed, acceptRequest, rejectRequest, updateShipment, linkedImporters } = useAgentStore();
+    const { rejectRequest, updateShipment, linkedImporters } = useAgentStore();
     const [searchQuery, setSearchQuery] = useState('');
     const [actionNote, setActionNote] = useState('');
     const [updateFile, setUpdateFile] = useState<File | null>(null);
@@ -28,36 +29,62 @@ export function ShipmentsView() {
     const [updateDialogRequestId, setUpdateDialogRequestId] = useState<string | null>(null);
     const [paymentDialogRequestId, setPaymentDialogRequestId] = useState<string | null>(null);
     const [filters, setFilters] = useState<FilterState>({});
+    const [shipments, setShipments] = useState<Shipment[]>([]);
+    const [loading, setLoading] = useState(true);
 
-    const allShipments = [...upcoming, ...pending, ...completed];
+    const fetchShipments = async () => {
+        try {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                toast.error('Authentication token not found');
+                return;
+            }
 
-    // Helper function to check if shipment is at port (based on updates)
-    const isAtPort = (shipment: Request) => {
-        return shipment.updates?.some(update =>
-            update.note.toLowerCase().includes('at the port') ||
-            update.note.toLowerCase().includes('at port')
-        ) || false;
+            const res = await fetch('/api/shipment', {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            if (!res.ok) {
+                throw new Error('Failed to fetch shipments');
+            }
+
+            const data = await res.json();
+            setShipments(data.shipments || []);
+        } catch (error) {
+            console.error('Error fetching shipments:', error);
+            toast.error('Failed to load shipments');
+        } finally {
+            setLoading(false);
+        }
     };
 
-    // Helper function to check if shipment is upcoming (arriving within 24 hours)
-    const isUpcoming = (shipment: Request) => {
-        if (!shipment.expectedArrival && !shipment.expectedArrivalDate) return false;
-        const arrivalDate = parseISO(shipment.expectedArrival || shipment.expectedArrivalDate || '');
+    useEffect(() => {
+        fetchShipments();
+    }, []);
+
+    // Filter logic
+    const atPortShipments = shipments.filter(s => s.status === 'AT_PORT');
+
+    const upcomingShipments = shipments.filter(s => {
+        if (!s.expected_arrival_date) return false;
+        const arrivalDate = parseISO(s.expected_arrival_date);
         const now = new Date();
-        const next24Hours = addHours(now, 24);
-        return isBefore(arrivalDate, next24Hours) && isBefore(now, arrivalDate);
-    };
+        const next7Days = addDays(now, 7);
+        return isAfter(arrivalDate, now) && isBefore(arrivalDate, next7Days);
+    });
 
-    // Filter shipments by category
-    const atPortShipments = allShipments.filter(s => s.status === 'ASSIGNED' && isAtPort(s));
-    const upcomingShipments = allShipments.filter(s => s.status === 'ASSIGNED' && isUpcoming(s) && !isAtPort(s));
+    const assignedShipments = shipments.filter(s => !s.is_accepted && !s.is_completed);
+    const confirmedShipments = shipments.filter(s => s.is_accepted && !s.is_completed);
+    const completedShipments = shipments.filter(s => s.is_completed);
 
-    const filteredShipments = (shipments: Request[]) => {
-        return shipments.filter(s => {
+    const filteredShipments = (list: Shipment[]) => {
+        return list.filter(s => {
             const matchesSearch =
-                s.importerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                s.billNo?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                s.bayanNo?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                (s.importer?.name || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+                s.bill_number.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                (s.bayan_number || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
                 s.id.toLowerCase().includes(searchQuery.toLowerCase());
 
             if (!matchesSearch) return false;
@@ -67,12 +94,12 @@ export function ShipmentsView() {
                 if (s.type.toLowerCase() !== filters.type.toLowerCase()) return false;
             }
 
-            if (filters.agentId) { // Using agentId field for importer filtering as per generic component design
-                if (s.importerId !== filters.agentId) return false;
+            if (filters.agentId) {
+                if (s.importer_id !== filters.agentId) return false;
             }
 
             if (filters.dateRange?.from) {
-                const reqDate = parseISO(s.createdAt);
+                const reqDate = parseISO(s.created_at);
                 const from = startOfDay(filters.dateRange.from);
                 const to = filters.dateRange.to ? endOfDay(filters.dateRange.to) : endOfDay(from);
 
@@ -92,9 +119,37 @@ export function ShipmentsView() {
         }
     };
 
-    const handleAccept = (id: string) => {
-        acceptRequest(id, actionNote);
-        setActionNote('');
+    const handleAccept = async (id: string) => {
+        try {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                toast.error('Authentication token not found');
+                return;
+            }
+
+            const res = await fetch('/api/shipment/accept', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    shipmentId: id,
+                    note: actionNote
+                })
+            });
+
+            if (!res.ok) {
+                throw new Error('Failed to accept shipment');
+            }
+
+            toast.success('Shipment accepted successfully');
+            setActionNote('');
+            fetchShipments(); // Refresh list
+        } catch (error) {
+            console.error('Error accepting shipment:', error);
+            toast.error('Failed to accept shipment');
+        }
     };
 
     const handleReject = (id: string) => {
@@ -102,53 +157,94 @@ export function ShipmentsView() {
         setActionNote('');
     };
 
-    const handleUpdate = (id: string) => {
-        if (!actionNote) return;
-        updateShipment(id, actionNote, updateFile || undefined);
-        setActionNote('');
-        setUpdateFile(null);
-        setUpdateStatus('');
-        setUpdateFile(null);
-        setUpdateStatus('');
-        setUpdateDialogRequestId(null);
+    const handleUpdate = async (id: string) => {
+        if (!updateStatus) {
+            toast.error('Please select a status');
+            return;
+        }
+
+        try {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                toast.error('Authentication token not found');
+                return;
+            }
+
+            let fileBase64 = null;
+            if (updateFile) {
+                const reader = new FileReader();
+                fileBase64 = await new Promise((resolve) => {
+                    reader.onload = (e) => resolve(e.target?.result);
+                    reader.readAsDataURL(updateFile);
+                });
+            }
+
+            const res = await fetch('/api/shipment/update-status', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    shipmentId: id,
+                    status: updateStatus,
+                    note: actionNote,
+                    file: fileBase64
+                })
+            });
+
+            if (!res.ok) {
+                throw new Error('Failed to update shipment status');
+            }
+
+            toast.success('Shipment status updated successfully');
+            setActionNote('');
+            setUpdateFile(null);
+            setUpdateStatus('');
+            setUpdateDialogRequestId(null);
+            fetchShipments(); // Refresh list
+        } catch (error) {
+            console.error('Error updating shipment status:', error);
+            toast.error('Failed to update shipment status');
+        }
     };
 
-    const ShipmentCard = ({ request, showActions = false, showUpdate = false }: { request: Request, showActions?: boolean, showUpdate?: boolean }) => (
+    const ShipmentCard = ({ request, showActions = false, showUpdate = false }: { request: Shipment, showActions?: boolean, showUpdate?: boolean }) => (
         <Card key={request.id} className="mb-4">
             <CardHeader className="pb-2">
                 <div className="flex justify-between items-start">
                     <div>
                         <CardTitle className="text-lg flex items-center gap-2">
                             {getIcon(request.type)}
-                            {request.importerName}
+                            {request.importer?.name || 'Unknown Importer'}
                         </CardTitle>
-                        <CardDescription>ID: {request.id} • Bill: {request.billNo}</CardDescription>
+                        <CardDescription>ID: {request.id} • Bill: {request.bill_number}</CardDescription>
                     </div>
                     <Badge variant={request.status === 'ASSIGNED' ? 'secondary' : request.status === 'CONFIRMED' ? 'default' : 'outline'}>
-                        {request.status}
+                        {request.status || 'PENDING'}
                     </Badge>
                 </div>
             </CardHeader>
             <CardContent className="pb-2">
                 <div className="grid grid-cols-2 gap-2 text-sm">
                     <div className="flex items-center gap-1 text-muted-foreground">
-                        <MapPin className="h-3 w-3" /> {request.portOfShipment} → {request.portOfDestination}
+                        <MapPin className="h-3 w-3" /> {request.port_of_shipment} → {request.port_of_destination}
                     </div>
                     <div className="flex items-center gap-1 text-muted-foreground">
-                        <Calendar className="h-3 w-3" /> ETA: {request.expectedArrival}
+                        <Calendar className="h-3 w-3" /> ETA: {request.expected_arrival_date ? new Date(request.expected_arrival_date).toLocaleDateString() : 'N/A'}
                     </div>
                     <div className="flex items-center gap-1 text-muted-foreground">
-                        <FileText className="h-3 w-3" /> Bayan: {request.bayanNo}
+                        <FileText className="h-3 w-3" /> Bayan: {request.bayan_number || 'N/A'}
                     </div>
                     <div className="flex items-center gap-1 text-muted-foreground">
-                        <DollarSign className="h-3 w-3" /> Duty: {request.dutyCharges || request.dutyAmount}
+                        <DollarSign className="h-3 w-3" /> Duty: {request.duty_charges || 'N/A'}
                     </div>
                 </div>
                 {request.updates && request.updates.length > 0 && (
                     <div className="mt-4 border-t pt-2">
                         <p className="text-xs font-semibold mb-1">Latest Update:</p>
                         <p className="text-xs text-muted-foreground">
-                            {new Date(request.updates[request.updates.length - 1].date).toLocaleDateString()}: {request.updates[request.updates.length - 1].note}
+                            {new Date(request.updates[request.updates.length - 1].created_at).toLocaleDateString()}: {request.updates[request.updates.length - 1].update_text}
                         </p>
                     </div>
                 )}
@@ -202,11 +298,11 @@ export function ShipmentsView() {
                                             <SelectValue placeholder="Select status" />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            <SelectItem value="At the port">At the port</SelectItem>
-                                            <SelectItem value="Clearing in progress">Clearing in progress</SelectItem>
-                                            <SelectItem value="On Hold by customs">On Hold by customs</SelectItem>
-                                            <SelectItem value="Completed by customs">Completed by customs</SelectItem>
-                                            <SelectItem value="Rejected by customs">Rejected by customs</SelectItem>
+                                            <SelectItem value={ShipmentStatusEnum.AT_PORT}>At the port</SelectItem>
+                                            <SelectItem value={ShipmentStatusEnum.CLEARING_IN_PROGRESS}>Clearing in progress</SelectItem>
+                                            <SelectItem value={ShipmentStatusEnum.ON_HOLD_BY_CUSTOMS}>On Hold by customs</SelectItem>
+                                            <SelectItem value={ShipmentStatusEnum.COMPLETED_BY_CUSTOMS}>Completed by customs</SelectItem>
+                                            <SelectItem value={ShipmentStatusEnum.REJECTED_BY_CUSTOMS}>Rejected by customs</SelectItem>
                                         </SelectContent>
                                     </Select>
                                 </div>
@@ -241,11 +337,11 @@ export function ShipmentsView() {
                             <DialogHeader>
                                 <DialogTitle>Create Payment Request</DialogTitle>
                                 <DialogDescription>
-                                    Create a payment request for {request.importerName}
+                                    Create a payment request for {request.importer?.name}
                                 </DialogDescription>
                             </DialogHeader>
                             <AgentPaymentForm
-                                prefilledImporterId={request.importerId}
+                                prefilledImporterId={request.importer_id}
                                 prefilledShipmentId={request.id}
                                 onSuccess={() => setPaymentDialogRequestId(null)}
                             />
@@ -255,6 +351,10 @@ export function ShipmentsView() {
             </CardFooter>
         </Card>
     );
+
+    if (loading) {
+        return <div className="text-center py-8">Loading shipments...</div>;
+    }
 
     return (
         <div className="space-y-4">
@@ -284,9 +384,9 @@ export function ShipmentsView() {
                 <TabsList>
                     <TabsTrigger value="at_port">AT PORT ({atPortShipments.length})</TabsTrigger>
                     <TabsTrigger value="upcoming">UPCOMING ({upcomingShipments.length})</TabsTrigger>
-                    <TabsTrigger value="assigned">SHIPMENTS ASSIGNED ({upcoming.length})</TabsTrigger>
-                    <TabsTrigger value="confirmed">SHIPMENTS CONFIRMED ({pending.length})</TabsTrigger>
-                    <TabsTrigger value="completed">SHIPMENTS COMPLETED ({completed.length})</TabsTrigger>
+                    <TabsTrigger value="assigned">SHIPMENTS ASSIGNED ({assignedShipments.length})</TabsTrigger>
+                    <TabsTrigger value="confirmed">SHIPMENTS CONFIRMED ({confirmedShipments.length})</TabsTrigger>
+                    <TabsTrigger value="completed">SHIPMENTS COMPLETED ({completedShipments.length})</TabsTrigger>
                     <TabsTrigger value="all">ALL SHIPMENTS</TabsTrigger>
                 </TabsList>
 
@@ -311,40 +411,40 @@ export function ShipmentsView() {
                 </TabsContent>
 
                 <TabsContent value="assigned" className="space-y-4">
-                    {filteredShipments(upcoming).length === 0 ? (
+                    {filteredShipments(assignedShipments).length === 0 ? (
                         <div className="text-center py-8 text-muted-foreground">No assigned shipments found.</div>
                     ) : (
-                        filteredShipments(upcoming).map(req => (
+                        filteredShipments(assignedShipments).map(req => (
                             <ShipmentCard key={req.id} request={req} showActions />
                         ))
                     )}
                 </TabsContent>
 
                 <TabsContent value="confirmed" className="space-y-4">
-                    {filteredShipments(pending).length === 0 ? (
+                    {filteredShipments(confirmedShipments).length === 0 ? (
                         <div className="text-center py-8 text-muted-foreground">No confirmed shipments found.</div>
                     ) : (
-                        filteredShipments(pending).map(req => (
+                        filteredShipments(confirmedShipments).map(req => (
                             <ShipmentCard key={req.id} request={req} showUpdate />
                         ))
                     )}
                 </TabsContent>
 
                 <TabsContent value="completed" className="space-y-4">
-                    {filteredShipments(completed).length === 0 ? (
+                    {filteredShipments(completedShipments).length === 0 ? (
                         <div className="text-center py-8 text-muted-foreground">No completed shipments found.</div>
                     ) : (
-                        filteredShipments(completed).map(req => (
+                        filteredShipments(completedShipments).map(req => (
                             <ShipmentCard key={req.id} request={req} />
                         ))
                     )}
                 </TabsContent>
 
                 <TabsContent value="all" className="space-y-4">
-                    {filteredShipments(allShipments).length === 0 ? (
+                    {filteredShipments(shipments).length === 0 ? (
                         <div className="text-center py-8 text-muted-foreground">No shipments found.</div>
                     ) : (
-                        filteredShipments(allShipments).map(req => (
+                        filteredShipments(shipments).map(req => (
                             <ShipmentCard key={req.id} request={req} />
                         ))
                     )}

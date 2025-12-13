@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -9,6 +9,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Plus, Trash2, Edit } from 'lucide-react';
+import { toast } from 'sonner';
+import { useRoleStore } from '@/lib/store/useRoleStore';
 
 export interface TruckDetails {
     id: string;
@@ -18,19 +20,25 @@ export interface TruckDetails {
     driverMobileDestination: string;
 }
 
+export enum ShipmentType {
+    Air = 'Air',
+    Sea = 'Sea',
+    Land = 'Land',
+}
+
 export interface CreateShipmentFormData {
-    type: 'Air' | 'Sea' | 'Land';
+    type: ShipmentType;
     portOfShipment: string;
     portOfDestination: string;
     expectedArrivalDate: string;
     billNumber: string;
     bayanNumber: string;
-    bayanFile: string;
+    bayanFile: string | null; // base64
     commercialInvoiceNumber: string;
-    commercialInvoiceFile: string;
-    packingListFile: string;
+    commercialInvoiceFile: string | null; // base64
+    packingListFile: string | null; // base64
     purchaseOrderNumber: string;
-    otherDocuments: string[];
+    otherDocuments: string[]; // base64 array
     dutyCharges: string;
     comments: string;
     partnerId: string; // agentId or importerId (for non-admin)
@@ -43,26 +51,28 @@ export interface CreateShipmentFormData {
 
 interface CreateShipmentFormProps {
     role: 'agent' | 'importer' | 'admin';
-    partners?: { id: string; name: string }[]; // for agent/importer
-    importers?: { id: string; name: string }[]; // for admin
-    agents?: { id: string; name: string }[]; // for admin
-    onSubmit: (data: CreateShipmentFormData) => Promise<void> | void;
-    isSubmitting: boolean;
+    // currentUserId: string; // Passed from parent
+    onSubmit: (data: CreateShipmentFormData) => Promise<void>; // Callback after successful submission
     onCancel: () => void;
 }
 
-export function CreateShipmentForm({ role, partners, importers, agents, onSubmit, isSubmitting, onCancel }: CreateShipmentFormProps) {
+interface Partner {
+    id: string;
+    name: string;
+}
+
+export function CreateShipmentForm({ role, onSubmit, onCancel }: CreateShipmentFormProps) {
     const [formData, setFormData] = useState<CreateShipmentFormData>({
-        type: 'Sea',
+        type: ShipmentType.Sea,
         portOfShipment: '',
         portOfDestination: '',
         expectedArrivalDate: '',
         billNumber: '',
         bayanNumber: '',
-        bayanFile: '',
+        bayanFile: null,
         commercialInvoiceNumber: '',
-        commercialInvoiceFile: '',
-        packingListFile: '',
+        commercialInvoiceFile: null,
+        packingListFile: null,
         purchaseOrderNumber: '',
         otherDocuments: [],
         dutyCharges: '',
@@ -75,6 +85,14 @@ export function CreateShipmentForm({ role, partners, importers, agents, onSubmit
         trucks: [],
     });
 
+
+    const currentUserId = useRoleStore((state) => state.currentUserId);
+
+    const [partners, setPartners] = useState<Partner[]>([]);
+    const [importers, setImporters] = useState<Partner[]>([]);
+    const [agents, setAgents] = useState<Partner[]>([]);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
     const [truckDialogOpen, setTruckDialogOpen] = useState(false);
     const [currentTruck, setCurrentTruck] = useState<TruckDetails | null>(null);
     const [truckForm, setTruckForm] = useState<Omit<TruckDetails, 'id'>>({
@@ -84,9 +102,73 @@ export function CreateShipmentForm({ role, partners, importers, agents, onSubmit
         driverMobileDestination: '',
     });
 
-    const handleSubmit = (e: React.FormEvent) => {
+    useEffect(() => {
+        const fetchPartners = async () => {
+            try {
+                if (role === 'admin') {
+                    const [importersRes, agentsRes] = await Promise.all([
+                        fetch('/api/users?role=importer'),
+                        fetch('/api/users?role=agent')
+                    ]);
+                    const importersData = await importersRes.json();
+                    const agentsData = await agentsRes.json();
+                    setImporters(importersData);
+                    setAgents(agentsData);
+                } else {
+                    const targetRole = role === 'importer' ? 'agent' : 'importer';
+                    const res = await fetch(`/api/users?role=${targetRole}`);
+                    const data = await res.json();
+                    setPartners(data);
+                }
+            } catch (error) {
+                console.error('Error fetching partners:', error);
+                toast.error('Failed to load partners');
+            }
+        };
+
+        fetchPartners();
+    }, [role]);
+
+    const convertFileToBase64 = (file: File): Promise<string> => {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = () => resolve(reader.result as string);
+            reader.onerror = error => reject(error);
+        });
+    };
+
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        onSubmit(formData);
+        setIsSubmitting(true);
+
+        try {
+            const payload = {
+                ...formData,
+                role,
+                createdById: currentUserId,
+            };
+
+            const response = await fetch('/api/shipment', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(payload),
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to create shipment');
+            }
+
+            toast.success('Shipment created successfully');
+            onSubmit(payload);
+        } catch (error) {
+            console.error('Error creating shipment:', error);
+            toast.error('Failed to create shipment');
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     const getBillLabel = () => {
@@ -151,15 +233,15 @@ export function CreateShipmentForm({ role, partners, importers, agents, onSubmit
                     <Label htmlFor="type">Shipment Type *</Label>
                     <Select
                         value={formData.type}
-                        onValueChange={(val: 'Air' | 'Sea' | 'Land') => setFormData(prev => ({ ...prev, type: val }))}
+                        onValueChange={(val: ShipmentType) => setFormData(prev => ({ ...prev, type: val }))}
                     >
                         <SelectTrigger>
                             <SelectValue placeholder="Select Type" />
                         </SelectTrigger>
                         <SelectContent>
-                            <SelectItem value="Air">Air</SelectItem>
-                            <SelectItem value="Sea">Sea</SelectItem>
-                            <SelectItem value="Land">Land</SelectItem>
+                            <SelectItem value={ShipmentType.Air}>Air</SelectItem>
+                            <SelectItem value={ShipmentType.Sea}>Sea</SelectItem>
+                            <SelectItem value={ShipmentType.Land}>Land</SelectItem>
                         </SelectContent>
                     </Select>
                 </div>
@@ -317,9 +399,10 @@ export function CreateShipmentForm({ role, partners, importers, agents, onSubmit
                         id="bayanFile"
                         type="file"
                         className="cursor-pointer"
-                        onChange={e => {
+                        onChange={async e => {
                             if (e.target.files?.[0]) {
-                                setFormData(prev => ({ ...prev, bayanFile: e.target.files![0].name }))
+                                const base64 = await convertFileToBase64(e.target.files[0]);
+                                setFormData(prev => ({ ...prev, bayanFile: base64 }));
                             }
                         }}
                     />
@@ -341,9 +424,10 @@ export function CreateShipmentForm({ role, partners, importers, agents, onSubmit
                         id="commercialInvoiceFile"
                         type="file"
                         className="cursor-pointer"
-                        onChange={e => {
+                        onChange={async e => {
                             if (e.target.files?.[0]) {
-                                setFormData(prev => ({ ...prev, commercialInvoiceFile: e.target.files![0].name }))
+                                const base64 = await convertFileToBase64(e.target.files[0]);
+                                setFormData(prev => ({ ...prev, commercialInvoiceFile: base64 }));
                             }
                         }}
                     />
@@ -356,9 +440,10 @@ export function CreateShipmentForm({ role, partners, importers, agents, onSubmit
                         type="file"
                         required
                         className="cursor-pointer"
-                        onChange={e => {
+                        onChange={async e => {
                             if (e.target.files?.[0]) {
-                                setFormData(prev => ({ ...prev, packingListFile: e.target.files![0].name }))
+                                const base64 = await convertFileToBase64(e.target.files[0]);
+                                setFormData(prev => ({ ...prev, packingListFile: base64 }));
                             }
                         }}
                     />
@@ -381,10 +466,11 @@ export function CreateShipmentForm({ role, partners, importers, agents, onSubmit
                         type="file"
                         multiple
                         className="cursor-pointer"
-                        onChange={e => {
+                        onChange={async e => {
                             if (e.target.files) {
-                                const files = Array.from(e.target.files).map(file => file.name);
-                                setFormData(prev => ({ ...prev, otherDocuments: files }))
+                                const files = Array.from(e.target.files);
+                                const base64s = await Promise.all(files.map(convertFileToBase64));
+                                setFormData(prev => ({ ...prev, otherDocuments: base64s }));
                             }
                         }}
                     />

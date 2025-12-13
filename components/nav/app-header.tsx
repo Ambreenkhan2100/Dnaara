@@ -28,6 +28,8 @@ export function AppHeader() {
 
     const handleLogout = () => {
         clearRole();
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
         router.push('/');
     };
 
@@ -37,7 +39,7 @@ export function AppHeader() {
     };
 
     return (
-        <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60">
             <div className="container flex h-16 items-center justify-between px-6">
                 <div className="flex items-center gap-4">
                     <h1 className="text-xl font-bold" style={{ color: '#0bad85' }}>
