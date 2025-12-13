@@ -1,4 +1,4 @@
-const { Pool } = require('pg');
+// const { Pool } = require('pg');
 const fs = require('fs');
 const path = require('path');
 require('dotenv').config({ path: '.env' });
@@ -8,7 +8,7 @@ const pool = new Pool({
 });
 
 async function runMigration() {
-    const client = await pool.connect();
+    const client = await _pool.connect();
     try {
         console.log('Running shipments migration...');
         const sqlPath = path.join(__dirname, 'create-shipments-table.sql');
@@ -20,7 +20,7 @@ async function runMigration() {
         console.error('Error running migration:', err);
     } finally {
         client.release();
-        await pool.end();
+        await _pool.end();
     }
 }
 

@@ -21,7 +21,7 @@ export default function NewShipmentPage() {
                 ...data,
                 agentId: data.partnerId,
                 dutyCharges: data.dutyCharges ? Number(data.dutyCharges) : undefined,
-            });
+            } as any);
             toast.success('Shipment created successfully');
             router.push('/importer');
         } catch (error) {
@@ -60,9 +60,9 @@ export default function NewShipmentPage() {
                 <CardContent>
                     <CreateShipmentForm
                         role="importer"
-                        partners={linkedAgents}
+                        // partners={linkedAgents}
                         onSubmit={handleSubmit}
-                        isSubmitting={isSubmitting}
+                        // isSubmitting={isSubmitting}
                         onCancel={() => router.back()}
                     />
                 </CardContent>

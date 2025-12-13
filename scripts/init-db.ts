@@ -1,17 +1,17 @@
 const { Pool } = require('pg');
 require('dotenv').config({ path: '.env' });
 
-const pool = new Pool({
-    connectionString: process.env.DATABASE_URL,
+const _pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
 });
 
 async function initDb() {
-    const client = await pool.connect();
-    try {
-        console.log('Initializing database...');
+  const client = await _pool.connect();
+  try {
+    console.log('Initializing database...');
 
-        // Users table
-        await client.query(`
+    // Users table
+    await client.query(`
       CREATE TABLE IF NOT EXISTS users (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
         username VARCHAR(255) NOT NULL,
@@ -21,10 +21,10 @@ async function initDb() {
         created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
       );
     `);
-        console.log('Created users table.');
+    console.log('Created users table.');
 
-        // User Profiles table
-        await client.query(`
+    // User Profiles table
+    await client.query(`
       CREATE TABLE IF NOT EXISTS user_profiles (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
         user_id UUID REFERENCES users(id) ON DELETE CASCADE,
@@ -39,10 +39,10 @@ async function initDb() {
         created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
       );
     `);
-        console.log('Created user_profiles table.');
+    console.log('Created user_profiles table.');
 
-        // Verification OTPs table
-        await client.query(`
+    // Verification OTPs table
+    await client.query(`
       CREATE TABLE IF NOT EXISTS verification_otps (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
         email VARCHAR(255) NOT NULL,
@@ -51,15 +51,15 @@ async function initDb() {
         created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
       );
     `);
-        console.log('Created verification_otps table.');
+    console.log('Created verification_otps table.');
 
-        console.log('Database initialization completed successfully.');
-    } catch (err) {
-        console.error('Error initializing database:', err);
-    } finally {
-        client.release();
-        await pool.end();
-    }
+    console.log('Database initialization completed successfully.');
+  } catch (err) {
+    console.error('Error initializing database:', err);
+  } finally {
+    client.release();
+    await _pool.end();
+  }
 }
 
 initDb();
