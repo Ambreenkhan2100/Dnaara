@@ -12,6 +12,8 @@ import { useAgentStore } from '@/lib/store/useAgentStore';
 import { toast } from 'sonner';
 import { useEffect } from 'react';
 import type { PaymentRequest } from '@/types';
+import { Shipment } from '@/types/shipment';
+import { ShipmentType } from './create-shipment-form';
 
 const SEA_PAYMENT_OPTIONS = [
     'Customs Duty',
@@ -47,11 +49,12 @@ interface AgentPaymentFormProps {
     initialData?: PaymentRequest;
     prefilledImporterId?: string;
     prefilledShipmentId?: string;
+    shipment?: Shipment;
 }
 
-export function AgentPaymentForm({ onSuccess, initialData, prefilledImporterId, prefilledShipmentId }: AgentPaymentFormProps) {
+export function AgentPaymentForm({ onSuccess, initialData, prefilledImporterId, prefilledShipmentId, shipment }: AgentPaymentFormProps) {
     const { createPayment, updatePayment, linkedImporters, upcoming, pending, completed } = useAgentStore();
-
+    console.log('shipment', shipment);
     // Combine all shipments for selection
     const allShipments = [...upcoming, ...pending, ...completed];
 
@@ -76,21 +79,21 @@ export function AgentPaymentForm({ onSuccess, initialData, prefilledImporterId, 
     const selectedShipment = allShipments.find(s => s.id === selectedShipmentId);
 
     const getBillLabel = () => {
-        if (!selectedShipment) return 'Bill Number';
-        switch (selectedShipment.type) {
-            case 'air': return 'Airway Bill Number';
-            case 'sea': return 'Bill of Lading Number';
-            case 'land': return 'Waybill Number';
+        if (!shipment) return 'Bill Number';
+        switch (shipment?.type) {
+            case ShipmentType.Air: return 'Airway Bill Number';
+            case ShipmentType.Sea: return 'Bill of Lading Number';
+            case ShipmentType.Land: return 'Waybill Number';
             default: return 'Bill Number';
         }
     };
 
     const getPaymentOptions = () => {
-        if (!selectedShipment) return [];
-        switch (selectedShipment.type) {
-            case 'sea': return SEA_PAYMENT_OPTIONS;
-            case 'air': return AIR_PAYMENT_OPTIONS;
-            case 'land': return LAND_PAYMENT_OPTIONS;
+        if (!shipment) return [];
+        switch (shipment?.type) {
+            case ShipmentType.Sea: return SEA_PAYMENT_OPTIONS;
+            case ShipmentType.Air: return AIR_PAYMENT_OPTIONS;
+            case ShipmentType.Land: return LAND_PAYMENT_OPTIONS;
             default: return [];
         }
     };
@@ -164,7 +167,7 @@ export function AgentPaymentForm({ onSuccess, initialData, prefilledImporterId, 
                     />
                 )}
 
-                {selectedShipment && (
+                {shipment && (
                     <FormField
                         control={form.control}
                         name="paymentType"

@@ -343,6 +343,7 @@ export function ShipmentsView() {
                             <AgentPaymentForm
                                 prefilledImporterId={request.importer_id}
                                 prefilledShipmentId={request.id}
+                                shipment={request}
                                 onSuccess={() => setPaymentDialogRequestId(null)}
                             />
                         </DialogContent>
