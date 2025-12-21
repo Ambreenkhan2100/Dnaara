@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useRoleStore } from '@/lib/store/useRoleStore';
 import { RoleKey } from '@/lib/constants';
+import { useLoader } from '../providers/loader-provider';
 
 interface AuthGuardProps {
     children?: React.ReactNode;
@@ -15,7 +16,7 @@ export function AuthGuard({ children, allowedRoles }: AuthGuardProps) {
     const pathname = usePathname();
     const { setRole, clearRole, currentRole } = useRoleStore();
     const [isLoading, setIsLoading] = useState(true);
-
+    const { fetchWithLoader } = useLoader();
     useEffect(() => {
         const checkAuth = async () => {
             const token = localStorage.getItem('token');
@@ -26,7 +27,7 @@ export function AuthGuard({ children, allowedRoles }: AuthGuardProps) {
             }
 
             try {
-                const res = await fetch('/api/auth/me', {
+                const res = await fetchWithLoader('/api/auth/me', {
                     headers: {
                         'Authorization': `Bearer ${token}`
                     }

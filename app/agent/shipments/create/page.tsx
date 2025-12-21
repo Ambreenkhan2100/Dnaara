@@ -6,9 +6,11 @@ import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbP
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAgentStore } from '@/lib/store/useAgentStore';
 import { CreateShipmentForm, CreateShipmentFormData } from '@/components/forms/create-shipment-form';
+import { useRouterWithLoader } from '@/hooks/use-router-with-loader';
 
 export default function CreateShipmentPage() {
-    const router = useRouter();
+    // const router = useRouter();
+    const router = useRouterWithLoader();
     const { linkedImporters } = useAgentStore();
     const [isLoading, setIsLoading] = useState(false);
 

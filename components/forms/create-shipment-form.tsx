@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogD
 import { Plus, Trash2, Edit } from 'lucide-react';
 import { toast } from 'sonner';
 import { useRoleStore } from '@/lib/store/useRoleStore';
+import { useLoader } from '../providers/loader-provider';
 
 export interface TruckDetails {
     id: string;
@@ -85,6 +86,8 @@ export function CreateShipmentForm({ role, onSubmit, onCancel }: CreateShipmentF
         trucks: [],
     });
 
+    const { fetchWithLoader } = useLoader();
+
 
     const currentUserId = useRoleStore((state) => state.currentUserId);
 
@@ -150,7 +153,7 @@ export function CreateShipmentForm({ role, onSubmit, onCancel }: CreateShipmentF
             };
 
             const token = localStorage.getItem('token');
-            const response = await fetch('/api/shipment', {
+            const response = await fetchWithLoader('/api/shipment', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

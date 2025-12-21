@@ -11,16 +11,17 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Plus, Search, FileText, MapPin, Calendar, DollarSign, Truck, Ship, Plane } from 'lucide-react';
-import { useRouter } from 'next/navigation';
 import { useAgentStore } from '@/lib/store/useAgentStore';
 import { Shipment, ShipmentStatusEnum } from '@/types/shipment';
 import { AgentPaymentForm } from '@/components/forms/agent-payment-form';
 import { ShipmentFilter, FilterState } from '@/components/shared/shipment-filter';
 import { isWithinInterval, parseISO, startOfDay, endOfDay, addDays, isBefore, isAfter } from 'date-fns';
 import { toast } from 'sonner';
+import { useLoader } from '@/components/providers/loader-provider';
+import { useRouterWithLoader } from '@/hooks/use-router-with-loader';
 
 export function ShipmentsView() {
-    const router = useRouter();
+    const router = useRouterWithLoader();
     const { rejectRequest, updateShipment, linkedImporters } = useAgentStore();
     const [searchQuery, setSearchQuery] = useState('');
     const [actionNote, setActionNote] = useState('');
@@ -32,6 +33,7 @@ export function ShipmentsView() {
     const [shipments, setShipments] = useState<Shipment[]>([]);
     const [loading, setLoading] = useState(true);
 
+    const { fetchWithLoader } = useLoader();
     const fetchShipments = async () => {
         try {
             const token = localStorage.getItem('token');
@@ -40,7 +42,7 @@ export function ShipmentsView() {
                 return;
             }
 
-            const res = await fetch('/api/shipment', {
+            const res = await fetchWithLoader('/api/shipment', {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }

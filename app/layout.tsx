@@ -3,6 +3,8 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { AppHeader } from "@/components/nav/app-header";
 import { Toaster } from "@/components/ui/sonner";
+import { LoaderProvider } from "@/components/providers/loader-provider";
+import { Loader } from "@/components/ui/loader";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -19,6 +21,10 @@ export const metadata: Metadata = {
   description: "Dnaara - Import Management Platform",
 };
 
+import { PageLoaderListener } from "@/components/providers/page-loader-listener";
+
+// ... existing imports
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -29,9 +35,13 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <AppHeader />
-        <main className="min-h-screen">{children}</main>
-        <Toaster />
+        <LoaderProvider>
+          <PageLoaderListener />
+          <Loader />
+          <AppHeader />
+          <main className="min-h-screen">{children}</main>
+          <Toaster />
+        </LoaderProvider>
       </body>
     </html>
   );
