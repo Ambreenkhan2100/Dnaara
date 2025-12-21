@@ -149,10 +149,12 @@ export function CreateShipmentForm({ role, onSubmit, onCancel }: CreateShipmentF
                 createdById: currentUserId,
             };
 
+            const token = localStorage.getItem('token');
             const response = await fetch('/api/shipment', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`,
                 },
                 body: JSON.stringify(payload),
             });

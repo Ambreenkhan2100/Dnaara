@@ -11,6 +11,8 @@ const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
 
 async function getUserIdFromToken(request: Request): Promise<string | null> {
     const authHeader = request.headers.get('authorization');
+    console.log('authHeader: ', authHeader);
+
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
         return null;
     }
