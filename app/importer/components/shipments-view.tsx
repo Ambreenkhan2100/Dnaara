@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 import { useImporterStore } from '@/lib/store/useImporterStore';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -15,9 +14,10 @@ import { Shipment } from '@/types/shipment';
 import { ShipmentFilter, FilterState } from '@/components/shared/shipment-filter';
 import { isWithinInterval, parseISO, startOfDay, endOfDay, addDays, isBefore, isAfter } from 'date-fns';
 import { useLoader } from '@/components/providers/loader-provider';
+import { useRouterWithLoader } from '@/hooks/use-router-with-loader';
 
 export function ShipmentsView() {
-    const router = useRouter();
+    const router = useRouterWithLoader();
     const { linkedAgents } = useImporterStore();
     const [searchQuery, setSearchQuery] = useState('');
     const [filters, setFilters] = useState<FilterState>({});

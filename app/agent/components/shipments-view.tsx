@@ -22,7 +22,7 @@ import { useRouterWithLoader } from '@/hooks/use-router-with-loader';
 
 export function ShipmentsView() {
     const router = useRouterWithLoader();
-    const { rejectRequest, updateShipment, linkedImporters } = useAgentStore();
+    const { rejectRequest, linkedImporters } = useAgentStore();
     const [searchQuery, setSearchQuery] = useState('');
     const [actionNote, setActionNote] = useState('');
     const [updateFile, setUpdateFile] = useState<File | null>(null);
@@ -212,7 +212,9 @@ export function ShipmentsView() {
     };
 
     const ShipmentCard = ({ request, showActions = false, showUpdate = false }: { request: Shipment, showActions?: boolean, showUpdate?: boolean }) => (
-        <Card key={request.id} className="mb-4">
+        <Card key={request.id} className="mb-4 cursor-pointer hover:bg-accent/50 transition-colors" onClick={() => {
+            router.push(`/agent/shipments/${request.id}`);
+        }}>
             <CardHeader className="pb-2">
                 <div className="flex justify-between items-start">
                     <div>
