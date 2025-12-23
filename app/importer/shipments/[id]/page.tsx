@@ -2,73 +2,84 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import { useImporterStore } from '@/lib/store/useImporterStore';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from '@/components/ui/breadcrumb';
 import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
 import { toast } from 'sonner';
-import { FileText, Upload } from 'lucide-react';
-import type { Request } from '@/types';
+import { FileText, Upload, Truck, Clock, MapPin, User, DollarSign, Calendar } from 'lucide-react';
+import type { Shipment } from '@/types/shipment';
+import { useLoader } from '@/components/providers/loader-provider';
 
 export default function ShipmentDetailsPage() {
     const router = useRouter();
     const params = useParams();
-    const { requests, updateShipment } = useImporterStore();
-    const [shipment, setShipment] = useState<Request | undefined>(undefined);
-    const [isEditing, setIsEditing] = useState(false);
-    const [formData, setFormData] = useState<Partial<Request>>({});
+    const [shipment, setShipment] = useState<Shipment | null>(null);
+    const [error, setError] = useState<string | null>(null);
+
+    const { fetchFn } = useLoader()
 
     useEffect(() => {
-        const found = requests.find(r => r.id === params.id);
-        if (found) {
-            setShipment(found);
-            setFormData(found);
-        } else {
-            // Handle not found
-        }
-    }, [params.id, requests]);
+        const fetchShipment = async () => {
+            try {
+                const token = localStorage.getItem('token');
+                const response = await fetchFn(`/api/shipment/${params.id}`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
 
-    if (!shipment) {
-        return <div className="p-8 text-center">Loading...</div>;
+                if (!response.ok) {
+                    throw new Error('Failed to fetch shipment');
+                }
+
+                const data = await response.json();
+                setShipment(data.shipment);
+            } catch (err) {
+                console.error(err);
+                setError('Failed to load shipment details');
+                toast.error('Failed to load shipment details');
+            }
+        };
+
+        if (params.id) {
+            fetchShipment();
+        }
+    }, [params.id]);
+
+    if (error || !shipment) {
+        return (
+            <div className="flex flex-col items-center justify-center min-h-[50vh] gap-4">
+                <p className="text-destructive font-medium">{error || 'Shipment not found'}</p>
+                <Button onClick={() => router.push('/importer')}>Go Back</Button>
+            </div>
+        );
     }
 
-    const handleSave = () => {
-        updateShipment(shipment.id, formData);
-        setIsEditing(false);
-        toast.success('Shipment updated successfully');
-    };
-
-    const handleCommentSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
-        // In a real app, this would append to a comments array.
-        // For now, we just update the 'comments' field or show a toast.
-        toast.success('Comment added');
-    };
-
-    const isAssigned = shipment.status === 'ASSIGNED';
-    const isConfirmed = shipment.status === 'CONFIRMED';
     const isCompleted = shipment.status === 'COMPLETED';
+    const isConfirmed = shipment.status === 'CONFIRMED';
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-6 p-6">
             <Breadcrumb>
                 <BreadcrumbList>
                     <BreadcrumbItem>
-                        <BreadcrumbLink href="/importer">Importer</BreadcrumbLink>
+                        <BreadcrumbLink href="/importer">Dashboard</BreadcrumbLink>
                     </BreadcrumbItem>
                     <BreadcrumbSeparator />
                     <BreadcrumbItem>
-                        <BreadcrumbPage>Shipment {shipment.billNumber}</BreadcrumbPage>
+                        <BreadcrumbLink href="/importer/shipments">Shipments</BreadcrumbLink>
+                    </BreadcrumbItem>
+                    <BreadcrumbSeparator />
+                    <BreadcrumbItem>
+                        <BreadcrumbPage>Shipment {shipment.bill_number}</BreadcrumbPage>
                     </BreadcrumbItem>
                 </BreadcrumbList>
             </Breadcrumb>
 
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
                     <h1 className="text-3xl font-bold flex items-center gap-3">
                         Shipment Details
@@ -76,152 +87,227 @@ export default function ShipmentDetailsPage() {
                             {shipment.status}
                         </Badge>
                     </h1>
-                    <p className="text-muted-foreground">
-                        {shipment.type} Shipment • {shipment.portOfShipment} to {shipment.portOfDestination}
+                    <p className="text-muted-foreground flex items-center gap-2 mt-1">
+                        <span className="font-medium">{shipment.type}</span>
+                        <span>•</span>
+                        <span className="flex items-center gap-1"><MapPin className="w-3 h-3" /> {shipment.port_of_shipment}</span>
+                        <span>→</span>
+                        <span className="flex items-center gap-1"><MapPin className="w-3 h-3" /> {shipment.port_of_destination}</span>
                     </p>
                 </div>
-                {isAssigned && (
-                    <div className="space-x-2">
-                        {isEditing ? (
-                            <>
-                                <Button variant="outline" onClick={() => setIsEditing(false)}>Cancel</Button>
-                                <Button onClick={handleSave}>Save Changes</Button>
-                            </>
-                        ) : (
-                            <Button onClick={() => setIsEditing(true)}>Edit Details</Button>
-                        )}
-                    </div>
-                )}
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="md:col-span-2 space-y-6">
+                    {/* Key Details */}
                     <Card>
                         <CardHeader>
                             <CardTitle>Shipment Information</CardTitle>
                         </CardHeader>
-                        <CardContent className="space-y-4">
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                    <Label>Bill Number</Label>
-                                    {isEditing ? (
-                                        <Input
-                                            value={formData.billNumber}
-                                            onChange={e => setFormData({ ...formData, billNumber: e.target.value })}
-                                        />
-                                    ) : (
-                                        <div className="font-medium">{shipment.billNumber}</div>
-                                    )}
-                                </div>
-                                <div className="space-y-2">
-                                    <Label>Bayan Number</Label>
-                                    {isEditing ? (
-                                        <Input
-                                            value={formData.bayanNumber}
-                                            onChange={e => setFormData({ ...formData, bayanNumber: e.target.value })}
-                                        />
-                                    ) : (
-                                        <div className="font-medium">{shipment.bayanNumber}</div>
-                                    )}
-                                </div>
-                                <div className="space-y-2">
-                                    <Label>Expected Arrival</Label>
-                                    {isEditing ? (
-                                        <Input
-                                            type="date"
-                                            value={formData.expectedArrivalDate}
-                                            onChange={e => setFormData({ ...formData, expectedArrivalDate: e.target.value })}
-                                        />
-                                    ) : (
-                                        <div className="font-medium">{shipment.expectedArrivalDate}</div>
-                                    )}
-                                </div>
-                                <div className="space-y-2">
-                                    <Label>Duty Charges (SAR)</Label>
-                                    {isEditing ? (
-                                        <Input
-                                            type="number"
-                                            value={formData.dutyCharges}
-                                            onChange={e => setFormData({ ...formData, dutyCharges: Number(e.target.value) })}
-                                        />
-                                    ) : (
-                                        <div className="font-medium">{shipment.dutyCharges?.toLocaleString() || '-'}</div>
-                                    )}
+                        <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div className="space-y-1">
+                                <Label className="text-muted-foreground">Bill Number</Label>
+                                <div className="font-medium text-lg">{shipment.bill_number}</div>
+                            </div>
+                            <div className="space-y-1">
+                                <Label className="text-muted-foreground">Bayan Number</Label>
+                                <div className="font-medium text-lg">{shipment.bayan_number || '-'}</div>
+                            </div>
+                            <div className="space-y-1">
+                                <Label className="text-muted-foreground">Expected Arrival</Label>
+                                <div className="font-medium flex items-center gap-2">
+                                    <Calendar className="w-4 h-4 text-muted-foreground" />
+                                    {new Date(shipment.expected_arrival_date).toLocaleDateString()}
                                 </div>
                             </div>
+                            <div className="space-y-1">
+                                <Label className="text-muted-foreground">Duty Charges</Label>
+                                <div className="font-medium flex items-center gap-2">
+                                    <DollarSign className="w-4 h-4 text-muted-foreground" />
+                                    {shipment.duty_charges?.toLocaleString() || '-'} SAR
+                                </div>
+                            </div>
+                            {shipment.number_of_pallets && (
+                                <div className="space-y-1">
+                                    <Label className="text-muted-foreground">Number of Pallets</Label>
+                                    <div className="font-medium">{shipment.number_of_pallets}</div>
+                                </div>
+                            )}
+                            {shipment.payment_partner && (
+                                <div className="space-y-1">
+                                    <Label className="text-muted-foreground">Payment Partner</Label>
+                                    <div className="font-medium">{shipment.payment_partner}</div>
+                                </div>
+                            )}
                         </CardContent>
                     </Card>
 
-                    {/* Comments Section for Confirmed Shipments */}
-                    {(isConfirmed || isCompleted) && (
+                    {/* Trucks Section (Only for Land shipments) */}
+                    {shipment.type === 'Land' && shipment.trucks && shipment.trucks.length > 0 && (
                         <Card>
                             <CardHeader>
-                                <CardTitle>Communication</CardTitle>
-                                <CardDescription>Comments and updates from the agent</CardDescription>
+                                <CardTitle className="flex items-center gap-2">
+                                    <Truck className="w-5 h-5" />
+                                    Truck Details
+                                </CardTitle>
                             </CardHeader>
-                            <CardContent className="space-y-4">
-                                <div className="bg-muted p-4 rounded-lg text-sm">
-                                    <p className="font-semibold mb-1">{shipment.agentName}</p>
-                                    <p>Shipment is currently being processed at customs. Will update shortly.</p>
-                                    <span className="text-xs text-muted-foreground mt-2 block">Today at 10:30 AM</span>
+                            <CardContent>
+                                <div className="space-y-4">
+                                    {shipment.trucks.map((truck, index) => (
+                                        <div key={truck.id} className="flex flex-col md:flex-row md:items-center justify-between p-4 border rounded-lg bg-muted/20">
+                                            <div className="space-y-1">
+                                                <div className="font-semibold">Truck #{index + 1}</div>
+                                                <div className="text-sm text-muted-foreground">Vehicle: {truck.vehicle_number}</div>
+                                            </div>
+                                            <div className="space-y-1 mt-2 md:mt-0">
+                                                <div className="text-sm">Driver: {truck.driver_name}</div>
+                                                <div className="text-sm text-muted-foreground">
+                                                    {truck.driver_mobile_origin} / {truck.driver_mobile_destination}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
                                 </div>
-
-                                {isConfirmed && (
-                                    <div className="flex gap-2 mt-4">
-                                        <Input placeholder="Type a message..." />
-                                        <Button size="icon" onClick={handleCommentSubmit}>
-                                            <FileText className="h-4 w-4" />
-                                        </Button>
-                                        <Button size="icon" variant="outline">
-                                            <Upload className="h-4 w-4" />
-                                        </Button>
-                                    </div>
-                                )}
                             </CardContent>
                         </Card>
                     )}
-                </div>
 
-                <div className="space-y-6">
+                    {/* Updates / Timeline */}
                     <Card>
                         <CardHeader>
-                            <CardTitle>Agent Details</CardTitle>
+                            <CardTitle className="flex items-center gap-2">
+                                <Clock className="w-5 h-5" />
+                                Timeline & Updates
+                            </CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <div className="space-y-2">
-                                <div className="font-medium">{shipment.agentName}</div>
-                                <div className="text-sm text-muted-foreground">ID: {shipment.agentId}</div>
-                                <Button variant="outline" className="w-full mt-2" size="sm">Contact Agent</Button>
+                            <div className="space-y-6 relative pl-4 border-l-2 border-muted">
+                                {shipment.updates && shipment.updates.length > 0 ? (
+                                    shipment.updates.map((update) => (
+                                        <div key={update.id} className="relative">
+                                            <div className="absolute -left-[21px] top-1 w-3 h-3 rounded-full bg-primary" />
+                                            <div className="space-y-1">
+                                                <p className="text-sm text-muted-foreground">
+                                                    {new Date(update.created_at).toLocaleString()}
+                                                </p>
+                                                <p className="font-medium">{update.update_text}</p>
+                                                {update.document_url && (
+                                                    <a
+                                                        href={update.document_url}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        className="text-sm text-blue-600 hover:underline flex items-center gap-1 mt-1"
+                                                    >
+                                                        <FileText className="w-3 h-3" />
+                                                        View Attachment
+                                                    </a>
+                                                )}
+                                            </div>
+                                        </div>
+                                    ))
+                                ) : (
+                                    <div className="text-sm text-muted-foreground italic">No updates yet.</div>
+                                )}
+                                {/* Creation event */}
+                                <div className="relative">
+                                    <div className="absolute -left-[21px] top-1 w-3 h-3 rounded-full bg-muted-foreground" />
+                                    <div className="space-y-1">
+                                        <p className="text-sm text-muted-foreground">
+                                            {new Date(shipment.created_at).toLocaleString()}
+                                        </p>
+                                        <p className="font-medium">Shipment Created</p>
+                                    </div>
+                                </div>
                             </div>
                         </CardContent>
                     </Card>
+                </div>
 
+                {/* Sidebar */}
+                <div className="space-y-6">
+                    {/* Agent Details */}
+                    {shipment.agent && (
+                        <Card>
+                            <CardHeader>
+                                <CardTitle className="flex items-center gap-2">
+                                    <User className="w-5 h-5" />
+                                    Agent Details
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="space-y-3">
+                                    <div>
+                                        <Label className="text-xs text-muted-foreground">Name</Label>
+                                        <div className="font-medium">{shipment.agent.name}</div>
+                                    </div>
+                                    <div>
+                                        <Label className="text-xs text-muted-foreground">Email</Label>
+                                        <div className="font-medium break-all">{shipment.agent.email}</div>
+                                    </div>
+                                    <Button variant="outline" className="w-full mt-2" size="sm">Contact Agent</Button>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    )}
+
+                    {/* Documents */}
                     <Card>
                         <CardHeader>
-                            <CardTitle>Documents</CardTitle>
+                            <CardTitle className="flex items-center gap-2">
+                                <FileText className="w-5 h-5" />
+                                Documents
+                            </CardTitle>
                         </CardHeader>
-                        <CardContent className="space-y-2">
-                            <div className="flex items-center justify-between p-2 border rounded hover:bg-accent/50 cursor-pointer">
-                                <div className="flex items-center gap-2">
-                                    <FileText className="h-4 w-4 text-blue-500" />
-                                    <span className="text-sm">Bayan Copy</span>
-                                </div>
-                                <Button variant="ghost" size="sm">View</Button>
-                            </div>
-                            {shipment.waybillFileName && (
-                                <div className="flex items-center justify-between p-2 border rounded hover:bg-accent/50 cursor-pointer">
-                                    <div className="flex items-center gap-2">
-                                        <FileText className="h-4 w-4 text-blue-500" />
-                                        <span className="text-sm">Waybill</span>
+                        <CardContent className="space-y-3">
+                            {shipment.bayan_file_url && (
+                                <div className="flex items-center justify-between p-2 border rounded hover:bg-accent/50 transition-colors">
+                                    <div className="flex items-center gap-2 overflow-hidden">
+                                        <FileText className="h-4 w-4 text-blue-500 flex-shrink-0" />
+                                        <span className="text-sm truncate">Bayan Document</span>
                                     </div>
-                                    <Button variant="ghost" size="sm">View</Button>
+                                    <a href={shipment.bayan_file_url} target="_blank" rel="noopener noreferrer">
+                                        <Button variant="ghost" size="sm">View</Button>
+                                    </a>
                                 </div>
                             )}
-                            {isConfirmed && (
-                                <Button variant="outline" className="w-full border-dashed">
-                                    <Upload className="mr-2 h-4 w-4" />
-                                    Upload Document
-                                </Button>
+                            {shipment.commercial_invoice_file_url && (
+                                <div className="flex items-center justify-between p-2 border rounded hover:bg-accent/50 transition-colors">
+                                    <div className="flex items-center gap-2 overflow-hidden">
+                                        <FileText className="h-4 w-4 text-blue-500 flex-shrink-0" />
+                                        <span className="text-sm truncate">Commercial Invoice</span>
+                                    </div>
+                                    <a href={shipment.commercial_invoice_file_url} target="_blank" rel="noopener noreferrer">
+                                        <Button variant="ghost" size="sm">View</Button>
+                                    </a>
+                                </div>
+                            )}
+                            {shipment.packing_list_file_url && (
+                                <div className="flex items-center justify-between p-2 border rounded hover:bg-accent/50 transition-colors">
+                                    <div className="flex items-center gap-2 overflow-hidden">
+                                        <FileText className="h-4 w-4 text-blue-500 flex-shrink-0" />
+                                        <span className="text-sm truncate">Packing List</span>
+                                    </div>
+                                    <a href={shipment.packing_list_file_url} target="_blank" rel="noopener noreferrer">
+                                        <Button variant="ghost" size="sm">View</Button>
+                                    </a>
+                                </div>
+                            )}
+                            {shipment.other_documents_urls && shipment.other_documents_urls.map((url, idx) => (
+                                <div key={idx} className="flex items-center justify-between p-2 border rounded hover:bg-accent/50 transition-colors">
+                                    <div className="flex items-center gap-2 overflow-hidden">
+                                        <FileText className="h-4 w-4 text-blue-500 flex-shrink-0" />
+                                        <span className="text-sm truncate">Other Doc #{idx + 1}</span>
+                                    </div>
+                                    <a href={url} target="_blank" rel="noopener noreferrer">
+                                        <Button variant="ghost" size="sm">View</Button>
+                                    </a>
+                                </div>
+                            ))}
+
+                            {(!shipment.bayan_file_url && !shipment.commercial_invoice_file_url && !shipment.packing_list_file_url) && (
+                                <div className="text-sm text-muted-foreground italic text-center py-2">
+                                    No documents attached
+                                </div>
                             )}
                         </CardContent>
                     </Card>

@@ -33,7 +33,7 @@ export function ShipmentsView() {
     const [shipments, setShipments] = useState<Shipment[]>([]);
     const [loading, setLoading] = useState(true);
 
-    const { fetchWithLoader } = useLoader();
+    const { fetchFn: fetchWithLoader } = useLoader();
     const fetchShipments = async () => {
         try {
             const token = localStorage.getItem('token');

@@ -86,7 +86,7 @@ export function CreateShipmentForm({ role, onSubmit, onCancel }: CreateShipmentF
         trucks: [],
     });
 
-    const { fetchWithLoader } = useLoader();
+    const { fetchFn: fetchWithLoader } = useLoader();
 
 
     const currentUserId = useRoleStore((state) => state.currentUserId);
