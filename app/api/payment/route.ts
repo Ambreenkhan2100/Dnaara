@@ -79,7 +79,6 @@ export async function GET(request: Request) {
         const agentId = searchParams.get('agent_id');
         const importerId = searchParams.get('importer_id');
 
-        // Validate that at least one parameter is provided
         if (!agentId && !importerId) {
             return NextResponse.json(
                 { error: 'Either agent_id or importer_id must be provided' },

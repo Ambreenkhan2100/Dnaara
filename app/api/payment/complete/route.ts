@@ -18,7 +18,6 @@ export async function PUT(request: Request) {
             );
         }
 
-        // 2. Upload File
         let fileUrl: string;
         try {
             fileUrl = await uploadBase64ToSupabase(file);
