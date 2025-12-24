@@ -145,3 +145,51 @@ export async function GET(request: Request) {
         );
     }
 }
+
+export async function PATCH(request: Request) {
+    try {
+
+        const { id, payment_status } = await request.json();
+
+        // Validate required fields
+        if (!id || !payment_status) {
+            return NextResponse.json(
+                { error: 'Payment ID and status are required' },
+                { status: 400 }
+            );
+        }
+
+        // Update payment status in database
+        const query = `
+            UPDATE payments 
+            SET payment_status = $1, 
+                updated_at = CURRENT_TIMESTAMP
+            WHERE id = $2
+            RETURNING *;
+        `;
+
+        const values = [payment_status, id];
+
+        const client = await pool.connect();
+        try {
+            const result = await client.query(query, values);
+
+            if (result.rowCount === 0) {
+                return NextResponse.json(
+                    { error: 'Payment not found' },
+                    { status: 404 }
+                );
+            }
+
+            return NextResponse.json(result.rows[0]);
+        } finally {
+            client.release();
+        }
+    } catch (error) {
+        console.error('Error updating payment status:', error);
+        return NextResponse.json(
+            { error: 'Internal Server Error' },
+            { status: 500 }
+        );
+    }
+}

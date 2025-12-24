@@ -1,0 +1,6 @@
+export enum PaymentStatus {
+    REQUESTED = 'REQUESTED',
+    CONFIRMED = 'CONFIRMED',
+    REJECTED = 'REJECTED',
+    COMPLETED = 'COMPLETED'
+}
