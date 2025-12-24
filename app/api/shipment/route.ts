@@ -1,40 +1,13 @@
 import { NextResponse } from 'next/server';
 import { Pool } from 'pg';
 import { uploadBase64ToSupabase } from '@/lib/utils/fileupload';
-import { jwtVerify } from 'jose';
 
 const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
 });
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
-
-async function getUserIdFromToken(request: Request): Promise<string | null> {
-    const authHeader = request.headers.get('authorization');
-    console.log('authHeader: ', authHeader);
-
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-        return null;
-    }
-
-    const token = authHeader.split(' ')[1];
-    try {
-        const { payload } = await jwtVerify(token, new TextEncoder().encode(JWT_SECRET));
-        console.log('payload; ', payload);
-
-        return payload.userId as string;
-    } catch (error) {
-        console.error('Error verifying token:', error);
-        return null;
-    }
-}
-
 export async function GET(request: Request) {
-    const userId = await getUserIdFromToken(request);
-    if (!userId) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
+    const userId = request.headers.get('x-user-id');
     const client = await pool.connect();
     try {
         // Fetch shipments where the user is involved (created_by, importer_id, or agent_id)
@@ -67,10 +40,7 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-    const userId = await getUserIdFromToken(request);
-    if (!userId) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    const userId = request.headers.get('x-user-id');
 
     const body = await request.json();
     const {

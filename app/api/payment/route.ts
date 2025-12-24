@@ -1,41 +1,14 @@
 // app/api/payment/route.ts
 import { NextResponse } from 'next/server';
 import { Pool } from 'pg';
-import { jwtVerify } from 'jose';
 import { PaymentData } from '@/types';
 
 const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
 });
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
-
-async function getUserIdFromToken(request: Request): Promise<string | null> {
-    const authHeader = request.headers.get('authorization');
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-        return null;
-    }
-
-    const token = authHeader.split(' ')[1];
-    try {
-        const { payload } = await jwtVerify(token, new TextEncoder().encode(JWT_SECRET));
-        return payload.userId as string;
-    } catch (error) {
-        console.error('Error verifying token:', error);
-        return null;
-    }
-}
-
 export async function POST(request: Request) {
     try {
-        // Verify authentication
-        const userId = await getUserIdFromToken(request);
-        if (!userId) {
-            return NextResponse.json(
-                { error: 'Unauthorized' },
-                { status: 401 }
-            );
-        }
 
         // Parse request body
         const paymentData: PaymentData = await request.json();
@@ -92,15 +65,6 @@ export async function POST(request: Request) {
 
 export async function GET(request: Request) {
     try {
-        // Verify authentication
-        const userId = await getUserIdFromToken(request);
-        if (!userId) {
-            return NextResponse.json(
-                { error: 'Unauthorized' },
-                { status: 401 }
-            );
-        }
-
         // Get query parameters
         const { searchParams } = new URL(request.url);
         const agentId = searchParams.get('agent_id');
