@@ -1,3 +1,5 @@
+import { Timestamp } from "next/dist/server/lib/cache-handlers/types";
+
 export type PaymentStatus = 'REQUESTED' | 'CONFIRMED' | 'COMPLETED';
 
 export interface PaymentComment {
@@ -25,6 +27,21 @@ export interface PaymentRequest {
     createdAt: string;
     updatedAt: string;
     comments: PaymentComment[];
+}
+
+export interface PaymentData {
+    payment_id: string;
+    agent_id: string;
+    shipment_id: string;
+    payment_type: string;
+    bayan_number?: string;
+    bill_number?: string;
+    amount: number;
+    payment_deadline: string;
+    description?: string;
+    status: string;
+    created_at: Timestamp;
+    updated_at: Timestamp;
 }
 
 export interface WalletTransaction {
