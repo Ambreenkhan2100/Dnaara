@@ -33,13 +33,14 @@ export interface PaymentData {
     payment_id: string;
     agent_id: string;
     shipment_id: string;
+    importer_id: string;
     payment_type: string;
     bayan_number?: string;
     bill_number?: string;
     amount: number;
     payment_deadline: string;
     description?: string;
-    status: string;
+    payment_status: string;
     created_at: Timestamp;
     updated_at: Timestamp;
 }
