@@ -40,6 +40,7 @@ export interface PaymentData {
     payment_deadline: string;
     description?: string;
     payment_status: PaymentStatus;
+    payment_document_url: string;
     created_at: Timestamp;
     updated_at: Timestamp;
 }

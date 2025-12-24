@@ -50,6 +50,15 @@ export async function POST(request: Request) {
         const client = await pool.connect();
         try {
             const result = await client.query(query, values);
+            if (result.rowCount === 0) {
+                await client.query('ROLLBACK');
+                return NextResponse.json(
+                    { error: 'Error Creating payment' },
+                    { status: 404 }
+                );
+            }
+
+            await client.query('COMMIT');
             return NextResponse.json(result.rows[0], { status: 201 });
         } finally {
             client.release();
@@ -175,12 +184,14 @@ export async function PATCH(request: Request) {
             const result = await client.query(query, values);
 
             if (result.rowCount === 0) {
+                await client.query('ROLLBACK');
                 return NextResponse.json(
                     { error: 'Payment not found' },
                     { status: 404 }
                 );
             }
 
+            await client.query('COMMIT');
             return NextResponse.json(result.rows[0]);
         } finally {
             client.release();
