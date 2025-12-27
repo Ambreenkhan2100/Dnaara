@@ -11,6 +11,7 @@ import { createPaymentSchema, type CreatePaymentInput } from '@/lib/schemas';
 import type { PaymentRequest } from '@/types';
 import { Shipment } from '@/types/shipment';
 import { ShipmentType } from './create-shipment-form';
+import { format } from 'date-fns';
 
 const SEA_PAYMENT_OPTIONS = [
     'Customs Duty',
@@ -55,11 +56,11 @@ export function AgentPaymentForm({ initialData, prefilledImporterId, prefilledSh
         defaultValues: {
             amount: initialData?.amount || 0,
             description: initialData?.description || '',
-            shipmentId: initialData?.shipmentId || prefilledShipmentId || '',
-            importerId: initialData?.importerId || prefilledImporterId || '',
+            shipmentId: initialData?.shipmentId || prefilledShipmentId || shipment?.id || '',
+            importerId: initialData?.importerId || prefilledImporterId || (shipment as any)?.importer_id || (shipment as any)?.importerId || '',
             billNumber: initialData?.billNumber || '',
             bayanNumber: initialData?.bayanNumber || '',
-            paymentDeadline: initialData?.paymentDeadline || '',
+            paymentDeadline: initialData?.paymentDeadline ? format(new Date(initialData.paymentDeadline), "yyyy-MM-dd'T'HH:mm") : '',
             paymentType: initialData?.paymentType || '',
             otherPaymentName: initialData?.otherPaymentName || '',
         },

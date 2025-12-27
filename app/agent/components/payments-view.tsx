@@ -19,6 +19,8 @@ import { AgentPaymentForm } from '@/components/forms/agent-payment-form';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { PaymentCard } from '@/components/shared/payment-card';
 import { PaymentDetailsDialog } from '@/components/shared/payment-details-dialog';
+import { CreatePaymentInput } from '@/lib/schemas';
+import { fa } from 'zod/v4/locales';
 
 export function PaymentsView() {
     const { currentUserId } = useRoleStore();
@@ -82,15 +84,73 @@ export function PaymentsView() {
         return filteredPayments.filter((p) => p.status === status);
     };
 
-    const handleDelete = (e: React.MouseEvent<HTMLButtonElement>, id: string) => {
+    const handleDelete = async (e: React.MouseEvent<HTMLButtonElement>, id: string) => {
         e.stopPropagation();
-        console.log('Delete payment', id);
+        try {
+            const res = await fetchWithLoader('/api/payment', {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ paymentId: id }),
+            });
+
+            if (!res.ok) {
+                const errorData = await res.json();
+                throw new Error(errorData.error || 'Failed to delete payment');
+            }
+
+            toast.success('Payment deleted successfully');
+            fetchPayments();
+        } catch (error: any) {
+            console.error('Error deleting payment:', error);
+            toast.error(error.message || 'Failed to delete payment');
+        }
     };
 
     const handleEdit = (e: React.MouseEvent<HTMLButtonElement>, payment: PaymentRequest) => {
         e.stopPropagation();
-        console.log('Edit payment', payment);
+        setSelectedPayment(payment);
+        setEditDialogOpen(true);
     };
+
+
+
+    const handleEditSubmit = async (data: CreatePaymentInput) => {
+        console.log('Edit submit', data);
+        setSelectedPayment(null);
+        setEditDialogOpen(false)
+
+        try {
+            const res = await fetchWithLoader('/api/payment', {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    id: selectedPayment?.id,
+                    payment_type: data.paymentType,
+                    bayan_number: data.bayanNumber,
+                    bill_number: data.billNumber,
+                    amount: data.amount,
+                    payment_deadline: data.paymentDeadline,
+                    description: data.description
+                }),
+            });
+
+            if (!res.ok) {
+                const errorData = await res.json();
+                throw new Error(errorData.error || 'Failed to update payment');
+            }
+
+            toast.success('Payment updated successfully');
+            setEditDialogOpen(false);
+            fetchPayments();
+        } catch (error: any) {
+            console.error('Error updating payment:', error);
+            toast.error(error.message || 'Failed to update payment');
+        }
+    }
 
     const handleAddComment = () => {
         if (!selectedPayment || !comment.trim()) return;
@@ -105,13 +165,19 @@ export function PaymentsView() {
                 <div className="text-center py-8 text-muted-foreground">No payments found</div>
             ) : (
                 data.map((payment) => (
-                    <PaymentCard
-                        key={payment.id}
-                        payment={payment}
-                        onClick={() => setSelectedPayment(payment)}
-                        onEdit={handleEdit}
-                        onDelete={handleDelete}
-                    />
+                    payment.status === PaymentStatus.REQUESTED ?
+                        <PaymentCard
+                            key={payment.id}
+                            payment={payment}
+                            onClick={() => setSelectedPayment(payment)}
+                            onEdit={handleEdit}
+                            onDelete={handleDelete}
+                        /> :
+                        <PaymentCard
+                            key={payment.id}
+                            payment={payment}
+                            onClick={() => setSelectedPayment(payment)}
+                        />
                 ))
             )}
         </div>
@@ -162,7 +228,10 @@ export function PaymentsView() {
             </Tabs>
 
             {/* Edit Dialog */}
-            <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+            <Dialog open={editDialogOpen} onOpenChange={() => {
+                setSelectedPayment(null);
+                setEditDialogOpen(false);
+            }}>
                 <DialogContent>
                     <DialogHeader>
                         <DialogTitle>Edit Payment Request</DialogTitle>
@@ -170,6 +239,13 @@ export function PaymentsView() {
                             Update the payment request details.
                         </DialogDescription>
                     </DialogHeader>
+                    {selectedPayment && (
+                        <AgentPaymentForm
+                            initialData={selectedPayment}
+                            shipment={selectedPayment.shipment!}
+                            onSubmit={handleEditSubmit}
+                        />
+                    )}
                 </DialogContent>
             </Dialog>
 
