@@ -8,9 +8,6 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { createPaymentSchema, type CreatePaymentInput } from '@/lib/schemas';
-import { useAgentStore } from '@/lib/store/useAgentStore';
-import { toast } from 'sonner';
-import { useEffect } from 'react';
 import type { PaymentRequest } from '@/types';
 import { Shipment } from '@/types/shipment';
 import { ShipmentType } from './create-shipment-form';
@@ -45,19 +42,14 @@ const LAND_PAYMENT_OPTIONS = [
 ];
 
 interface AgentPaymentFormProps {
-    onSuccess?: () => void;
     initialData?: PaymentRequest;
     prefilledImporterId?: string;
     prefilledShipmentId?: string;
-    shipment?: Shipment;
+    shipment: Shipment;
+    onSubmit: (data: CreatePaymentInput) => void;
 }
 
-export function AgentPaymentForm({ onSuccess, initialData, prefilledImporterId, prefilledShipmentId, shipment }: AgentPaymentFormProps) {
-    const { createPayment, updatePayment, linkedImporters, upcoming, pending, completed } = useAgentStore();
-    console.log('shipment', shipment);
-    // Combine all shipments for selection
-    const allShipments = [...upcoming, ...pending, ...completed];
-
+export function AgentPaymentForm({ initialData, prefilledImporterId, prefilledShipmentId, shipment, onSubmit }: AgentPaymentFormProps) {
     const form = useForm<CreatePaymentInput>({
         resolver: zodResolver(createPaymentSchema) as any,
         defaultValues: {
@@ -75,8 +67,8 @@ export function AgentPaymentForm({ onSuccess, initialData, prefilledImporterId, 
 
     const paymentType = form.watch('paymentType');
 
-    const selectedShipmentId = form.watch('shipmentId');
-    const selectedShipment = allShipments.find(s => s.id === selectedShipmentId);
+    const selectedShipmentId = shipment?.id;
+    // const selectedShipment = allShipments.find(s => s.id === selectedShipmentId);
 
     const getBillLabel = () => {
         if (!shipment) return 'Bill Number';
@@ -98,101 +90,34 @@ export function AgentPaymentForm({ onSuccess, initialData, prefilledImporterId, 
         }
     };
 
-    const onSubmit = (data: CreatePaymentInput) => {
-        if (initialData) {
-            updatePayment(initialData.id, data);
-            toast.success('Payment updated successfully');
-        } else {
-            createPayment(data);
-            toast.success('Payment created successfully');
-        }
-        form.reset();
-        onSuccess?.();
-    };
-
     return (
         <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                {!prefilledImporterId && (
-                    <FormField
-                        control={form.control}
-                        name="importerId"
-                        render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Importer</FormLabel>
-                                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                    <FormControl>
-                                        <SelectTrigger>
-                                            <SelectValue placeholder="Select Importer" />
-                                        </SelectTrigger>
-                                    </FormControl>
-                                    <SelectContent>
-                                        {linkedImporters.map((importer) => (
-                                            <SelectItem key={importer.id} value={importer.id}>
-                                                {importer.name}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                                <FormMessage />
-                            </FormItem>
-                        )}
-                    />
-                )}
-
-                {!prefilledShipmentId && (
-                    <FormField
-                        control={form.control}
-                        name="shipmentId"
-                        render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Shipment</FormLabel>
-                                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                    <FormControl>
-                                        <SelectTrigger>
-                                            <SelectValue placeholder="Select Shipment" />
-                                        </SelectTrigger>
-                                    </FormControl>
-                                    <SelectContent>
-                                        {allShipments.map((shipment) => (
-                                            <SelectItem key={shipment.id} value={shipment.id}>
-                                                {shipment.id} - {shipment.type} ({shipment.status})
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                                <FormMessage />
-                            </FormItem>
-                        )}
-                    />
-                )}
-
-                {shipment && (
-                    <FormField
-                        control={form.control}
-                        name="paymentType"
-                        render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Payment Type</FormLabel>
-                                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                    <FormControl>
-                                        <SelectTrigger>
-                                            <SelectValue placeholder="Select Payment Type" />
-                                        </SelectTrigger>
-                                    </FormControl>
-                                    <SelectContent>
-                                        {getPaymentOptions().map((option) => (
-                                            <SelectItem key={option} value={option}>
-                                                {option}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                                <FormMessage />
-                            </FormItem>
-                        )}
-                    />
-                )}
+                <FormField
+                    control={form.control}
+                    name="paymentType"
+                    render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Payment Type</FormLabel>
+                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                <FormControl>
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Select Payment Type" />
+                                    </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                    {getPaymentOptions().map((option) => (
+                                        <SelectItem key={option} value={option}>
+                                            {option}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                            <FormMessage />
+                        </FormItem>
+                    )}
+                />
+                {/* )} */}
 
                 {paymentType === 'Other Charges' && (
                     <FormField

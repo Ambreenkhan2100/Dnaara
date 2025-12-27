@@ -28,7 +28,14 @@ export const LoaderProvider = ({ children }: { children: React.ReactNode }) => {
         async (input: RequestInfo | URL, init?: RequestInit) => {
             showLoader();
             try {
-                const response = await fetch(input, init);
+                const token = localStorage.getItem('token');
+                const response = await fetch(input, {
+                    ...init,
+                    headers: {
+                        ...init?.headers,
+                        'Authorization': `Bearer ${token}`,
+                    },
+                });
                 return response;
             } finally {
                 hideLoader();

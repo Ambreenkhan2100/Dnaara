@@ -9,6 +9,8 @@ export interface PaymentComment {
     content: string;
     createdAt: string;
 }
+import { Shipment } from "./shipment";
+
 export interface PaymentRequest {
     id: string;
     shipmentId: string;
@@ -26,6 +28,7 @@ export interface PaymentRequest {
     createdAt: string;
     updatedAt: string;
     comments: PaymentComment[];
+    shipment?: Shipment;
 }
 
 export interface PaymentData {
@@ -40,7 +43,7 @@ export interface PaymentData {
     payment_deadline: string;
     description?: string;
     payment_status: PaymentStatus;
-    payment_document_url: string;
+    payment_document_url?: string;
     created_at: Timestamp;
     updated_at: Timestamp;
 }
