@@ -11,6 +11,7 @@ import { createAdminPaymentSchema, type CreateAdminPaymentInput } from '@/lib/sc
 import { useAdminStore } from '@/lib/store/useAdminStore';
 import { toast } from 'sonner';
 import { useState, useEffect } from 'react';
+import { PaymentStatus } from '@/types/enums/PaymentStatus';
 
 interface AdminPaymentFormProps {
     onSuccess?: () => void;
@@ -61,7 +62,7 @@ export function AdminPaymentForm({ onSuccess }: AdminPaymentFormProps) {
             billNumber: data.billNumber,
             bayanNumber: data.bayanNumber,
             paymentDeadline: data.paymentDeadline,
-            status: 'REQUESTED',
+            status: PaymentStatus.REQUESTED,
         });
 
         toast.success('Payment request created successfully');

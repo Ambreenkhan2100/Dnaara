@@ -1,4 +1,5 @@
 import type { PaymentRequest } from '@/types';
+import { PaymentStatus } from '@/types/enums/PaymentStatus';
 
 export const payments: PaymentRequest[] = [
     {
@@ -9,7 +10,7 @@ export const payments: PaymentRequest[] = [
         importerId: 'i1',
         amount: 1500,
         description: 'Customs Duty for Shipment #BL-SH-JA-001',
-        status: 'REQUESTED',
+        status: PaymentStatus.REQUESTED,
         createdAt: '2024-02-20T10:00:00Z',
         updatedAt: '2024-02-20T10:00:00Z',
         comments: [],
@@ -22,7 +23,7 @@ export const payments: PaymentRequest[] = [
         importerId: 'i1',
         amount: 500,
         description: 'Handling Charges for Shipment #WB-RYD-DXB-003',
-        status: 'CONFIRMED',
+        status: PaymentStatus.CONFIRMED,
         createdAt: '2024-02-18T14:30:00Z',
         updatedAt: '2024-02-19T09:00:00Z',
         comments: [
@@ -43,7 +44,7 @@ export const payments: PaymentRequest[] = [
         importerId: 'i1',
         amount: 3200,
         description: 'Final Settlement for Shipment #AWB-LHR-DXB-002',
-        status: 'COMPLETED',
+        status: PaymentStatus.COMPLETED,
         createdAt: '2024-02-15T11:00:00Z',
         updatedAt: '2024-02-16T16:00:00Z',
         comments: [],
@@ -56,7 +57,7 @@ export const payments: PaymentRequest[] = [
         importerId: 'i1',
         amount: 750,
         description: 'Inspection Fees for Shipment #BL-SIN-JA-004',
-        status: 'REQUESTED',
+        status: PaymentStatus.REQUESTED,
         createdAt: '2024-02-21T08:00:00Z',
         updatedAt: '2024-02-21T08:00:00Z',
         comments: [],
