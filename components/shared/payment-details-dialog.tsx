@@ -18,6 +18,8 @@ interface PaymentDetailsDialogProps {
     payment: PaymentRequest | null;
     shipment?: Request | Shipment;
     onAddComment: (paymentId: string, comment: string) => void;
+    onConfirmPayment?: (paymentId: string) => void;
+    onRejectPayment?: (paymentId: string) => void;
 }
 
 export function PaymentDetailsDialog({
@@ -25,7 +27,9 @@ export function PaymentDetailsDialog({
     onOpenChange,
     payment,
     shipment,
-    onAddComment
+    onAddComment,
+    onConfirmPayment,
+    onRejectPayment
 }: PaymentDetailsDialogProps) {
     const [comment, setComment] = useState('');
 
@@ -165,7 +169,31 @@ export function PaymentDetailsDialog({
                         </div>
                     </div>
                 </div>
+                {(onConfirmPayment || onRejectPayment) && (
+                    <>
+                        <Separator className="my-4" />
+                        <div className="flex justify-end gap-2">
+                            {onRejectPayment && (
+                                <Button
+                                    variant="destructive"
+                                    onClick={() => onRejectPayment(payment.id)}
+                                >
+                                    Reject
+                                </Button>
+                            )}
+                            {onConfirmPayment && (
+                                <Button
+                                    variant="default"
+                                    className="bg-green-600 hover:bg-green-700"
+                                    onClick={() => onConfirmPayment(payment.id)}
+                                >
+                                    Accept
+                                </Button>
+                            )}
+                        </div>
+                    </>
+                )}
             </DialogContent>
-        </Dialog>
+        </Dialog >
     );
 }

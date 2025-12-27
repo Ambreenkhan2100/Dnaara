@@ -97,6 +97,11 @@ export function PaymentsView() {
         return <div className="text-center py-8">Loading payments...</div>;
     }
 
+    const acceptRejectPayment = (id: string, status: PaymentStatus.CONFIRMED | PaymentStatus.REJECTED) => {
+        console.log(id, status);
+
+    }
+
     return (
         <div className="space-y-6">
             <div className="flex items-center space-x-2">
@@ -141,6 +146,8 @@ export function PaymentsView() {
                 payment={selectedPayment}
                 shipment={selectedPayment?.shipment}
                 onAddComment={handleAddComment}
+                onConfirmPayment={(id) => acceptRejectPayment(id, PaymentStatus.CONFIRMED)}
+                onRejectPayment={(id) => acceptRejectPayment(id, PaymentStatus.REJECTED)}
             />
         </div>
     );
