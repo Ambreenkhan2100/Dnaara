@@ -97,10 +97,26 @@ export function PaymentsView() {
         return <div className="text-center py-8">Loading payments...</div>;
     }
 
-    const acceptRejectPayment = (id: string, status: PaymentStatus.CONFIRMED | PaymentStatus.REJECTED) => {
-        console.log(id, status);
+    const acceptRejectPayment = async (id: string, status: PaymentStatus.CONFIRMED | PaymentStatus.REJECTED) => {
+        try {
+            const res = await fetchWithLoader('/api/payment', {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ id, payment_status: status }),
+            });
 
-    }
+            if (!res.ok) throw new Error('Failed to update payment status');
+
+            toast.success(`Payment ${status.toLowerCase()} successfully`);
+            setSelectedPayment(null);
+            fetchPayments();
+        } catch (error) {
+            console.error('Error updating payment status:', error);
+            toast.error('Failed to update payment status');
+        }
+    };
 
     return (
         <div className="space-y-6">

@@ -325,21 +325,7 @@ export function CreateShipmentForm({ role, onSubmit, onCancel }: CreateShipmentF
                                     {role === 'importer' ? 'Agent' : 'Importer'}
                                 </SelectItem>
                             )}
-                            <TooltipProvider>
-                                <Tooltip>
-                                    <TooltipTrigger asChild>
-                                        <div>
-                                            <SelectItem value="dnaara" disabled>
-                                                Dnaara
-                                            </SelectItem>
-                                        </div>
-                                    </TooltipTrigger>
-                                    <TooltipContent>
-                                        <p>Coming Soon!</p>
-                                    </TooltipContent>
-                                </Tooltip>
-                            </TooltipProvider>
-                            <SelectItem value="self">Self</SelectItem>
+                            <SelectItem value={role}>Self</SelectItem>
                         </SelectContent>
                     </Select>
                 </div>
