@@ -110,8 +110,8 @@ export function CreateShipmentForm({ role, onSubmit, onCancel }: CreateShipmentF
             try {
                 if (role === 'admin') {
                     const [importersRes, agentsRes] = await Promise.all([
-                        fetch('/api/users?role=importer'),
-                        fetch('/api/users?role=agent')
+                        fetchWithLoader('/api/users?role=importer'),
+                        fetchWithLoader('/api/users?role=agent')
                     ]);
                     const importersData = await importersRes.json();
                     const agentsData = await agentsRes.json();
@@ -119,7 +119,7 @@ export function CreateShipmentForm({ role, onSubmit, onCancel }: CreateShipmentF
                     setAgents(agentsData);
                 } else {
                     const targetRole = role === 'importer' ? 'agent' : 'importer';
-                    const res = await fetch(`/api/users?role=${targetRole}`);
+                    const res = await fetchWithLoader(`/api/users?role=${targetRole}`);
                     const data = await res.json();
                     setPartners(data);
                 }
@@ -325,21 +325,7 @@ export function CreateShipmentForm({ role, onSubmit, onCancel }: CreateShipmentF
                                     {role === 'importer' ? 'Agent' : 'Importer'}
                                 </SelectItem>
                             )}
-                            <TooltipProvider>
-                                <Tooltip>
-                                    <TooltipTrigger asChild>
-                                        <div>
-                                            <SelectItem value="dnaara" disabled>
-                                                Dnaara
-                                            </SelectItem>
-                                        </div>
-                                    </TooltipTrigger>
-                                    <TooltipContent>
-                                        <p>Coming Soon!</p>
-                                    </TooltipContent>
-                                </Tooltip>
-                            </TooltipProvider>
-                            <SelectItem value="self">Self</SelectItem>
+                            <SelectItem value={role}>Self</SelectItem>
                         </SelectContent>
                     </Select>
                 </div>

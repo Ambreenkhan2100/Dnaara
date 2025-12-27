@@ -1,91 +1,122 @@
-'use client';
-
-import { useState, useMemo } from 'react';
-import { useImporterStore } from '@/lib/store/useImporterStore';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useState, useMemo, useEffect } from 'react';
+import { useRoleStore } from '@/lib/store/useRoleStore';
+import { useLoader } from '@/components/providers/loader-provider';
+import { PaymentStatus } from '@/types/enums/PaymentStatus';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Search, DollarSign, Calendar, FileText } from 'lucide-react';
-import { format } from 'date-fns';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
-import { Textarea } from '@/components/ui/textarea';
+import { Search } from 'lucide-react';
 import { toast } from 'sonner';
 import type { PaymentRequest } from '@/types';
-import { PaymentDetailsDialog } from '@/components/dialogs/payment-details-dialog';
+import { PaymentCard } from '@/components/shared/payment-card';
+import { PaymentDetailsDialog } from '@/components/shared/payment-details-dialog';
 
 export function PaymentsView() {
-    const { payments, addPaymentComment } = useImporterStore();
+    const { currentUserId } = useRoleStore();
+    const { fetchWithLoader } = useLoader();
+    const [payments, setPayments] = useState<PaymentRequest[]>([]);
+    const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedPayment, setSelectedPayment] = useState<PaymentRequest | null>(null);
     const [comment, setComment] = useState('');
 
+    const fetchPayments = async () => {
+        if (!currentUserId) return;
+        try {
+            const res = await fetchWithLoader(`/api/payment?importer_id=${currentUserId}`);
+            if (!res.ok) throw new Error('Failed to fetch payments');
+            const data = await res.json();
+
+            // Map API response to PaymentRequest interface
+            const mappedPayments: PaymentRequest[] = data.map((p: any) => ({
+                id: p.id,
+                shipmentId: p.shipment_id,
+                agentId: p.agent_id,
+                agentName: 'Unknown Agent', // Placeholder as API doesn't return this
+                importerId: p.importer_id,
+                amount: parseFloat(p.amount),
+                description: p.description || '',
+                billNumber: p.bill_number,
+                bayanNumber: p.bayan_number,
+                paymentDeadline: p.payment_deadline,
+                paymentType: p.payment_type,
+                status: p.payment_status as PaymentStatus,
+                createdAt: p.created_at,
+                updatedAt: p.updated_at,
+                comments: [], // Placeholder
+                shipment: p.shipment
+            }));
+            setPayments(mappedPayments);
+        } catch (error) {
+            console.error('Error fetching payments:', error);
+            toast.error('Failed to load payments');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchPayments();
+    }, [currentUserId]);
+
     const filteredPayments = useMemo(() => {
         return payments.filter((p) =>
             p.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            p.id.toLowerCase().includes(searchQuery.toLowerCase())
+            p.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            p.agentName.toLowerCase().includes(searchQuery.toLowerCase())
         );
     }, [payments, searchQuery]);
 
-    const getPaymentsByStatus = (status: 'REQUESTED' | 'CONFIRMED' | 'COMPLETED') => {
+    const getPaymentsByStatus = (status: PaymentStatus) => {
         return filteredPayments.filter((p) => p.status === status);
     };
 
     const handleAddComment = () => {
         if (!selectedPayment || !comment.trim()) return;
-        addPaymentComment(selectedPayment.id, comment);
+        console.log('Add comment', selectedPayment.id, comment);
         setComment('');
         toast.success('Comment added');
     };
-
-    const PaymentCard = ({ payment }: { payment: PaymentRequest }) => (
-        <Card
-            className="mb-4 cursor-pointer hover:bg-accent/50 transition-colors"
-            onClick={() => setSelectedPayment(payment)}
-        >
-            <CardHeader className="pb-2">
-                <div className="flex justify-between items-start">
-                    <div>
-                        <CardTitle className="text-base font-medium">{payment.description}</CardTitle>
-                        <p className="text-sm text-muted-foreground">ID: {payment.id}</p>
-                    </div>
-                    <Badge variant={
-                        payment.status === 'COMPLETED' ? 'default' :
-                            payment.status === 'CONFIRMED' ? 'secondary' : 'outline'
-                    }>
-                        {payment.status}
-                    </Badge>
-                </div>
-            </CardHeader>
-            <CardContent>
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div className="flex items-center text-muted-foreground">
-                        <DollarSign className="mr-2 h-4 w-4" />
-                        SAR {payment.amount.toLocaleString()}
-                    </div>
-                    <div className="flex items-center text-muted-foreground">
-                        <Calendar className="mr-2 h-4 w-4" />
-                        {format(new Date(payment.createdAt), 'MMM dd, yyyy')}
-                    </div>
-                    <div className="flex items-center text-muted-foreground col-span-2">
-                        <FileText className="mr-2 h-4 w-4" />
-                        Shipment: {payment.shipmentId}
-                    </div>
-                </div>
-            </CardContent>
-        </Card>
-    );
 
     const PaymentList = ({ data }: { data: PaymentRequest[] }) => (
         <div className="space-y-4">
             {data.length === 0 ? (
                 <div className="text-center py-8 text-muted-foreground">No payments found</div>
             ) : (
-                data.map((payment) => <PaymentCard key={payment.id} payment={payment} />)
+                data.map((payment) => (
+                    <PaymentCard
+                        key={payment.id}
+                        payment={payment}
+                        onClick={() => setSelectedPayment(payment)}
+                    />
+                ))
             )}
         </div>
     );
+
+    if (loading) {
+        return <div className="text-center py-8">Loading payments...</div>;
+    }
+
+    const acceptRejectPayment = async (id: string, status: PaymentStatus.CONFIRMED | PaymentStatus.REJECTED) => {
+        try {
+            const res = await fetchWithLoader('/api/payment', {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ id, payment_status: status }),
+            });
+
+            if (!res.ok) throw new Error('Failed to update payment status');
+
+            toast.success(`Payment ${status.toLowerCase()} successfully`);
+            setSelectedPayment(null);
+            fetchPayments();
+        } catch (error) {
+            console.error('Error updating payment status:', error);
+            toast.error('Failed to update payment status');
+        }
+    };
 
     return (
         <div className="space-y-6">
@@ -99,22 +130,26 @@ export function PaymentsView() {
                 />
             </div>
 
-            <Tabs defaultValue="requested" className="space-y-6">
-                <TabsList className="grid w-full grid-cols-4 lg:w-[600px]">
-                    <TabsTrigger value="requested">REQUESTED</TabsTrigger>
-                    <TabsTrigger value="confirmed">CONFIRMED</TabsTrigger>
-                    <TabsTrigger value="completed">COMPLETED</TabsTrigger>
+            <Tabs defaultValue={PaymentStatus.REQUESTED} className="space-y-6">
+                <TabsList className="grid w-full grid-cols-5 lg:w-[800px]">
+                    <TabsTrigger value={PaymentStatus.REQUESTED}>REQUESTED</TabsTrigger>
+                    <TabsTrigger value={PaymentStatus.CONFIRMED}>CONFIRMED</TabsTrigger>
+                    <TabsTrigger value={PaymentStatus.REJECTED}>REJECTED</TabsTrigger>
+                    <TabsTrigger value={PaymentStatus.COMPLETED}>COMPLETED</TabsTrigger>
                     <TabsTrigger value="all">ALL PAYMENTS</TabsTrigger>
                 </TabsList>
 
-                <TabsContent value="requested">
-                    <PaymentList data={getPaymentsByStatus('REQUESTED')} />
+                <TabsContent value={PaymentStatus.REQUESTED}>
+                    <PaymentList data={getPaymentsByStatus(PaymentStatus.REQUESTED)} />
                 </TabsContent>
-                <TabsContent value="confirmed">
-                    <PaymentList data={getPaymentsByStatus('CONFIRMED')} />
+                <TabsContent value={PaymentStatus.CONFIRMED}>
+                    <PaymentList data={getPaymentsByStatus(PaymentStatus.CONFIRMED)} />
                 </TabsContent>
-                <TabsContent value="completed">
-                    <PaymentList data={getPaymentsByStatus('COMPLETED')} />
+                <TabsContent value={PaymentStatus.REJECTED}>
+                    <PaymentList data={getPaymentsByStatus(PaymentStatus.REJECTED)} />
+                </TabsContent>
+                <TabsContent value={PaymentStatus.COMPLETED}>
+                    <PaymentList data={getPaymentsByStatus(PaymentStatus.COMPLETED)} />
                 </TabsContent>
                 <TabsContent value="all">
                     <PaymentList data={filteredPayments} />
@@ -125,14 +160,10 @@ export function PaymentsView() {
                 open={!!selectedPayment}
                 onOpenChange={(open) => !open && setSelectedPayment(null)}
                 payment={selectedPayment}
-                shipment={
-                    selectedPayment
-                        ? useImporterStore.getState().requests.find(
-                            (r) => r.id === selectedPayment.shipmentId
-                        )
-                        : undefined
-                }
-                onAddComment={addPaymentComment}
+                shipment={selectedPayment?.shipment}
+                onAddComment={handleAddComment}
+                onConfirmPayment={(id) => acceptRejectPayment(id, PaymentStatus.CONFIRMED)}
+                onRejectPayment={(id) => acceptRejectPayment(id, PaymentStatus.REJECTED)}
             />
         </div>
     );

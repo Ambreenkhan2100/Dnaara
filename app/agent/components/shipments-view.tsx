@@ -12,6 +12,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Plus, Search, FileText, MapPin, Calendar, DollarSign, Truck, Ship, Plane } from 'lucide-react';
 import { useAgentStore } from '@/lib/store/useAgentStore';
+import { useRoleStore } from '@/lib/store/useRoleStore';
 import { Shipment, ShipmentStatusEnum } from '@/types/shipment';
 import { AgentPaymentForm } from '@/components/forms/agent-payment-form';
 import { ShipmentFilter, FilterState } from '@/components/shared/shipment-filter';
@@ -19,6 +20,8 @@ import { isWithinInterval, parseISO, startOfDay, endOfDay, addDays, isBefore, is
 import { toast } from 'sonner';
 import { useLoader } from '@/components/providers/loader-provider';
 import { useRouterWithLoader } from '@/hooks/use-router-with-loader';
+import { CreatePaymentInput } from '@/lib/schemas';
+import { PaymentStatus } from '@/types/enums/PaymentStatus';
 
 export function ShipmentsView() {
     const router = useRouterWithLoader();
@@ -129,7 +132,7 @@ export function ShipmentsView() {
                 return;
             }
 
-            const res = await fetch('/api/shipment/accept', {
+            const res = await fetchWithLoader('/api/shipment/accept', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -181,7 +184,7 @@ export function ShipmentsView() {
                 });
             }
 
-            const res = await fetch('/api/shipment/update-status', {
+            const res = await fetchWithLoader('/api/shipment/update-status', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -208,6 +211,57 @@ export function ShipmentsView() {
         } catch (error) {
             console.error('Error updating shipment status:', error);
             toast.error('Failed to update shipment status');
+        }
+    };
+
+    const currentUserId = useRoleStore((state) => state.currentUserId);
+
+    const createPayment = async (data: CreatePaymentInput) => {
+        try {
+            setPaymentDialogRequestId(null);
+
+            const token = localStorage.getItem('token');
+            if (!token) {
+                toast.error('Authentication token not found');
+                return;
+            }
+
+            if (!currentUserId) {
+                toast.error('User session not found');
+                return;
+            }
+
+            const payload = {
+                shipment_id: data.shipmentId,
+                payment_type: data.paymentType === 'other' ? data.otherPaymentName : data.paymentType,
+                agent_id: currentUserId,
+                importer_id: data.importerId,
+                bayan_number: data.bayanNumber,
+                bill_number: data.billNumber,
+                amount: data.amount,
+                payment_deadline: data.paymentDeadline,
+                description: data.description,
+                payment_status: PaymentStatus.REQUESTED
+            };
+
+            const res = await fetchWithLoader('/api/payment', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify(payload)
+            });
+
+            if (!res.ok) {
+                const errorData = await res.json();
+                throw new Error(errorData.error || 'Failed to create payment');
+            }
+
+            toast.success('Payment request created successfully');
+        } catch (error) {
+            console.error('Error creating payment:', error);
+            toast.error(error instanceof Error ? error.message : 'Failed to create payment');
         }
     };
 
@@ -348,7 +402,7 @@ export function ShipmentsView() {
                                 prefilledImporterId={request.importer_id}
                                 prefilledShipmentId={request.id}
                                 shipment={request}
-                                onSuccess={() => setPaymentDialogRequestId(null)}
+                                onSubmit={createPayment}
                             />
                         </DialogContent>
                     </Dialog>

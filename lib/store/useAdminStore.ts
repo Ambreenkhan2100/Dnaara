@@ -8,7 +8,8 @@ import { shipments } from '@/lib/mock/shipments';
 import type { Importer, Agent, Admin, Request, Balance } from '@/types';
 import type { RequestStatus } from '@/lib/status';
 import { payments } from '@/lib/mock/payments';
-import type { PaymentRequest, PaymentStatus } from '@/types';
+import type { PaymentRequest } from '@/types';
+import { PaymentStatus } from '@/types/enums/PaymentStatus';
 
 interface AdminState {
     users: (Importer | Agent | Admin)[];

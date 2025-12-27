@@ -8,6 +8,7 @@ import { format } from 'date-fns';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import type { PaymentRequest, Request } from '@/types';
+import { Shipment } from '@/types/shipment';
 import { Separator } from '@/components/ui/separator';
 import { Plane, Ship, Truck, MapPin, Calendar, FileText, DollarSign } from 'lucide-react';
 
@@ -15,8 +16,10 @@ interface PaymentDetailsDialogProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
     payment: PaymentRequest | null;
-    shipment?: Request;
+    shipment?: Request | Shipment;
     onAddComment: (paymentId: string, comment: string) => void;
+    onConfirmPayment?: (paymentId: string) => void;
+    onRejectPayment?: (paymentId: string) => void;
 }
 
 export function PaymentDetailsDialog({
@@ -24,7 +27,9 @@ export function PaymentDetailsDialog({
     onOpenChange,
     payment,
     shipment,
-    onAddComment
+    onAddComment,
+    onConfirmPayment,
+    onRejectPayment
 }: PaymentDetailsDialogProps) {
     const [comment, setComment] = useState('');
 
@@ -110,19 +115,19 @@ export function PaymentDetailsDialog({
                                 <div className="grid grid-cols-2 gap-3">
                                     <div className="flex items-center gap-2">
                                         <MapPin className="h-4 w-4 text-muted-foreground" />
-                                        <span>{shipment.portOfShipment} → {shipment.portOfDestination}</span>
+                                        <span>{(shipment as any).portOfShipment || (shipment as any).port_of_shipment} → {(shipment as any).portOfDestination || (shipment as any).port_of_destination}</span>
                                     </div>
                                     <div className="flex items-center gap-2">
                                         <Calendar className="h-4 w-4 text-muted-foreground" />
-                                        <span>ETA: {shipment.expectedArrival || shipment.expectedArrivalDate || '-'}</span>
+                                        <span>ETA: {(shipment as any).expectedArrival || (shipment as any).expectedArrivalDate || (shipment as any).expected_arrival_date || '-'}</span>
                                     </div>
                                     <div className="flex items-center gap-2">
                                         <FileText className="h-4 w-4 text-muted-foreground" />
-                                        <span>Bayan: {shipment.bayanNo || shipment.bayanNumber || '-'}</span>
+                                        <span>Bayan: {(shipment as any).bayanNo || (shipment as any).bayanNumber || (shipment as any).bayan_number || '-'}</span>
                                     </div>
                                     <div className="flex items-center gap-2">
                                         <DollarSign className="h-4 w-4 text-muted-foreground" />
-                                        <span>Duty: {shipment.dutyCharges || shipment.dutyAmount || '-'}</span>
+                                        <span>Duty: {(shipment as any).dutyCharges || (shipment as any).dutyAmount || (shipment as any).duty_charges || '-'}</span>
                                     </div>
                                 </div>
                             </div>
@@ -164,7 +169,31 @@ export function PaymentDetailsDialog({
                         </div>
                     </div>
                 </div>
+                {(onConfirmPayment || onRejectPayment) && (
+                    <>
+                        <Separator className="my-4" />
+                        <div className="flex justify-end gap-2">
+                            {onRejectPayment && (
+                                <Button
+                                    variant="destructive"
+                                    onClick={() => onRejectPayment(payment.id)}
+                                >
+                                    Reject
+                                </Button>
+                            )}
+                            {onConfirmPayment && (
+                                <Button
+                                    variant="default"
+                                    className="bg-green-600 hover:bg-green-700"
+                                    onClick={() => onConfirmPayment(payment.id)}
+                                >
+                                    Accept
+                                </Button>
+                            )}
+                        </div>
+                    </>
+                )}
             </DialogContent>
-        </Dialog>
+        </Dialog >
     );
 }

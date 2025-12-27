@@ -10,9 +10,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Search, Plus, Calendar, FileText } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/components/ui/dialog';
 import { AdminPaymentForm } from '@/components/forms/admin-payment-form';
-import { PaymentDetailsDialog } from '@/components/dialogs/payment-details-dialog';
+import { PaymentDetailsDialog } from '@/components/shared/payment-details-dialog';
 import { format } from 'date-fns';
 import type { PaymentRequest } from '@/types';
+import { PaymentStatus } from '@/types/enums/PaymentStatus';
 
 export default function AdminPaymentsPage() {
     const { payments, updatePaymentStatus, shipments, addPaymentComment } = useAdminStore();
@@ -78,7 +79,7 @@ export default function AdminPaymentsPage() {
                             {payment.status === 'REQUESTED' && (
                                 <Button
                                     size="sm"
-                                    onClick={() => updatePaymentStatus(payment.id, 'CONFIRMED')}
+                                    onClick={() => updatePaymentStatus(payment.id, PaymentStatus.CONFIRMED)}
                                     className="bg-blue-600 hover:bg-blue-700 text-white"
                                 >
                                     Confirm Payment
@@ -87,7 +88,7 @@ export default function AdminPaymentsPage() {
                             {payment.status === 'CONFIRMED' && (
                                 <Button
                                     size="sm"
-                                    onClick={() => updatePaymentStatus(payment.id, 'COMPLETED')}
+                                    onClick={() => updatePaymentStatus(payment.id, PaymentStatus.COMPLETED)}
                                     className="bg-green-600 hover:bg-green-700 text-white"
                                 >
                                     Mark Completed

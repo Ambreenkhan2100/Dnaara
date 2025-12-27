@@ -1,4 +1,6 @@
-export type PaymentStatus = 'REQUESTED' | 'CONFIRMED' | 'COMPLETED';
+import { Timestamp } from "next/dist/server/lib/cache-handlers/types";
+import { PaymentStatus } from "./enums/PaymentStatus";
+
 
 export interface PaymentComment {
     id: string;
@@ -7,6 +9,7 @@ export interface PaymentComment {
     content: string;
     createdAt: string;
 }
+import { Shipment } from "./shipment";
 
 export interface PaymentRequest {
     id: string;
@@ -25,6 +28,24 @@ export interface PaymentRequest {
     createdAt: string;
     updatedAt: string;
     comments: PaymentComment[];
+    shipment?: Shipment;
+}
+
+export interface PaymentData {
+    payment_id: string;
+    agent_id: string;
+    shipment_id: string;
+    importer_id: string;
+    payment_type: string;
+    bayan_number?: string;
+    bill_number?: string;
+    amount: number;
+    payment_deadline: string;
+    description?: string;
+    payment_status: PaymentStatus;
+    payment_document_url?: string;
+    created_at: Timestamp;
+    updated_at: Timestamp;
 }
 
 export interface WalletTransaction {

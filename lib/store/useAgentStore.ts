@@ -5,6 +5,7 @@ import { requests } from '@/lib/mock/requests';
 import { importers } from '@/lib/mock/users';
 import type { Request, RequestStatus, PaymentRequest } from '@/types';
 import type { CreatePaymentInput } from '@/lib/schemas';
+import { PaymentStatus } from '@/types/enums/PaymentStatus';
 
 interface LinkedImporter {
     id: string;
@@ -345,7 +346,7 @@ export const useAgentStore = create<AgentState>((set) => ({
                     ...payment,
                     agentId: 'ag1',
                     agentName: 'Logistics Pro', // Mock agent name
-                    status: 'REQUESTED',
+                    status: PaymentStatus.REQUESTED,
                     createdAt: new Date().toISOString(),
                     updatedAt: new Date().toISOString(),
                     comments: []

@@ -1,7 +1,9 @@
 'use client';
 
-import { useState, useMemo } from 'react';
-import { useAgentStore } from '@/lib/store/useAgentStore';
+import { useState, useMemo, useEffect } from 'react';
+import { useRoleStore } from '@/lib/store/useRoleStore';
+import { useLoader } from '@/components/providers/loader-provider';
+import { PaymentStatus } from '@/types/enums/PaymentStatus';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
@@ -15,15 +17,60 @@ import { toast } from 'sonner';
 import type { PaymentRequest } from '@/types';
 import { AgentPaymentForm } from '@/components/forms/agent-payment-form';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { PaymentDetailsDialog } from '@/components/dialogs/payment-details-dialog';
+import { PaymentCard } from '@/components/shared/payment-card';
+import { PaymentDetailsDialog } from '@/components/shared/payment-details-dialog';
+import { CreatePaymentInput } from '@/lib/schemas';
+import { fa } from 'zod/v4/locales';
 
 export function PaymentsView() {
-    const { payments, deletePayment, addPaymentComment } = useAgentStore();
+    const { currentUserId } = useRoleStore();
+    const { fetchWithLoader } = useLoader();
+    const [payments, setPayments] = useState<PaymentRequest[]>([]);
+    const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedPayment, setSelectedPayment] = useState<PaymentRequest | null>(null);
     const [comment, setComment] = useState('');
     const [createDialogOpen, setCreateDialogOpen] = useState(false);
     const [editDialogOpen, setEditDialogOpen] = useState(false);
+
+    const fetchPayments = async () => {
+        if (!currentUserId) return;
+        try {
+            const res = await fetchWithLoader(`/api/payment?agent_id=${currentUserId}`);
+            if (!res.ok) throw new Error('Failed to fetch payments');
+            const data = await res.json();
+
+            // Map API response to PaymentRequest interface
+            const mappedPayments: PaymentRequest[] = data.map((p: any) => ({
+                id: p.id,
+                shipmentId: p.shipment_id,
+                agentId: p.agent_id,
+                agentName: 'Unknown Agent', // Placeholder as API doesn't return this
+                importerId: p.importer_id,
+                amount: parseFloat(p.amount),
+                description: p.description || '',
+                billNumber: p.bill_number,
+                bayanNumber: p.bayan_number,
+                paymentDeadline: p.payment_deadline,
+                paymentType: p.payment_type,
+                status: p.payment_status as PaymentStatus,
+                createdAt: p.created_at,
+                updatedAt: p.updated_at,
+                comments: [], // Placeholder
+                shipment: p.shipment
+            }));
+            setPayments(mappedPayments);
+        } catch (error) {
+            console.error('Error fetching payments:', error);
+            toast.error('Failed to load payments');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchPayments();
+    }, [currentUserId]);
 
     const filteredPayments = useMemo(() => {
         return payments.filter((p) =>
@@ -33,14 +80,32 @@ export function PaymentsView() {
         );
     }, [payments, searchQuery]);
 
-    const getPaymentsByStatus = (status: 'REQUESTED' | 'CONFIRMED' | 'COMPLETED') => {
+    const getPaymentsByStatus = (status: PaymentStatus) => {
         return filteredPayments.filter((p) => p.status === status);
     };
 
-    const handleDelete = (e: React.MouseEvent<HTMLButtonElement>, id: string) => {
+    const handleDelete = async (e: React.MouseEvent<HTMLButtonElement>, id: string) => {
         e.stopPropagation();
-        deletePayment(id);
-        toast.success('Payment request deleted');
+        try {
+            const res = await fetchWithLoader('/api/payment', {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ paymentId: id }),
+            });
+
+            if (!res.ok) {
+                const errorData = await res.json();
+                throw new Error(errorData.error || 'Failed to delete payment');
+            }
+
+            toast.success('Payment deleted successfully');
+            fetchPayments();
+        } catch (error: any) {
+            console.error('Error deleting payment:', error);
+            toast.error(error.message || 'Failed to delete payment');
+        }
     };
 
     const handleEdit = (e: React.MouseEvent<HTMLButtonElement>, payment: PaymentRequest) => {
@@ -49,91 +114,78 @@ export function PaymentsView() {
         setEditDialogOpen(true);
     };
 
+
+
+    const handleEditSubmit = async (data: CreatePaymentInput) => {
+        console.log('Edit submit', data);
+        setSelectedPayment(null);
+        setEditDialogOpen(false)
+
+        try {
+            const res = await fetchWithLoader('/api/payment', {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    id: selectedPayment?.id,
+                    payment_type: data.paymentType,
+                    bayan_number: data.bayanNumber,
+                    bill_number: data.billNumber,
+                    amount: data.amount,
+                    payment_deadline: data.paymentDeadline,
+                    description: data.description
+                }),
+            });
+
+            if (!res.ok) {
+                const errorData = await res.json();
+                throw new Error(errorData.error || 'Failed to update payment');
+            }
+
+            toast.success('Payment updated successfully');
+            setEditDialogOpen(false);
+            fetchPayments();
+        } catch (error: any) {
+            console.error('Error updating payment:', error);
+            toast.error(error.message || 'Failed to update payment');
+        }
+    }
+
     const handleAddComment = () => {
         if (!selectedPayment || !comment.trim()) return;
-        addPaymentComment(selectedPayment.id, comment);
+        console.log('Add comment', selectedPayment.id, comment);
         setComment('');
         toast.success('Comment added');
     };
-
-    const PaymentCard = ({ payment }: { payment: PaymentRequest }) => (
-        <Card
-            className="mb-4 cursor-pointer hover:bg-accent/50 transition-colors relative group"
-            onClick={() => {
-                setSelectedPayment(payment);
-                // Don't open edit dialog here, just view details
-            }}
-        >
-            <CardHeader className="pb-2">
-                <div className="flex justify-between items-start">
-                    <div>
-                        <CardTitle className="text-base font-medium">{payment.description}</CardTitle>
-                        <p className="text-sm text-muted-foreground">ID: {payment.id}</p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                        <Badge variant={
-                            payment.status === 'COMPLETED' ? 'default' :
-                                payment.status === 'CONFIRMED' ? 'secondary' : 'outline'
-                        }>
-                            {payment.status}
-                        </Badge>
-                        {payment.status === 'REQUESTED' && (
-                            <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => handleEdit(e, payment)}>
-                                    <Edit className="h-4 w-4" />
-                                </Button>
-                                <AlertDialog>
-                                    <AlertDialogTrigger asChild>
-                                        <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={(e) => e.stopPropagation()}>
-                                            <Trash2 className="h-4 w-4" />
-                                        </Button>
-                                    </AlertDialogTrigger>
-                                    <AlertDialogContent onClick={(e) => e.stopPropagation()}>
-                                        <AlertDialogHeader>
-                                            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                                            <AlertDialogDescription>
-                                                This action cannot be undone. This will permanently delete the payment request.
-                                            </AlertDialogDescription>
-                                        </AlertDialogHeader>
-                                        <AlertDialogFooter>
-                                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                            <AlertDialogAction onClick={(e) => handleDelete(e, payment.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Delete</AlertDialogAction>
-                                        </AlertDialogFooter>
-                                    </AlertDialogContent>
-                                </AlertDialog>
-                            </div>
-                        )}
-                    </div>
-                </div>
-            </CardHeader>
-            <CardContent>
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div className="flex items-center text-muted-foreground">
-                        <DollarSign className="mr-2 h-4 w-4" />
-                        SAR {payment.amount.toLocaleString()}
-                    </div>
-                    <div className="flex items-center text-muted-foreground">
-                        <Calendar className="mr-2 h-4 w-4" />
-                        {format(new Date(payment.createdAt), 'MMM dd, yyyy')}
-                    </div>
-                    <div className="flex items-center text-muted-foreground">
-                        <FileText className="mr-2 h-4 w-4" />
-                        Shipment: {payment.shipmentId}
-                    </div>
-                </div>
-            </CardContent>
-        </Card>
-    );
 
     const PaymentList = ({ data }: { data: PaymentRequest[] }) => (
         <div className="space-y-4">
             {data.length === 0 ? (
                 <div className="text-center py-8 text-muted-foreground">No payments found</div>
             ) : (
-                data.map((payment) => <PaymentCard key={payment.id} payment={payment} />)
+                data.map((payment) => (
+                    payment.status === PaymentStatus.REQUESTED ?
+                        <PaymentCard
+                            key={payment.id}
+                            payment={payment}
+                            onClick={() => setSelectedPayment(payment)}
+                            onEdit={handleEdit}
+                            onDelete={handleDelete}
+                        /> :
+                        <PaymentCard
+                            key={payment.id}
+                            payment={payment}
+                            onClick={() => setSelectedPayment(payment)}
+                        />
+                ))
             )}
         </div>
     );
+
+    if (loading) {
+        return <div className="text-center py-8">Loading payments...</div>;
+    }
 
     return (
         <div className="space-y-6">
@@ -147,41 +199,28 @@ export function PaymentsView() {
                         className="max-w-sm"
                     />
                 </div>
-                {/* <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
-                    <DialogTrigger asChild>
-                        <Button style={{ backgroundColor: '#0bad85' }}>
-                            <Plus className="mr-2 h-4 w-4" />
-                            Create Payment
-                        </Button>
-                    </DialogTrigger>
-                    <DialogContent>
-                        <DialogHeader>
-                            <DialogTitle>Create Payment Request</DialogTitle>
-                            <DialogDescription>
-                                Create a new payment request for an importer.
-                            </DialogDescription>
-                        </DialogHeader>
-                        <AgentPaymentForm onSuccess={() => setCreateDialogOpen(false)} />
-                    </DialogContent>
-                </Dialog> */}
             </div>
 
-            <Tabs defaultValue="requested" className="space-y-6">
-                <TabsList className="grid w-full grid-cols-4 lg:w-[600px]">
-                    <TabsTrigger value="requested">REQUESTED</TabsTrigger>
-                    <TabsTrigger value="confirmed">CONFIRMED</TabsTrigger>
-                    <TabsTrigger value="completed">COMPLETED</TabsTrigger>
+            <Tabs defaultValue={PaymentStatus.REQUESTED} className="space-y-6">
+                <TabsList className="grid w-full grid-cols-5 lg:w-[800px]">
+                    <TabsTrigger value={PaymentStatus.REQUESTED}>REQUESTED</TabsTrigger>
+                    <TabsTrigger value={PaymentStatus.CONFIRMED}>CONFIRMED</TabsTrigger>
+                    <TabsTrigger value={PaymentStatus.REJECTED}>REJECTED</TabsTrigger>
+                    <TabsTrigger value={PaymentStatus.COMPLETED}>COMPLETED</TabsTrigger>
                     <TabsTrigger value="all">ALL PAYMENTS</TabsTrigger>
                 </TabsList>
 
-                <TabsContent value="requested">
-                    <PaymentList data={getPaymentsByStatus('REQUESTED')} />
+                <TabsContent value={PaymentStatus.REQUESTED}>
+                    <PaymentList data={getPaymentsByStatus(PaymentStatus.REQUESTED)} />
                 </TabsContent>
-                <TabsContent value="confirmed">
-                    <PaymentList data={getPaymentsByStatus('CONFIRMED')} />
+                <TabsContent value={PaymentStatus.CONFIRMED}>
+                    <PaymentList data={getPaymentsByStatus(PaymentStatus.CONFIRMED)} />
                 </TabsContent>
-                <TabsContent value="completed">
-                    <PaymentList data={getPaymentsByStatus('COMPLETED')} />
+                <TabsContent value={PaymentStatus.REJECTED}>
+                    <PaymentList data={getPaymentsByStatus(PaymentStatus.REJECTED)} />
+                </TabsContent>
+                <TabsContent value={PaymentStatus.COMPLETED}>
+                    <PaymentList data={getPaymentsByStatus(PaymentStatus.COMPLETED)} />
                 </TabsContent>
                 <TabsContent value="all">
                     <PaymentList data={filteredPayments} />
@@ -189,7 +228,10 @@ export function PaymentsView() {
             </Tabs>
 
             {/* Edit Dialog */}
-            <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+            <Dialog open={editDialogOpen} onOpenChange={() => {
+                setSelectedPayment(null);
+                setEditDialogOpen(false);
+            }}>
                 <DialogContent>
                     <DialogHeader>
                         <DialogTitle>Edit Payment Request</DialogTitle>
@@ -200,10 +242,8 @@ export function PaymentsView() {
                     {selectedPayment && (
                         <AgentPaymentForm
                             initialData={selectedPayment}
-                            onSuccess={() => {
-                                setEditDialogOpen(false);
-                                setSelectedPayment(null);
-                            }}
+                            shipment={selectedPayment.shipment!}
+                            onSubmit={handleEditSubmit}
                         />
                     )}
                 </DialogContent>
@@ -214,14 +254,8 @@ export function PaymentsView() {
                 open={!!selectedPayment && !editDialogOpen}
                 onOpenChange={(open) => !open && setSelectedPayment(null)}
                 payment={selectedPayment}
-                shipment={
-                    selectedPayment
-                        ? [...useAgentStore.getState().upcoming, ...useAgentStore.getState().pending, ...useAgentStore.getState().completed].find(
-                            (s) => s.id === selectedPayment.shipmentId
-                        )
-                        : undefined
-                }
-                onAddComment={addPaymentComment}
+                shipment={selectedPayment?.shipment}
+                onAddComment={handleAddComment}
             />
         </div>
     );
