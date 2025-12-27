@@ -1,4 +1,3 @@
-// app/api/payment/route.ts
 import { NextResponse } from 'next/server';
 import { Pool } from 'pg';
 import { PaymentData } from '@/types';
@@ -10,7 +9,6 @@ const pool = new Pool({
 export async function POST(request: Request) {
     try {
 
-        // Parse request body
         const paymentData: PaymentData = await request.json();
 
         // Validate required fields
@@ -25,7 +23,6 @@ export async function POST(request: Request) {
             );
         }
 
-        // Insert payment into database
         const query = `
             INSERT INTO payments (
                 shipment_id, payment_type, agent_id, importer_id, bayan_number, bill_number, 
@@ -74,7 +71,6 @@ export async function POST(request: Request) {
 
 export async function GET(request: Request) {
     try {
-        // Get query parameters
         const { searchParams } = new URL(request.url);
         const agentId = searchParams.get('agent_id');
         const importerId = searchParams.get('importer_id');
@@ -159,7 +155,6 @@ export async function PATCH(request: Request) {
 
         const { id, payment_status } = await request.json();
 
-        // Validate required fields
         if (!id || !payment_status) {
             return NextResponse.json(
                 { error: 'Payment ID and status are required' },
@@ -167,7 +162,6 @@ export async function PATCH(request: Request) {
             );
         }
 
-        // Update payment status in database
         const query = `
             UPDATE payments 
             SET payment_status = $1, 
@@ -201,5 +195,100 @@ export async function PATCH(request: Request) {
             { error: 'Internal Server Error' },
             { status: 500 }
         );
+    }
+}
+
+export async function PUT(request: Request) {
+    const client = await pool.connect();
+    try {
+        await client.query('BEGIN');
+
+        const {
+            id,
+            payment_type,
+            bayan_number,
+            bill_number,
+            amount,
+            payment_deadline,
+            description
+        } = await request.json();
+
+        if (!id || !payment_type || !amount || !payment_deadline) {
+            await client.query('ROLLBACK');
+            return NextResponse.json(
+                { error: 'Missing required fields' },
+                { status: 400 }
+            );
+        }
+
+        const checkQuery = `
+            SELECT payment_status 
+            FROM payments 
+            WHERE id = $1
+        `;
+        const checkResult = await client.query(checkQuery, [id]);
+
+        if (checkResult.rows.length === 0) {
+            await client.query('ROLLBACK');
+            return NextResponse.json(
+                { error: 'Payment not found' },
+                { status: 404 }
+            );
+        }
+
+        const nonEditableStatuses = ['CONFIRMED', 'COMPLETED', 'REJECTED'];
+        if (nonEditableStatuses.includes(checkResult.rows[0].payment_status)) {
+            await client.query('ROLLBACK');
+            return NextResponse.json(
+                { error: `Cannot update a ${checkResult.rows[0].payment_status} payment` },
+                { status: 400 }
+            );
+        }
+
+        const updateQuery = `
+            UPDATE payments 
+            SET 
+                payment_type = $1,
+                bayan_number = $2,
+                bill_number = $3,
+                amount = $4,
+                payment_deadline = $5,
+                description = $6,
+                updated_at = CURRENT_TIMESTAMP
+            WHERE id = $7
+            RETURNING *;
+        `;
+
+        const values = [
+            payment_type,
+            bayan_number,
+            bill_number,
+            amount,
+            new Date(payment_deadline).toISOString(),
+            description,
+            id
+        ];
+
+        const result = await client.query(updateQuery, values);
+
+        if (result.rowCount === 0) {
+            await client.query('ROLLBACK');
+            return NextResponse.json(
+                { error: 'Failed to update payment' },
+                { status: 400 }
+            );
+        }
+
+        await client.query('COMMIT');
+        return NextResponse.json(result.rows[0]);
+    } catch (error) {
+        await client.query('ROLLBACK');
+        console.error('Error updating payment:', error);
+        return NextResponse.json(
+            { error: 'Internal Server Error' },
+            { status: 500 }
+        );
+    } finally {
+        client.release();
     }
 }
