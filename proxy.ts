@@ -16,8 +16,8 @@ async function verifyToken(token: string): Promise<{ userId: string } | null> {
     }
 }
 
-export async function middleware(req: NextRequest) {
-    // Skipping middleware for auth-related routes
+export async function proxy(req: NextRequest) {
+    // Skipping proxy for auth-related routes
     if (req.nextUrl.pathname.startsWith('/api/auth')) {
         return NextResponse.next();
     }

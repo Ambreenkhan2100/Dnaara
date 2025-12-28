@@ -16,6 +16,7 @@ export async function POST(request: Request) {
     const client = await pool.connect();
     try {
         await client.query('BEGIN');
+        let relationshipStatus = 'INVITED';
 
         const { id, email, company_type }: InviteRequest = await request.json();
         let userProfile = null;
@@ -55,6 +56,7 @@ export async function POST(request: Request) {
                 );
 
                 userProfile = profileResult.rows[0] || null;
+                relationshipStatus = 'ACTIVE'
             }
         } else {
             const signupUrl = `${process.env.NEXT_PUBLIC_APP_URL}/signup`;
@@ -74,7 +76,7 @@ export async function POST(request: Request) {
             INSERT INTO importer_agent_relationship (
                 importer_id, agent_id, invited_email, 
                 relationship_status, invited_by
-            ) VALUES ($1, $2, $3, 'INVITED', $4)
+            ) VALUES ($1, $2, $3, '${relationshipStatus}', $4)
             RETURNING *;
         `;
 

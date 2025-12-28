@@ -42,13 +42,13 @@ export async function POST(req: Request) {
                 [fullName, companyEmail, hashedPassword, role.toLowerCase()]
             );
             const userId = userResult.rows[0].id;
-
+            
             // Create user profile
             await query(
                 `INSERT INTO user_profiles (
-          user_id, legal_business_name, trade_registration_number, national_address,
-          full_name, position, phone_number, national_id, company_email
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+                    user_id, legal_business_name, trade_registration_number, national_address,
+                    full_name, position, phone_number, national_id, company_email
+                    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
                 [
                     userId,
                     legalBusinessName,
@@ -61,7 +61,31 @@ export async function POST(req: Request) {
                     companyEmail,
                 ]
             );
+            
+            //Check any pending invitations and update relationships.
+            const pendingRelationships = await query(
+                `SELECT id, agent_id, importer_id 
+                    FROM importer_agent_relationship 
+                    WHERE invited_email = $1 
+                    AND relationship_status = 'INVITED'`,
+                [companyEmail]
+            );
 
+            if (pendingRelationships.rows.length > 0) {
+                for (const rel of pendingRelationships.rows) {
+                    const updateField = role.toUpperCase() === 'AGENT' ? 'agent_id' : 'importer_id';
+
+                    await query(
+                        `UPDATE importer_agent_relationship 
+                        SET ${updateField} = $1,
+                        relationship_status = 'ACTIVE',
+                        updated_at = NOW()
+                        WHERE id = $2`,
+                        [userId, rel.id]
+                    );
+                }
+            }
+            
             // Delete used OTPs
             await query('DELETE FROM verification_otps WHERE email = $1', [companyEmail]);
 
