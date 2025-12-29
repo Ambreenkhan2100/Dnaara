@@ -9,9 +9,7 @@ export enum RelationshipStatus {
 }
 
 export interface InviteRequest {
-    id: string;
     email: string;
-    company_type: CompanyType;
 }
 
 export interface ConnectedUser {

@@ -10,6 +10,7 @@ import { useLoader } from '@/components/providers/loader-provider';
 import { ConnectedUser, RelationshipStatus } from '@/types/invite';
 import { Badge } from '@/components/ui/badge';
 
+import { toast } from 'sonner';
 
 export function ImportersView() {
     const { fetchWithLoader } = useLoader();
@@ -32,8 +33,24 @@ export function ImportersView() {
         fetchImporters();
     }, [fetchImporters]);
 
-    const AddImporter = (email: string) => {
-
+    const AddImporter = async (email: string) => {
+        try {
+            setDialogOpen(false);
+            const response = await fetchWithLoader('/api/relationship/invite', {
+                method: 'POST',
+                body: JSON.stringify({ email }),
+            });
+            const result = await response.json();
+            if (response.ok) {
+                toast.success('Invitation sent successfully');
+                fetchImporters();
+            } else {
+                toast.error(result.error || 'Failed to add importer');
+            }
+        } catch (error) {
+            console.error('Error adding importer:', error);
+            toast.error('An unexpected error occurred');
+        }
     }
     return (
         <div className="space-y-6">

@@ -22,7 +22,6 @@ export function AgentImporterForm({ onSubmit }: AgentImporterFormProps) {
 
     const handleSubmission = (data: AddImporterInput) => {
         onSubmit(data.email);
-        toast.success('Importer added successfully');
         form.reset();
     };
 
