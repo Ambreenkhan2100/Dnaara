@@ -6,16 +6,13 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { addImporterSchema, type AddImporterInput } from '@/lib/schemas';
-import { useAgentStore } from '@/lib/store/useAgentStore';
 import { toast } from 'sonner';
 
 interface AgentImporterFormProps {
-    onSuccess?: () => void;
+    onSubmit: (email: string) => void;
 }
 
-export function AgentImporterForm({ onSuccess }: AgentImporterFormProps) {
-    const addImporter = useAgentStore((state) => state.addImporter);
-
+export function AgentImporterForm({ onSubmit }: AgentImporterFormProps) {
     const form = useForm<AddImporterInput>({
         resolver: zodResolver(addImporterSchema),
         defaultValues: {
@@ -23,16 +20,15 @@ export function AgentImporterForm({ onSuccess }: AgentImporterFormProps) {
         },
     });
 
-    const onSubmit = (data: AddImporterInput) => {
-        addImporter(data);
+    const handleSubmission = (data: AddImporterInput) => {
+        onSubmit(data.email);
         toast.success('Importer added successfully');
         form.reset();
-        onSuccess?.();
     };
 
     return (
         <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <form onSubmit={form.handleSubmit(handleSubmission)} className="space-y-4">
                 <FormField
                     control={form.control}
                     name="email"

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { query } from '@/lib/db';
 import { hashPassword, generateToken } from '@/lib/auth';
+import { RelationshipStatus } from '@/types/invite';
 
 export async function POST(req: Request) {
     try {
@@ -42,7 +43,7 @@ export async function POST(req: Request) {
                 [fullName, companyEmail, hashedPassword, role.toLowerCase()]
             );
             const userId = userResult.rows[0].id;
-            
+
             // Create user profile
             await query(
                 `INSERT INTO user_profiles (
@@ -61,13 +62,13 @@ export async function POST(req: Request) {
                     companyEmail,
                 ]
             );
-            
+
             //Check any pending invitations and update relationships.
             const pendingRelationships = await query(
                 `SELECT id, agent_id, importer_id 
                     FROM importer_agent_relationship 
                     WHERE invited_email = $1 
-                    AND relationship_status = 'INVITED'`,
+                    AND relationship_status = ${RelationshipStatus.INVITED}`,
                 [companyEmail]
             );
 
@@ -78,14 +79,14 @@ export async function POST(req: Request) {
                     await query(
                         `UPDATE importer_agent_relationship 
                         SET ${updateField} = $1,
-                        relationship_status = 'ACTIVE',
+                        relationship_status = ${RelationshipStatus.ACTIVE},
                         updated_at = NOW()
                         WHERE id = $2`,
                         [userId, rel.id]
                     );
                 }
             }
-            
+
             // Delete used OTPs
             await query('DELETE FROM verification_otps WHERE email = $1', [companyEmail]);
 

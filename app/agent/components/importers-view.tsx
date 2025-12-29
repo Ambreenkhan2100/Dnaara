@@ -1,18 +1,40 @@
 'use client';
 
-import { useState } from 'react';
-import { useAgentStore } from '@/lib/store/useAgentStore';
+import { useState, useEffect, useCallback } from 'react';
 import { DataTable } from '@/components/tables/data-table';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { StatusBadge } from '@/components/shared/status-badge';
 import { AgentImporterForm } from '@/components/forms/agent-importer-form';
 import { Plus } from 'lucide-react';
+import { useLoader } from '@/components/providers/loader-provider';
+import { ConnectedUser, RelationshipStatus } from '@/types/invite';
+import { Badge } from '@/components/ui/badge';
+
 
 export function ImportersView() {
-    const { linkedImporters } = useAgentStore();
+    const { fetchWithLoader } = useLoader();
+    const [importers, setImporters] = useState<ConnectedUser[]>([]);
     const [dialogOpen, setDialogOpen] = useState(false);
 
+    const fetchImporters = useCallback(async () => {
+        try {
+            const response = await fetchWithLoader('/api/relationship?fetch=importers');
+            const result = await response.json();
+            if (result.data) {
+                setImporters(result.data);
+            }
+        } catch (error) {
+            console.error('Error fetching importers:', error);
+        }
+    }, [fetchWithLoader]);
+
+    useEffect(() => {
+        fetchImporters();
+    }, [fetchImporters]);
+
+    const AddImporter = (email: string) => {
+
+    }
     return (
         <div className="space-y-6">
             <div className="flex items-center justify-between">
@@ -34,35 +56,41 @@ export function ImportersView() {
                                 Enter the importer's details to add them to your list.
                             </DialogDescription>
                         </DialogHeader>
-                        <AgentImporterForm onSuccess={() => setDialogOpen(false)} />
+                        <AgentImporterForm onSubmit={AddImporter} />
                     </DialogContent>
                 </Dialog>
             </div>
 
             <DataTable
-                data={linkedImporters}
+                data={importers}
                 columns={[
                     {
                         header: 'Company Name',
-                        accessor: (row) => row.companyName || '-',
+                        accessor: 'legal_business_name',
                     },
                     {
                         header: 'Importer Name',
-                        accessor: 'name',
+                        accessor: 'full_name',
                     },
                     {
                         header: 'Importer Email',
-                        accessor: 'email',
+                        accessor: 'company_email',
                     },
                     {
                         header: 'Importer Phone',
-                        accessor: (row) => row.phone || '-',
+                        accessor: 'phone_number',
                     },
                     {
                         header: 'Status',
-                        accessor: (row) => (
-                            <StatusBadge status={row.status === 'active' ? 'active' : 'pending'} />
-                        ),
+                        accessor: (row) => {
+                            return (
+                                <Badge
+                                    variant={row.relationship_status === RelationshipStatus.ACTIVE ? 'default' : 'destructive'}
+                                >
+                                    {row.relationship_status}
+                                </Badge>
+                            );
+                        },
                     },
                 ]}
                 emptyMessage="No importers linked yet"

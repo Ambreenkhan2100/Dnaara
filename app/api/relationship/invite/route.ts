@@ -1,16 +1,11 @@
 import { NextResponse } from 'next/server';
 import { Pool } from 'pg';
 import { sendEmail } from '@/lib/email';
+import { CompanyType, InviteRequest } from '@/types/invite';
 
 const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
 });
-
-interface InviteRequest {
-    id: string;
-    email: string;
-    company_type: 'IMPORTER' | 'AGENT';
-}
 
 export async function POST(request: Request) {
     const client = await pool.connect();
@@ -21,7 +16,7 @@ export async function POST(request: Request) {
         const { id, email, company_type }: InviteRequest = await request.json();
         let userProfile = null;
 
-        if (!id || !email || !company_type || !['IMPORTER', 'AGENT'].includes(company_type)) {
+        if (!id || !email || !company_type || !Object.values(CompanyType).includes(company_type)) {
             await client.query('ROLLBACK');
             return NextResponse.json(
                 { error: 'Invalid request data' },
