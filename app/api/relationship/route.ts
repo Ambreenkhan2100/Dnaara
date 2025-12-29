@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { Pool } from 'pg';
+import { email } from 'zod';
 
 const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
@@ -58,7 +59,7 @@ export async function GET(request: Request) {
                         full_name: null,
                         position: null,
                         phone_number: null,
-                        company_email: null,
+                        company_email: relationship.invited_email,
                         national_id: null,
                     })
                 };
