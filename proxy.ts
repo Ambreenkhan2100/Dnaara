@@ -3,13 +3,13 @@ import { NextRequest, NextResponse } from "next/server";
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
 
-async function verifyToken(token: string): Promise<{ userId: string } | null> {
+async function verifyToken(token: string): Promise<{ userId: string, role: string } | null> {
     try {
         const { payload } = await jwtVerify(
             token,
             new TextEncoder().encode(JWT_SECRET)
         );
-        return { userId: payload.userId as string };
+        return { userId: payload.userId as string, role: payload.role as string };
     } catch (error) {
         console.error('Error verifying token:', error);
         return null;
@@ -44,6 +44,7 @@ export async function proxy(req: NextRequest) {
     // Add user ID to request headers for API routes to use
     const requestHeaders = new Headers(req.headers);
     requestHeaders.set('x-user-id', verified.userId);
+    requestHeaders.set('x-user-role', verified.role);
 
     return NextResponse.next({
         request: {

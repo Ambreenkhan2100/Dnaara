@@ -12,8 +12,10 @@ export async function POST(request: Request) {
     try {
         await client.query('BEGIN');
         let relationshipStatus = 'INVITED';
+        const id = request.headers.get('x-user-id');
+        const company_type = request.headers.get('x-user-role')?.toUpperCase() as CompanyType
 
-        const { id, email, company_type }: InviteRequest = await request.json();
+        const { email }: InviteRequest = await request.json();
         let userProfile = null;
 
         if (!id || !email || !company_type || !Object.values(CompanyType).includes(company_type)) {
