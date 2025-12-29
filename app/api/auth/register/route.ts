@@ -66,9 +66,9 @@ export async function POST(req: Request) {
             //Check any pending invitations and update relationships.
             const pendingRelationships = await query(
                 `SELECT id, agent_id, importer_id 
-                    FROM importer_agent_relationship 
-                    WHERE invited_email = $1 
-                    AND relationship_status = ${RelationshipStatus.INVITED}`,
+                    FROM importer_agent_relationship iar
+                    WHERE iar.invited_email = $1 
+                    AND iar.relationship_status = ${RelationshipStatus.INVITED}`,
                 [companyEmail]
             );
 
