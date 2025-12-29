@@ -19,7 +19,7 @@ export function ImportersView() {
 
     const fetchImporters = useCallback(async () => {
         try {
-            const response = await fetchWithLoader('/api/relationship?fetch=importers');
+            const response = await fetchWithLoader('/api/relationship');
             const result = await response.json();
             if (result.data) {
                 setImporters(result.data);

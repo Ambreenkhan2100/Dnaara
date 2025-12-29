@@ -8,18 +8,10 @@ const pool = new Pool({
 export async function GET(request: Request) {
     const client = await pool.connect();
     try {
-        const { searchParams } = new URL(request.url);
-        const fetchParam = searchParams.get('fetch');
+        const userRole = request.headers.get('x-user-role');
         const userId = request.headers.get("x-user-id");
 
-        if ((fetchParam !== 'agents' && fetchParam !== 'importers') || !userId) {
-            return NextResponse.json(
-                { error: 'Invalid query parameters. Expected fetch=agent|importer&id=:id' },
-                { status: 400 }
-            );
-        }
-
-        const isAgentFetch = fetchParam === 'agents';
+        const isAgentFetch = userRole !== 'agent';
         const relationshipsQuery = `
             SELECT * FROM importer_agent_relationship 
             WHERE ${isAgentFetch ? 'importer_id' : 'agent_id'} = $1`;
@@ -49,18 +41,28 @@ export async function GET(request: Request) {
         const result = relationshipsResult.rows
             .map(relationship => {
                 const targetId = isAgentFetch ? relationship.agent_id : relationship.importer_id;
-                const profile = profilesResult.rows.find(p => p.user_id === targetId);
+                const profile = targetId ? profilesResult.rows.find(p => p.user_id === targetId) : null;
 
-                return profile ? {
+                return {
                     id: relationship.id,
                     relationship_status: relationship.relationship_status,
                     created_at: relationship.created_at,
-                    ...profile,
+                    ...(profile || {}),
                     importer_id: relationship.importer_id,
-                    agent_id: relationship.agent_id
-                } : null;
-            })
-            .filter(Boolean);
+                    agent_id: relationship.agent_id,
+                    ...(!profile && {
+                        user_id: null,
+                        legal_business_name: null,
+                        trade_registration_number: null,
+                        national_address: null,
+                        full_name: null,
+                        position: null,
+                        phone_number: null,
+                        company_email: null,
+                        national_id: null,
+                    })
+                };
+            });
 
         return NextResponse.json({ data: result });
     } catch (error) {
