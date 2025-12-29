@@ -1,15 +1,15 @@
-import { jwtVerify } from "jose";
+import jwt from 'jsonwebtoken';
 import { NextRequest, NextResponse } from "next/server";
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
 
 async function verifyToken(token: string): Promise<{ userId: string, role: string } | null> {
     try {
-        const { payload } = await jwtVerify(
-            token,
-            new TextEncoder().encode(JWT_SECRET)
-        );
-        return { userId: payload.userId as string, role: payload.role as string };
+        const decoded = jwt.verify(token, JWT_SECRET) as { userId: string, role: string };
+        return { 
+            userId: decoded.userId,
+            role: decoded.role
+        };
     } catch (error) {
         console.error('Error verifying token:', error);
         return null;
