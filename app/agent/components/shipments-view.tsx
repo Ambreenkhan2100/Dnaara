@@ -266,13 +266,15 @@ export function ShipmentsView() {
     };
 
     const ShipmentCard = ({ request, showActions = false, showUpdate = false }: { request: Shipment, showActions?: boolean, showUpdate?: boolean }) => (
-        <Card key={request.id} className="mb-4 cursor-pointer hover:bg-accent/50 transition-colors" onClick={() => {
-            router.push(`/agent/shipments/${request.id}`);
-        }}>
+        <Card key={request.id} className="mb-4 transition-colors">
             <CardHeader className="pb-2">
                 <div className="flex justify-between items-start">
                     <div>
-                        <CardTitle className="text-lg flex items-center gap-2">
+                        <CardTitle className="text-lg flex items-center gap-2 cursor-pointer hover:text-primary"
+                            onClick={() => {
+                                router.push(`/agent/shipments/${request.id}`);
+                            }}
+                        >
                             {getIcon(request.type)}
                             {request.importer?.name || 'Unknown Importer'}
                         </CardTitle>
