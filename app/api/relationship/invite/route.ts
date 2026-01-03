@@ -62,7 +62,7 @@ export async function POST(request: Request) {
                 email,
                 'You have been invited to join Dnaara',
                 `You have been invited to join Dnaara as a ${company_type === 'IMPORTER' ? 'importer' : 'agent'}. 
-                Click here to sign up: ${signupUrl}`
+                Click here to sign up: https://dnaara-v1.vercel.app/signup`
             );
         }
 
