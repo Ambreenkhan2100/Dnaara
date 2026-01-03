@@ -1,39 +1,15 @@
 import { NextResponse } from 'next/server';
 import { Pool } from 'pg';
-import { jwtVerify } from 'jose';
 
 const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
 });
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
 
-async function getUserIdFromToken(request: Request): Promise<string | null> {
-    const authHeader = request.headers.get('authorization');
-
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-        return null;
-    }
-
-    const token = authHeader.split(' ')[1];
-    try {
-        const { payload } = await jwtVerify(token, new TextEncoder().encode(JWT_SECRET));
-        return payload.userId as string;
-    } catch (error) {
-        console.error('Error verifying token:', error);
-        return null;
-    }
-}
-
-export async function GET(
-    request: Request,
+export async function GET(request: Request,
     { params }: { params: Promise<{ id: string }> }
 ) {
-    const userId = await getUserIdFromToken(request);
-    if (!userId) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
+    const userId = request.headers.get('x-user-id');
     const { id } = await params;
 
     const client = await pool.connect();
