@@ -12,7 +12,7 @@ import { PaymentDetailsDialog } from '@/components/shared/payment-details-dialog
 
 export function PaymentsView() {
     const { currentUserId } = useRoleStore();
-    const { fetchWithLoader } = useLoader();
+    const { fetchFn } = useLoader();
     const [payments, setPayments] = useState<PaymentRequest[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
@@ -22,7 +22,7 @@ export function PaymentsView() {
     const fetchPayments = async () => {
         if (!currentUserId) return;
         try {
-            const res = await fetchWithLoader(`/api/payment?importer_id=${currentUserId}`);
+            const res = await fetchFn(`/api/payment?importer_id=${currentUserId}`);
             if (!res.ok) throw new Error('Failed to fetch payments');
             const data = await res.json();
 
@@ -99,7 +99,7 @@ export function PaymentsView() {
 
     const acceptRejectPayment = async (id: string, status: PaymentStatus.CONFIRMED | PaymentStatus.REJECTED) => {
         try {
-            const res = await fetchWithLoader('/api/payment', {
+            const res = await fetchFn('/api/payment', {
                 method: 'PATCH',
                 headers: {
                     'Content-Type': 'application/json',
