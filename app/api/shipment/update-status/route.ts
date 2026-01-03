@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
 import { Pool } from 'pg';
-import { jwtVerify } from 'jose';
 import { uploadBase64ToSupabase } from '@/lib/utils/fileupload';
 
 const pool = new Pool({

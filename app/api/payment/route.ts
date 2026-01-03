@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { Pool } from 'pg';
 import { PaymentData } from '@/types';
+import { createNotification } from '@/lib/notifications';
 
 const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
@@ -55,6 +56,15 @@ export async function POST(request: Request) {
                 );
             }
 
+            const notification = {
+                recipientId: paymentData.importer_id,
+                senderId: paymentData.agent_id,
+                title: 'Payment Created',
+                message: `Payment for shipment bill number ${paymentData.bill_number} has been created`,
+                entityType: 'PAYMENT',
+                entityId: result.rows[0].id
+            }
+            createNotification(notification)
             await client.query('COMMIT');
             return NextResponse.json(result.rows[0], { status: 201 });
         } finally {

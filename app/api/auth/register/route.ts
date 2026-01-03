@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { query } from '@/lib/db';
 import { hashPassword, generateToken } from '@/lib/auth';
+import { RelationshipStatus } from '@/types/invite';
 
 export async function POST(req: Request) {
     try {
@@ -46,9 +47,9 @@ export async function POST(req: Request) {
             // Create user profile
             await query(
                 `INSERT INTO user_profiles (
-          user_id, legal_business_name, trade_registration_number, national_address,
-          full_name, position, phone_number, national_id, company_email
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+                    user_id, legal_business_name, trade_registration_number, national_address,
+                    full_name, position, phone_number, national_id, company_email
+                    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
                 [
                     userId,
                     legalBusinessName,
@@ -61,6 +62,30 @@ export async function POST(req: Request) {
                     companyEmail,
                 ]
             );
+
+            //Check any pending invitations and update relationships.
+            const pendingRelationships = await query(
+                `SELECT id, agent_id, importer_id 
+                    FROM importer_agent_relationship iar
+                    WHERE iar.invited_email = $1 
+                    AND iar.relationship_status = '${RelationshipStatus.INVITED}'`,
+                [companyEmail]
+            );
+
+            if (pendingRelationships.rows.length > 0) {
+                for (const rel of pendingRelationships.rows) {
+                    const updateField = role.toUpperCase() === 'AGENT' ? 'agent_id' : 'importer_id';
+
+                    await query(
+                        `UPDATE importer_agent_relationship 
+                        SET ${updateField} = $1,
+                        relationship_status = '${RelationshipStatus.ACTIVE}',
+                        updated_at = NOW()
+                        WHERE id = $2`,
+                        [userId, rel.id]
+                    );
+                }
+            }
 
             // Delete used OTPs
             await query('DELETE FROM verification_otps WHERE email = $1', [companyEmail]);

@@ -1,23 +1,23 @@
-import { jwtVerify } from "jose";
+import jwt from 'jsonwebtoken';
 import { NextRequest, NextResponse } from "next/server";
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
 
-async function verifyToken(token: string): Promise<{ userId: string } | null> {
+async function verifyToken(token: string): Promise<{ userId: string, role: string } | null> {
     try {
-        const { payload } = await jwtVerify(
-            token,
-            new TextEncoder().encode(JWT_SECRET)
-        );
-        return { userId: payload.userId as string };
+        const decoded = jwt.verify(token, JWT_SECRET) as { userId: string, role: string };
+        return { 
+            userId: decoded.userId,
+            role: decoded.role
+        };
     } catch (error) {
         console.error('Error verifying token:', error);
         return null;
     }
 }
 
-export async function middleware(req: NextRequest) {
-    // Skipping middleware for auth-related routes
+export async function proxy(req: NextRequest) {
+    // Skipping proxy for auth-related routes
     if (req.nextUrl.pathname.startsWith('/api/auth')) {
         return NextResponse.next();
     }
@@ -44,6 +44,7 @@ export async function middleware(req: NextRequest) {
     // Add user ID to request headers for API routes to use
     const requestHeaders = new Headers(req.headers);
     requestHeaders.set('x-user-id', verified.userId);
+    requestHeaders.set('x-user-role', verified.role);
 
     return NextResponse.next({
         request: {
