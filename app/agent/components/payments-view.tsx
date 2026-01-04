@@ -24,7 +24,7 @@ import { fa } from 'zod/v4/locales';
 
 export function PaymentsView() {
     const { currentUserId } = useRoleStore();
-    const { fetchWithLoader } = useLoader();
+    const { fetchFn } = useLoader();
     const [payments, setPayments] = useState<PaymentRequest[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
@@ -36,7 +36,7 @@ export function PaymentsView() {
     const fetchPayments = async () => {
         if (!currentUserId) return;
         try {
-            const res = await fetchWithLoader(`/api/payment?agent_id=${currentUserId}`);
+            const res = await fetchFn(`/api/payment?agent_id=${currentUserId}`);
             if (!res.ok) throw new Error('Failed to fetch payments');
             const data = await res.json();
 
@@ -87,7 +87,7 @@ export function PaymentsView() {
     const handleDelete = async (e: React.MouseEvent<HTMLButtonElement>, id: string) => {
         e.stopPropagation();
         try {
-            const res = await fetchWithLoader('/api/payment', {
+            const res = await fetchFn('/api/payment', {
                 method: 'DELETE',
                 headers: {
                     'Content-Type': 'application/json',
@@ -122,7 +122,7 @@ export function PaymentsView() {
         setEditDialogOpen(false)
 
         try {
-            const res = await fetchWithLoader('/api/payment', {
+            const res = await fetchFn('/api/payment', {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',

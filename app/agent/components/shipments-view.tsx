@@ -25,7 +25,7 @@ import { PaymentStatus } from '@/types/enums/PaymentStatus';
 
 export function ShipmentsView() {
     const router = useRouterWithLoader();
-    const { rejectRequest, updateShipment, linkedImporters } = useAgentStore();
+    const { rejectRequest, linkedImporters } = useAgentStore();
     const [searchQuery, setSearchQuery] = useState('');
     const [actionNote, setActionNote] = useState('');
     const [updateFile, setUpdateFile] = useState<File | null>(null);
@@ -36,7 +36,7 @@ export function ShipmentsView() {
     const [shipments, setShipments] = useState<Shipment[]>([]);
     const [loading, setLoading] = useState(true);
 
-    const { fetchWithLoader } = useLoader();
+    const { fetchFn: fetchWithLoader } = useLoader();
     const fetchShipments = async () => {
         try {
             const token = localStorage.getItem('token');
@@ -266,11 +266,15 @@ export function ShipmentsView() {
     };
 
     const ShipmentCard = ({ request, showActions = false, showUpdate = false }: { request: Shipment, showActions?: boolean, showUpdate?: boolean }) => (
-        <Card key={request.id} className="mb-4">
+        <Card key={request.id} className="mb-4 transition-colors">
             <CardHeader className="pb-2">
                 <div className="flex justify-between items-start">
                     <div>
-                        <CardTitle className="text-lg flex items-center gap-2">
+                        <CardTitle className="text-lg flex items-center gap-2 cursor-pointer hover:text-primary"
+                            onClick={() => {
+                                router.push(`/agent/shipments/${request.id}`);
+                            }}
+                        >
                             {getIcon(request.type)}
                             {request.importer?.name || 'Unknown Importer'}
                         </CardTitle>
