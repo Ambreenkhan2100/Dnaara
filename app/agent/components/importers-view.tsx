@@ -13,13 +13,13 @@ import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 
 export function ImportersView() {
-    const { fetchWithLoader } = useLoader();
+    const { fetchFn } = useLoader();
     const [importers, setImporters] = useState<ConnectedUser[]>([]);
     const [dialogOpen, setDialogOpen] = useState(false);
 
     const fetchImporters = useCallback(async () => {
         try {
-            const response = await fetchWithLoader('/api/relationship');
+            const response = await fetchFn('/api/relationship');
             const result = await response.json();
             if (result.data) {
                 setImporters(result.data);
@@ -27,7 +27,7 @@ export function ImportersView() {
         } catch (error) {
             console.error('Error fetching importers:', error);
         }
-    }, [fetchWithLoader]);
+    }, [fetchFn]);
 
     useEffect(() => {
         fetchImporters();
@@ -36,7 +36,7 @@ export function ImportersView() {
     const AddImporter = async (email: string) => {
         try {
             setDialogOpen(false);
-            const response = await fetchWithLoader('/api/relationship/invite', {
+            const response = await fetchFn('/api/relationship/invite', {
                 method: 'POST',
                 body: JSON.stringify({ email }),
             });

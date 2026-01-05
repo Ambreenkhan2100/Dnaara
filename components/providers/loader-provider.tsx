@@ -9,7 +9,7 @@ interface LoaderContextType {
     hideLoader: () => void;
     showPageLoader: () => void;
     hidePageLoader: () => void;
-    fetchWithLoader: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
+    fetchFn: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
 }
 
 const LoaderContext = createContext<LoaderContextType | undefined>(undefined);
@@ -24,7 +24,7 @@ export const LoaderProvider = ({ children }: { children: React.ReactNode }) => {
     const showPageLoader = useCallback(() => setIsPageLoading(true), []);
     const hidePageLoader = useCallback(() => setIsPageLoading(false), []);
 
-    const fetchWithLoader = useCallback(
+    const fetchFn = useCallback(
         async (input: RequestInfo | URL, init?: RequestInit) => {
             showLoader();
             try {
@@ -49,7 +49,7 @@ export const LoaderProvider = ({ children }: { children: React.ReactNode }) => {
     );
 
     return (
-        <LoaderContext.Provider value={{ isLoading, isPageLoading, showLoader, hideLoader, showPageLoader, hidePageLoader, fetchWithLoader }}>
+        <LoaderContext.Provider value={{ isLoading, isPageLoading, showLoader, hideLoader, showPageLoader, hidePageLoader, fetchFn }}>
             {children}
         </LoaderContext.Provider>
     );

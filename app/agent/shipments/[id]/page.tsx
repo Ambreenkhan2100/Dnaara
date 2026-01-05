@@ -3,23 +3,22 @@
 import { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from '@/components/ui/breadcrumb';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { FileText, Upload, Truck, Clock, MapPin, User, DollarSign, Calendar } from 'lucide-react';
+import { FileText, Truck, Clock, MapPin, User, DollarSign, Calendar } from 'lucide-react';
 import type { Shipment } from '@/types/shipment';
 import { useLoader } from '@/components/providers/loader-provider';
 
-export default function ShipmentDetailsPage() {
+export default function AgentShipmentDetailsPage() {
     const router = useRouter();
     const params = useParams();
     const [shipment, setShipment] = useState<Shipment | null>(null);
     const [error, setError] = useState<string | null>(null);
 
-    const { fetchFn } = useLoader()
+    const { fetchFn } = useLoader();
 
     useEffect(() => {
         const fetchShipment = async () => {
@@ -47,13 +46,13 @@ export default function ShipmentDetailsPage() {
         if (params.id) {
             fetchShipment();
         }
-    }, [params.id]);
+    }, [params.id, fetchFn]);
 
     if (error || !shipment) {
         return (
             <div className="flex flex-col items-center justify-center min-h-[50vh] gap-4">
                 <p className="text-destructive font-medium">{error || 'Shipment not found'}</p>
-                <Button onClick={() => router.push('/importer')}>Go Back</Button>
+                <Button onClick={() => router.push('/agent')}>Go Back</Button>
             </div>
         );
     }
@@ -66,11 +65,11 @@ export default function ShipmentDetailsPage() {
             <Breadcrumb>
                 <BreadcrumbList>
                     <BreadcrumbItem>
-                        <BreadcrumbLink href="/importer">Dashboard</BreadcrumbLink>
+                        <BreadcrumbLink href="/agent">Dashboard</BreadcrumbLink>
                     </BreadcrumbItem>
                     <BreadcrumbSeparator />
                     <BreadcrumbItem>
-                        <BreadcrumbLink href="/importer/shipments">Shipments</BreadcrumbLink>
+                        <BreadcrumbLink href="/agent/shipments">Shipments</BreadcrumbLink>
                     </BreadcrumbItem>
                     <BreadcrumbSeparator />
                     <BreadcrumbItem>
@@ -225,26 +224,26 @@ export default function ShipmentDetailsPage() {
 
                 {/* Sidebar */}
                 <div className="space-y-6">
-                    {/* Agent Details */}
-                    {shipment.agent && (
+                    {/* Importer Details (Instead of Agent Details) */}
+                    {shipment.importer && (
                         <Card>
                             <CardHeader>
                                 <CardTitle className="flex items-center gap-2">
                                     <User className="w-5 h-5" />
-                                    Agent Details
+                                    Importer Details
                                 </CardTitle>
                             </CardHeader>
                             <CardContent>
                                 <div className="space-y-3">
                                     <div>
                                         <Label className="text-xs text-muted-foreground">Name</Label>
-                                        <div className="font-medium">{shipment.agent.name}</div>
+                                        <div className="font-medium">{shipment.importer.name}</div>
                                     </div>
                                     <div>
                                         <Label className="text-xs text-muted-foreground">Email</Label>
-                                        <div className="font-medium break-all">{shipment.agent.email}</div>
+                                        <div className="font-medium break-all">{shipment.importer.email}</div>
                                     </div>
-                                    <Button variant="outline" className="w-full mt-2" size="sm">Contact Agent</Button>
+                                    <Button variant="outline" className="w-full mt-2" size="sm">Contact Importer</Button>
                                 </div>
                             </CardContent>
                         </Card>

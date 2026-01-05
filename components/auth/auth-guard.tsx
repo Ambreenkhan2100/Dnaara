@@ -16,7 +16,7 @@ export function AuthGuard({ children, allowedRoles }: AuthGuardProps) {
     const pathname = usePathname();
     const { setRole, clearRole, currentRole } = useRoleStore();
     const [isLoading, setIsLoading] = useState(true);
-    const { fetchWithLoader } = useLoader();
+    const { fetchFn: fetchWithLoader } = useLoader();
     useEffect(() => {
         const checkAuth = async () => {
             const token = localStorage.getItem('token');
