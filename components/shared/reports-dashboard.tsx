@@ -37,65 +37,68 @@ export function ReportsDashboard() {
     const [activeTab, setActiveTab] = useState('shipments');
 
     useEffect(() => {
-        const fetchData = async () => {
-            try {
-                const apiCalls = [
-                    // Shipment summary
-                    fetchFn('/api/reports/shipments-summary')
-                        .then(response => response.json())
-                        .then(data => {
-                            setShipmentStats({
-                                upcoming: data.upcoming,
-                                confirmed: data.confirmed,
-                                completed: data.completed
-                            });
-                        }),
+        if (activeTab === 'shipments') {
+            const fetchData = async () => {
+                try {
+                    const apiCalls = [
+                        // Shipment summary
+                        fetchFn('/api/reports/shipments-summary')
+                            .then(response => response.json())
+                            .then(data => {
+                                setShipmentStats({
+                                    upcoming: data.upcoming,
+                                    confirmed: data.confirmed,
+                                    completed: data.completed
+                                });
+                            }),
 
-                    // Shipment types
-                    fetchFn('/api/reports/shipment-type-distribution')
-                        .then(response => response.json())
-                        .then(typesData => {
-                            setShipmentTypes(typesData.map((item: any) => ({
-                                type: item.type,
-                                count: item.count
-                            })));
-                        }),
+                        // Shipment types
+                        fetchFn('/api/reports/shipment-type-distribution')
+                            .then(response => response.json())
+                            .then(typesData => {
+                                setShipmentTypes(typesData.map((item: any) => ({
+                                    type: item.type,
+                                    count: item.count
+                                })));
+                            }),
 
-                    // Monthly data
-                    fetchFn('/api/reports/shipments-over-time')
-                        .then(response => response.json())
-                        .then(monthlyData => {
-                            setMonthlyData(monthlyData.map((item: any) => ({
-                                month: item.month,
-                                shipments: item.count
-                            })));
-                        }),
+                        // Monthly data
+                        fetchFn('/api/reports/shipments-over-time')
+                            .then(response => response.json())
+                            .then(monthlyData => {
+                                setMonthlyData(monthlyData.map((item: any) => ({
+                                    month: item.month,
+                                    shipments: item.count
+                                })));
+                            }),
 
-                    // Shipments by status
-                    fetchFn('/api/reports/shipments-by-status')
-                        .then(response => response.json())
-                        .then(statusData => {
-                            const statusStats = statusData.reduce((acc: ShipmentStatusStats, item: any) => {
-                                const status = item.status?.toUpperCase() || 'PENDING_DOCS';
-                                acc[status] = item.count;
-                                return acc;
-                            }, {} as ShipmentStatusStats);
+                        // Shipments by status
+                        fetchFn('/api/reports/shipments-by-status')
+                            .then(response => response.json())
+                            .then(statusData => {
+                                const statusStats = statusData.reduce((acc: ShipmentStatusStats, item: any) => {
+                                    const status = item.status?.toUpperCase() || 'PENDING_DOCS';
+                                    acc[status] = item.count;
+                                    return acc;
+                                }, {} as ShipmentStatusStats);
 
-                            setShipmentStatusStats(prev => ({
-                                ...prev,
-                                ...statusStats
-                            }));
-                        })
-                ];
+                                setShipmentStatusStats(prev => ({
+                                    ...prev,
+                                    ...statusStats
+                                }));
+                            })
+                    ];
 
-                await Promise.all(apiCalls);
+                    await Promise.all(apiCalls);
 
-            } catch (error) {
-                console.error('Error fetching reports:', error);
-            }
-        };
 
-        fetchData();
+                } catch (error) {
+                    console.error('Error fetching reports:', error);
+                }
+            };
+
+            fetchData();
+        }
     }, [fetchFn, activeTab]);
 
     useEffect(() => {
