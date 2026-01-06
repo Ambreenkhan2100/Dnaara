@@ -1,47 +1,97 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { TrendingUp, TrendingDown, DollarSign, Package, Ship, Plane, Truck, Clock, Users, Wallet, MapPin, Star } from 'lucide-react';
+import { TrendingUp, TrendingDown, Package, Clock, Users, Wallet, MapPin, Star } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, AreaChart, Area } from 'recharts';
+import { useLoader } from '../providers/loader-provider';
+import { ShipmentStatusStats } from '@/types/shipmentStatusStats';
 
 export function ReportsDashboard() {
     const [paymentFilter, setPaymentFilter] = useState('all');
+    const { fetchFn } = useLoader();
+    const [shipmentStats, setShipmentStats] = useState({
+        upcoming: { count: 0, totalDutyCharges: 0 },
+        confirmed: { count: 0, totalDutyCharges: 0 },
+        completed: { count: 0, totalDutyCharges: 0 }
+    });
+    const [shipmentTypes, setShipmentTypes] = useState([]);
+    const [monthlyData, setMonthlyData] = useState<{ month: string; shipments: number }[]>([]);
+    const [shipmentStatusStats, setShipmentStatusStats] = useState({
+        CONFIRMED: 0,
+        CLEARING_IN_PROGRESS: 0,
+        IN_TRANSIT: 0,
+        AT_PORT: 0,
+        PENDING_DOCS: 0,
+        ON_HOLD_BY_CUSTOMS: 0,
+        REJECTED: 0,
+    });
 
-    // --- Mock Data ---
+    useEffect(() => {
+        const fetchData = async () => {
+            try {
+                const apiCalls = [
+                    // Shipment summary
+                    fetchFn('/api/reports/shipments-summary')
+                        .then(response => response.json())
+                        .then(data => {
+                            setShipmentStats({
+                                upcoming: data.upcoming,
+                                confirmed: data.confirmed,
+                                completed: data.completed
+                            });
+                        }),
 
-    // Shipments Tab Data
-    const shipmentStats = {
-        upcoming: { count: 12, inTransit: 8, expectedDuty: 'SAR 45,000' },
-        confirmed: { count: 24, totalConfirmed: 24, totalDutyConfirmed: 'SAR 120,000' },
-        completed: { count: 156, totalCompleted: 156, totalDutyPaid: 'SAR 850,000' },
-    };
+                    // Shipment types
+                    fetchFn('/api/reports/shipment-type-distribution')
+                        .then(response => response.json())
+                        .then(typesData => {
+                            setShipmentTypes(typesData.map((item: any) => ({
+                                type: item.type,
+                                count: item.count
+                            })));
+                        }),
 
-    const shipmentDetailedStats = {
-        inTransit: 8,
-        atPort: 4,
-        pendingDocs: 2,
-        heldAtCustoms: 1,
-        rejected: 0,
-    };
+                    // Monthly data
+                    fetchFn('/api/reports/shipments-over-time')
+                        .then(response => response.json())
+                        .then(monthlyData => {
+                            setMonthlyData(monthlyData.map((item: any) => ({
+                                month: item.month,
+                                shipments: item.count
+                            })));
+                        }),
 
-    const shipmentTypes = [
-        { type: 'Air', count: 45, percentage: 25, color: 'bg-blue-500' },
-        { type: 'Sea', count: 110, percentage: 60, color: 'bg-green-500' },
-        { type: 'Land', count: 25, percentage: 15, color: 'bg-orange-500' }
-    ];
+                    // Shipments by status
+                    fetchFn('/api/reports/shipments-by-status')
+                        .then(response => response.json())
+                        .then(statusData => {
+                            const statusStats = statusData.reduce((acc: ShipmentStatusStats, item: any) => {
+                                const status = item.status?.toUpperCase() || 'PENDING_DOCS';
+                                acc[status] = item.count;
+                                return acc;
+                            }, {} as ShipmentStatusStats);
 
-    const monthlyData = [
-        { month: 'Jan', shipments: 18 },
-        { month: 'Feb', shipments: 24 },
-        { month: 'Mar', shipments: 20 },
-        { month: 'Apr', shipments: 32 },
-        { month: 'May', shipments: 28 },
-        { month: 'Jun', shipments: 35 }
-    ];
+                            setShipmentStatusStats(prev => ({
+                                ...prev,
+                                ...statusStats
+                            }));
+                        })
+                ];
+
+                await Promise.all(apiCalls);
+
+            } catch (error) {
+                console.error('Error fetching reports:', error);
+            }
+        };
+
+        fetchData();
+    }, [fetchFn]);
+
     const maxShipments = Math.max(...monthlyData.map(d => d.shipments));
 
     // Payments Tab Data
@@ -92,8 +142,8 @@ export function ReportsDashboard() {
                             <CardContent>
                                 <div className="text-2xl font-bold">{shipmentStats.upcoming.count}</div>
                                 <div className="text-xs text-muted-foreground mt-1">
-                                    <span className="block">In Transit: {shipmentStats.upcoming.inTransit}</span>
-                                    <span className="block">Exp. Duty: {shipmentStats.upcoming.expectedDuty}</span>
+                                    <span className="block">In Transit: {shipmentStats.upcoming.count}</span>
+                                    <span className="block">Exp. Duty: {shipmentStats.upcoming.totalDutyCharges}</span>
                                 </div>
                             </CardContent>
                         </Card>
@@ -105,8 +155,8 @@ export function ReportsDashboard() {
                             <CardContent>
                                 <div className="text-2xl font-bold">{shipmentStats.confirmed.count}</div>
                                 <div className="text-xs text-muted-foreground mt-1">
-                                    <span className="block">Total Confirmed: {shipmentStats.confirmed.totalConfirmed}</span>
-                                    <span className="block">Duty Confirmed: {shipmentStats.confirmed.totalDutyConfirmed}</span>
+                                    <span className="block">Total Confirmed: {shipmentStats.confirmed.count}</span>
+                                    <span className="block">Duty Confirmed: {shipmentStats.confirmed.totalDutyCharges}</span>
                                 </div>
                             </CardContent>
                         </Card>
@@ -118,8 +168,8 @@ export function ReportsDashboard() {
                             <CardContent>
                                 <div className="text-2xl font-bold">{shipmentStats.completed.count}</div>
                                 <div className="text-xs text-muted-foreground mt-1">
-                                    <span className="block">Total Completed: {shipmentStats.completed.totalCompleted}</span>
-                                    <span className="block">Total Duty Paid: {shipmentStats.completed.totalDutyPaid}</span>
+                                    <span className="block">Total Completed: {shipmentStats.completed.count}</span>
+                                    <span className="block">Total Duty Paid: {shipmentStats.completed.totalDutyCharges}</span>
                                 </div>
                             </CardContent>
                         </Card>
@@ -184,23 +234,27 @@ export function ReportsDashboard() {
                             <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
                                 <div className="space-y-1">
                                     <p className="text-sm font-medium text-muted-foreground">In Transit</p>
-                                    <p className="text-2xl font-bold">{shipmentDetailedStats.inTransit}</p>
+                                    <p className="text-2xl font-bold">{shipmentStatusStats.IN_TRANSIT || 0}</p>
                                 </div>
                                 <div className="space-y-1">
                                     <p className="text-sm font-medium text-muted-foreground">At Port</p>
-                                    <p className="text-2xl font-bold">{shipmentDetailedStats.atPort}</p>
+                                    <p className="text-2xl font-bold">{shipmentStatusStats.AT_PORT || 0}</p>
                                 </div>
                                 <div className="space-y-1">
                                     <p className="text-sm font-medium text-muted-foreground">Pending Docs</p>
-                                    <p className="text-2xl font-bold">{shipmentDetailedStats.pendingDocs}</p>
+                                    <p className="text-2xl font-bold">{shipmentStatusStats.PENDING_DOCS || 0}</p>
                                 </div>
                                 <div className="space-y-1">
                                     <p className="text-sm font-medium text-muted-foreground">Held at Customs</p>
-                                    <p className="text-2xl font-bold text-orange-500">{shipmentDetailedStats.heldAtCustoms}</p>
+                                    <p className="text-2xl font-bold text-orange-500">{shipmentStatusStats.ON_HOLD_BY_CUSTOMS || 0}</p>
                                 </div>
                                 <div className="space-y-1">
                                     <p className="text-sm font-medium text-muted-foreground">Rejected</p>
-                                    <p className="text-2xl font-bold text-red-500">{shipmentDetailedStats.rejected}</p>
+                                    <p className="text-2xl font-bold text-red-500">{shipmentStatusStats.REJECTED || 0}</p>
+                                </div>
+                                <div className="space-y-1">
+                                    <p className="text-sm font-medium text-muted-foreground">Clearing In Progress</p>
+                                    <p className="text-2xl font-bold text-red-500">{shipmentStatusStats.CLEARING_IN_PROGRESS || 0}</p>
                                 </div>
                             </div>
                         </CardContent>
