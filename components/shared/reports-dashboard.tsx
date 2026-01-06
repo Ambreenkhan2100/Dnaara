@@ -11,7 +11,6 @@ import { useLoader } from '../providers/loader-provider';
 import { ShipmentStatusStats } from '@/types/shipmentStatusStats';
 
 export function ReportsDashboard() {
-    const [paymentFilter, setPaymentFilter] = useState('all');
     const { fetchFn } = useLoader();
     const [shipmentStats, setShipmentStats] = useState({
         upcoming: { count: 0, totalDutyCharges: 0 },
@@ -29,6 +28,13 @@ export function ReportsDashboard() {
         ON_HOLD_BY_CUSTOMS: 0,
         REJECTED: 0,
     });
+    const [paymentData, setPaymentData] = useState({
+        customsDuty: { requested: 0, confirmed: 0, completed: 0 },
+        otherPayments: { requested: 0, confirmed: 0, completed: 0 },
+        byShipmentType: []
+    });
+    const [paymentFilter, setPaymentFilter] = useState('all');
+    const [activeTab, setActiveTab] = useState('shipments');
 
     useEffect(() => {
         const fetchData = async () => {
@@ -90,15 +96,65 @@ export function ReportsDashboard() {
         };
 
         fetchData();
-    }, [fetchFn]);
+    }, [fetchFn, activeTab]);
+
+    useEffect(() => {
+        if (activeTab === 'payments') {
+            const fetchPaymentData = async () => {
+                try {
+                    const response = await fetchFn(`/api/reports/payments`);
+                    const data = await response.json();
+                    setPaymentData(data);
+                } catch (error) {
+                    console.error('Error fetching payment data:', error);
+                }
+            };
+            fetchPaymentData();
+        }
+    }, [activeTab, fetchFn]);
+
+    const getFilteredData = () => {
+        if (paymentFilter === 'all') {
+            return paymentData;
+        }
+        const filteredType = paymentData.byShipmentType.find(
+            (item: any) => item.type.toLowerCase() === paymentFilter
+        );
+        return filteredType || {
+            customsDuty: { requested: 0, confirmed: 0, completed: 0 },
+            otherPayments: { requested: 0, confirmed: 0, completed: 0 }
+        };
+    };
+
+    const filteredData = getFilteredData();
+    const isFiltered = paymentFilter !== 'all';
+
+    const totalAmountData = [
+        {
+            name: 'Requested',
+            total: (isFiltered ? filteredData.customsDuty.requested : paymentData.customsDuty.requested) +
+                (isFiltered ? filteredData.otherPayments.requested : paymentData.otherPayments.requested)
+        },
+        {
+            name: 'Confirmed',
+            total: (isFiltered ? filteredData.customsDuty.confirmed : paymentData.customsDuty.confirmed) +
+                (isFiltered ? filteredData.otherPayments.confirmed : paymentData.otherPayments.confirmed)
+        },
+        {
+            name: 'Completed',
+            total: (isFiltered ? filteredData.customsDuty.completed : paymentData.customsDuty.completed) +
+                (isFiltered ? filteredData.otherPayments.completed : paymentData.otherPayments.completed)
+        }
+    ];
+
+    // Data for the Customs Duty chart
+    const customsDutyData = [
+        { name: 'Requested', value: isFiltered ? filteredData.customsDuty.requested : paymentData.customsDuty.requested },
+        { name: 'Confirmed', value: isFiltered ? filteredData.customsDuty.confirmed : paymentData.customsDuty.confirmed },
+        { name: 'Completed', value: isFiltered ? filteredData.customsDuty.completed : paymentData.customsDuty.completed }
+    ];
 
     const maxShipments = Math.max(...monthlyData.map(d => d.shipments));
-
-    // Payments Tab Data
-    const paymentStats = {
-        total: { requested: 'SAR 150,000', confirmed: 'SAR 450,000', completed: 'SAR 2.1M' },
-        customsDuty: { requested: 'SAR 45,000', confirmed: 'SAR 120,000', completed: 'SAR 850,000' },
-    };
 
     // Agents Tab Data
     const agentStats = {
@@ -123,7 +179,9 @@ export function ReportsDashboard() {
                 <p className="text-muted-foreground">Comprehensive overview of operations</p>
             </div>
 
-            <Tabs defaultValue="shipments" className="space-y-6">
+            <Tabs value={activeTab}
+                onValueChange={setActiveTab}
+                className="space-y-6">
                 <TabsList>
                     <TabsTrigger value="shipments">Shipments</TabsTrigger>
                     <TabsTrigger value="payments">Payments</TabsTrigger>
@@ -286,15 +344,15 @@ export function ReportsDashboard() {
                             <CardContent className="space-y-4">
                                 <div className="flex justify-between items-center border-b pb-2">
                                     <span className="text-muted-foreground">Requested</span>
-                                    <span className="font-bold text-lg">{paymentStats.total.requested}</span>
+                                    <span className="font-bold text-lg">SAR {totalAmountData.find(d => d.name === 'Requested')?.total.toLocaleString() || '0'}</span>
                                 </div>
                                 <div className="flex justify-between items-center border-b pb-2">
                                     <span className="text-muted-foreground">Confirmed</span>
-                                    <span className="font-bold text-lg text-blue-600">{paymentStats.total.confirmed}</span>
+                                    <span className="font-bold text-lg text-blue-600">SAR {totalAmountData.find(d => d.name === 'Confirmed')?.total.toLocaleString() || '0'}</span>
                                 </div>
                                 <div className="flex justify-between items-center">
                                     <span className="text-muted-foreground">Completed</span>
-                                    <span className="font-bold text-lg text-green-600">{paymentStats.total.completed}</span>
+                                    <span className="font-bold text-lg text-green-600">SAR {totalAmountData.find(d => d.name === 'Completed')?.total.toLocaleString() || '0'}</span>
                                 </div>
                             </CardContent>
                         </Card>
@@ -307,15 +365,15 @@ export function ReportsDashboard() {
                             <CardContent className="space-y-4">
                                 <div className="flex justify-between items-center border-b pb-2">
                                     <span className="text-muted-foreground">Requested</span>
-                                    <span className="font-bold text-lg">{paymentStats.customsDuty.requested}</span>
+                                    <span className="font-bold text-lg">SAR {customsDutyData.find(d => d.name === 'Requested')?.value.toLocaleString() || '0'}</span>
                                 </div>
                                 <div className="flex justify-between items-center border-b pb-2">
                                     <span className="text-muted-foreground">Confirmed</span>
-                                    <span className="font-bold text-lg text-blue-600">{paymentStats.customsDuty.confirmed}</span>
+                                    <span className="font-bold text-lg text-blue-600">SAR {customsDutyData.find(d => d.name === 'Confirmed')?.value.toLocaleString() || '0'}</span>
                                 </div>
                                 <div className="flex justify-between items-center">
                                     <span className="text-muted-foreground">Completed</span>
-                                    <span className="font-bold text-lg text-green-600">{paymentStats.customsDuty.completed}</span>
+                                    <span className="font-bold text-lg text-green-600">SAR {customsDutyData.find(d => d.name === 'Completed')?.value.toLocaleString() || '0'}</span>
                                 </div>
                             </CardContent>
                         </Card>
