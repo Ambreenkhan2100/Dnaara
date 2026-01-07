@@ -31,7 +31,6 @@ export const LoaderProvider = ({ children }: { children: React.ReactNode }) => {
                 init = init || {};
 
                 const token = localStorage.getItem('token');
-                console.log('fetchWithLoader: ', token);
                 const response = await fetch(input, {
                     ...init,
                     headers: {

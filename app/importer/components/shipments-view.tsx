@@ -5,7 +5,7 @@ import { useImporterStore } from '@/lib/store/useImporterStore';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Plus, Search, FileText, MapPin, Calendar, DollarSign, Truck, Ship, Plane } from 'lucide-react';
+import { Plus, Search, FileText, MapPin, Calendar, DollarSign, Truck, Ship, Plane, SaudiRiyal, Banknote } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
@@ -124,7 +124,7 @@ export function ShipmentsView() {
                             {getIcon(request.type)}
                             {request.agent?.name || 'Unknown Agent'}
                         </CardTitle>
-                        <CardDescription>ID: {request.id} • Bill: {request.bill_number}</CardDescription>
+                        <CardDescription>ID: {request.id} • B/L: {request.bill_number}</CardDescription>
                     </div>
                     <Badge variant={request.status === 'ASSIGNED' ? 'secondary' : request.status === 'CONFIRMED' ? 'default' : 'outline'}>
                         {request.status || 'PENDING'}
@@ -143,7 +143,7 @@ export function ShipmentsView() {
                         <FileText className="h-3 w-3" /> Bayan: {request.bayan_number || 'N/A'}
                     </div>
                     <div className="flex items-center gap-1 text-muted-foreground">
-                        <DollarSign className="h-3 w-3" /> Duty: {request.duty_charges || 'N/A'}
+                        <Banknote className="h-3 w-3" />   Expected Custom Duty: {request.duty_charges || 'N/A'}<SaudiRiyal className="h-3 w-3" />
                     </div>
                 </div>
                 {request.updates && request.updates.length > 0 && (

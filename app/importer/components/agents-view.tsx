@@ -1,73 +1,59 @@
 'use client';
 
-import { useState } from 'react';
-import { useImporterStore } from '@/lib/store/useImporterStore';
+import { useState, useEffect, useCallback } from 'react';
 import { DataTable } from '@/components/tables/data-table';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { StatusBadge } from '@/components/shared/status-badge';
 import { ImporterAgentLinkForm } from '@/components/forms/importer-agent-link-form';
-import { Plus, Pencil, Check, X, ArrowUpRight } from 'lucide-react';
-import { Input } from '@/components/ui/input';
+import { Plus, ArrowUpRight } from 'lucide-react';
 import { AgentDetailsDrawer } from './agent-details-drawer';
-
-function MinimumBalanceCell({ agentId, initialBalance }: { agentId: string, initialBalance?: number }) {
-    const { updateAgentMinimumBalance } = useImporterStore();
-    const [isEditing, setIsEditing] = useState(false);
-    const [value, setValue] = useState(initialBalance?.toString() || '');
-
-    const handleSave = () => {
-        updateAgentMinimumBalance(agentId, parseFloat(value) || 0);
-        setIsEditing(false);
-    };
-
-    const handleCancel = () => {
-        setValue(initialBalance?.toString() || '');
-        setIsEditing(false);
-    };
-
-    if (isEditing) {
-        return (
-            <div className="flex items-center gap-2">
-                <Input
-                    type="number"
-                    value={value}
-                    onChange={(e) => setValue(e.target.value)}
-                    className="h-8 w-24"
-                    autoFocus
-                />
-                <Button size="icon" variant="ghost" className="h-8 w-8 text-green-600 hover:text-green-700 hover:bg-green-50" onClick={handleSave}>
-                    <Check className="h-4 w-4" />
-                </Button>
-                <Button size="icon" variant="ghost" className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50" onClick={handleCancel}>
-                    <X className="h-4 w-4" />
-                </Button>
-            </div>
-        );
-    }
-
-    return (
-        <div className="group flex items-center gap-2 min-h-[32px]">
-            <span>{initialBalance ? `SAR ${initialBalance.toLocaleString()}` : '-'}</span>
-            <Button
-                size="icon"
-                variant="ghost"
-                className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
-                onClick={() => setIsEditing(true)}
-            >
-                <Pencil className="h-3 w-3" />
-            </Button>
-        </div>
-    );
-}
+import { useLoader } from '@/components/providers/loader-provider';
+import { ConnectedUser, RelationshipStatus } from '@/types/invite';
+import { toast } from 'sonner';
 
 export function AgentsView() {
-    const { linkedAgents } = useImporterStore();
+    const { fetchFn } = useLoader();
+    const [linkedAgents, setLinkedAgents] = useState<ConnectedUser[]>([]);
     const [dialogOpen, setDialogOpen] = useState(false);
-    const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
-    const [selectedAgentId, setSelectedAgentId] = useState<string | null>(null);
     const [drawerOpen, setDrawerOpen] = useState(false);
     const [drawerAgentId, setDrawerAgentId] = useState<string | null>(null);
+
+    const fetchAgents = useCallback(async () => {
+        try {
+            const response = await fetchFn('/api/relationship');
+            const result = await response.json();
+            if (result.data) {
+                setLinkedAgents(result.data);
+            }
+        } catch (error) {
+            console.error('Error fetching agents:', error);
+        }
+    }, [fetchFn]);
+
+    useEffect(() => {
+        fetchAgents();
+    }, [fetchAgents]);
+
+    const AddAgent = async (email: string) => {
+        try {
+            setDialogOpen(false);
+            const response = await fetchFn('/api/relationship/invite', {
+                method: 'POST',
+                body: JSON.stringify({ email }),
+            });
+            const result = await response.json();
+            if (response.ok) {
+                toast.success('Invitation sent successfully');
+                fetchAgents();
+            } else {
+                toast.error(result.error || 'Failed to add agent');
+            }
+        } catch (error) {
+            console.error('Error adding agent:', error);
+            toast.error('An unexpected error occurred');
+        }
+    }
 
     return (
         <div className="space-y-6">
@@ -95,114 +81,52 @@ export function AgentsView() {
                                 Enter the agent's email address to link them to your account
                             </DialogDescription>
                         </DialogHeader>
-                        <ImporterAgentLinkForm onSuccess={() => setDialogOpen(false)} />
+                        <ImporterAgentLinkForm
+                            onSubmit={AddAgent}
+                            onSuccess={() => setDialogOpen(false)}
+                        />
                     </DialogContent>
                 </Dialog>
             </div>
-
-            <Dialog open={paymentDialogOpen} onOpenChange={setPaymentDialogOpen}>
-                <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle>Add Payment</DialogTitle>
-                        <DialogDescription>
-                            Add funds to the agent's wallet
-                        </DialogDescription>
-                    </DialogHeader>
-                    <form className="space-y-4" onSubmit={(e) => {
-                        e.preventDefault();
-                        setPaymentDialogOpen(false);
-                    }}>
-                        <div className="space-y-2">
-                            <label htmlFor="amount" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">Payment Amount</label>
-                            <input
-                                id="amount"
-                                type="number"
-                                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                                placeholder="Enter amount"
-                                required
-                            />
-                        </div>
-                        <div className="space-y-2">
-                            <label htmlFor="date" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">Payment Date</label>
-                            <input
-                                id="date"
-                                type="date"
-                                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                                required
-                            />
-                        </div>
-                        <div className="space-y-2">
-                            <label htmlFor="receipt" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">Payment Receipt</label>
-                            <input
-                                id="receipt"
-                                type="file"
-                                accept=".pdf,.jpg,.jpeg,.png"
-                                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
-                                required
-                            />
-                        </div>
-                        <Button type="submit" className="w-full" style={{ backgroundColor: '#0bad85' }}>
-                            Submit Payment
-                        </Button>
-                    </form>
-                </DialogContent>
-            </Dialog>
 
             <DataTable
                 data={linkedAgents}
                 columns={[
                     {
                         header: 'Company Name',
-                        accessor: (row) => row.companyName || '-',
+                        accessor: (row) => row.legal_business_name || '-',
                     },
                     {
                         header: 'Agent Name',
-                        accessor: 'name',
+                        accessor: (row) => row.full_name || '-',
                     },
                     {
                         header: 'Email',
-                        accessor: 'email',
+                        accessor: (row) => row.company_email || '-',
                     },
                     {
                         header: 'Phone',
-                        accessor: (row) => row.phone || '-',
+                        accessor: (row) => row.phone_number || '-',
                     },
                     {
                         header: 'Minimum Balance',
-                        accessor: (row) => (
-                            <MinimumBalanceCell agentId={row.id} initialBalance={row.minimumBalance} />
-                        ),
+                        accessor: () => '-',
                     },
                     {
                         header: 'Wallet',
-                        accessor: (row) => (
-                            <div className="flex items-center gap-2">
-                                <span>SAR 5,000.00</span>
-                                <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="h-6 w-6 rounded-full hover:bg-primary/10 hover:text-primary"
-                                    onClick={() => {
-                                        setSelectedAgentId(row.id);
-                                        setPaymentDialogOpen(true);
-                                    }}
-                                >
-                                    <Plus className="h-4 w-4" />
-                                </Button>
-                            </div>
-                        ),
+                        accessor: () => '-',
                     },
                     {
                         header: 'Status',
                         accessor: (row) => (
                             <div className="flex items-center justify-between group">
-                                <StatusBadge status={row.status === 'linked' ? 'active' : 'pending'} />
+                                <StatusBadge status={row.relationship_status === RelationshipStatus.ACTIVE ? 'active' : 'pending'} />
                                 <Button
                                     variant="ghost"
                                     size="sm"
                                     className="opacity-0 group-hover:opacity-100 transition-opacity text-primary hover:text-primary hover:bg-primary/10"
                                     onClick={() => {
-                                        setDrawerAgentId(row.id);
+                                        setDrawerAgentId(row.agent_id || row.id);
                                         setDrawerOpen(true);
                                     }}
                                 >

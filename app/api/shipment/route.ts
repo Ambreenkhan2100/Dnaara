@@ -17,13 +17,13 @@ export async function GET(request: Request) {
                 s.*,
                 json_agg(DISTINCT st.*) FILTER (WHERE st.id IS NOT NULL) as trucks,
                 json_agg(DISTINCT u.*) FILTER (WHERE u.id IS NOT NULL) as updates,
-                json_build_object('id', imp.id, 'name', imp.username, 'email', imp.email) as importer,
-                json_build_object('id', agt.id, 'name', agt.username, 'email', agt.email) as agent
+                json_build_object('id', imp.id, 'name', imp.legal_business_name, 'email', imp.company_email) as importer,
+                json_build_object('id', agt.id, 'name', agt.legal_business_name, 'email', agt.company_email) as agent
             FROM shipments s
             LEFT JOIN shipment_trucks st ON s.id = st.shipment_id
             LEFT JOIN updates u ON s.id = u.shipment_id
-            LEFT JOIN users imp ON s.importer_id = imp.id
-            LEFT JOIN users agt ON s.agent_id = agt.id
+            LEFT JOIN user_profiles imp ON s.importer_id = imp.user_id
+            LEFT JOIN user_profiles agt ON s.agent_id = agt.user_id
             WHERE s.created_by = $1 OR s.importer_id = $1 OR s.agent_id = $1
             GROUP BY s.id, imp.id, agt.id
             ORDER BY s.created_at DESC

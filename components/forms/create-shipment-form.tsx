@@ -86,7 +86,7 @@ export function CreateShipmentForm({ role, onSubmit, onCancel }: CreateShipmentF
         trucks: [],
     });
 
-    const { fetchFn: fetchWithLoader } = useLoader();
+    const { fetchFn } = useLoader();
 
 
     const currentUserId = useRoleStore((state) => state.currentUserId);
@@ -110,18 +110,18 @@ export function CreateShipmentForm({ role, onSubmit, onCancel }: CreateShipmentF
             try {
                 if (role === 'admin') {
                     const [importersRes, agentsRes] = await Promise.all([
-                        fetchWithLoader('/api/users?role=importer'),
-                        fetchWithLoader('/api/users?role=agent')
+                        fetchFn('/api/users?role=importer'),
+                        fetchFn('/api/users?role=agent')
                     ]);
                     const importersData = await importersRes.json();
                     const agentsData = await agentsRes.json();
                     setImporters(importersData);
                     setAgents(agentsData);
                 } else {
-                    const targetRole = role === 'importer' ? 'agent' : 'importer';
-                    const res = await fetchWithLoader(`/api/users?role=${targetRole}`);
-                    const data = await res.json();
-                    setPartners(data);
+                    // const targetRole = role === 'importer' ? 'agent' : 'importer';
+                    const res = await fetchFn('/api/relationship');
+                    const { data } = await res.json();
+                    setPartners(data.map((item: any) => ({ id: item.id, name: item.legal_business_name })));
                 }
             } catch (error) {
                 console.error('Error fetching partners:', error);
@@ -153,7 +153,7 @@ export function CreateShipmentForm({ role, onSubmit, onCancel }: CreateShipmentF
             };
 
             const token = localStorage.getItem('token');
-            const response = await fetchWithLoader('/api/shipment', {
+            const response = await fetchFn('/api/shipment', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
