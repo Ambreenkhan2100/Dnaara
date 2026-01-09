@@ -12,27 +12,30 @@ export async function POST(request: Request) {
     const body = await request.json();
     const { shipmentId, status, note, file } = body;
 
-    if (!shipmentId || !status) {
-        return NextResponse.json({ error: 'Shipment ID and Status are required' }, { status: 400 });
+    if (!shipmentId) {
+        return NextResponse.json({ error: 'Shipment ID is required' }, { status: 400 });
     }
 
     const client = await pool.connect();
     try {
         await client.query('BEGIN');
 
-        // Update shipment status
-        const updateQuery = `
+        if (status) {
+            // Update shipment status
+            const updateQuery = `
             UPDATE shipments 
             SET status = $1, updated_at = CURRENT_TIMESTAMP
             WHERE id = $2
             RETURNING id
         `;
-        const updateRes = await client.query(updateQuery, [status, shipmentId]);
+            const updateRes = await client.query(updateQuery, [status, shipmentId]);
 
-        if (updateRes.rowCount === 0) {
-            await client.query('ROLLBACK');
-            return NextResponse.json({ error: 'Shipment not found' }, { status: 404 });
+            if (updateRes.rowCount === 0) {
+                await client.query('ROLLBACK');
+                return NextResponse.json({ error: 'Shipment not found' }, { status: 404 });
+            }
         }
+
 
         // Add update entry if note or file is provided
         if (note || file) {
