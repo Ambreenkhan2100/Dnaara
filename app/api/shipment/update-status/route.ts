@@ -61,3 +61,43 @@ export async function POST(request: Request) {
         client.release();
     }
 }
+
+export async function GET(request: Request) {
+    try {
+        const { searchParams } = new URL(request.url);
+        const shipmentId = searchParams.get('shipmentId');
+
+        if (!shipmentId) {
+            return NextResponse.json(
+                { error: 'Shipment ID is required' },
+                { status: 400 }
+            );
+        }
+
+        const client = await pool.connect();
+        // Fetch all updates for the shipment, ordered by created_at in descending order
+        const updates = await client.query(
+            `SELECT 
+                up.id,
+                up.shipment_id as "shipmentId",
+                up.update_text,
+                up.document_url as "fileUrl",
+                up.created_by as "createdBy",
+                up.created_at as "createdAt",
+                u.legal_business_name as "senderName"
+             FROM updates up
+             JOIN user_profiles u ON up.created_by = u.user_id
+             WHERE shipment_id = $1
+             ORDER BY up.created_at DESC`,
+            [shipmentId]
+        );
+
+        return NextResponse.json(updates.rows);
+    } catch (error) {
+        console.error('Error fetching shipment updates:', error);
+        return NextResponse.json(
+            { error: 'Failed to fetch shipment updates' },
+            { status: 500 }
+        );
+    }
+}
