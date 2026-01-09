@@ -8,8 +8,14 @@ export const createUpcomingRequestSchema = z.object({
     agentId: z.string().optional(),
 });
 
+export const companyEmailSchema = z.string().email('Invalid email address').refine((email) => {
+    const domain = email.split('@')[1]?.toLowerCase() || '';
+    const forbidden = ['gmail', 'yahoo', 'hotmail', 'outlook'];
+    return !forbidden.some(f => domain.includes(f));
+}, 'Public email domains are not allowed. Please use a company email.');
+
 export const linkAgentSchema = z.object({
-    email: z.string().email('Invalid email address'),
+    email: companyEmailSchema,
 });
 
 export const finalBayanSchema = z.object({
@@ -21,7 +27,7 @@ export const finalBayanSchema = z.object({
 
 export const createUserSchema = z.object({
     name: z.string().min(1, 'Name is required'),
-    email: z.string().email('Invalid email address'),
+    email: companyEmailSchema,
     phone: z.string().optional(),
     type: z.enum(['importer', 'agent']),
     businessName: z.string().optional(),
@@ -36,7 +42,7 @@ export type FinalBayanInput = z.infer<typeof finalBayanSchema>;
 export type CreateUserInput = z.infer<typeof createUserSchema>;
 
 export const addImporterSchema = z.object({
-    email: z.string().email('Invalid email address'),
+    email: companyEmailSchema,
 });
 
 export type AddImporterInput = z.infer<typeof addImporterSchema>;
@@ -84,7 +90,7 @@ export type CreateAdminShipmentInput = z.infer<typeof createAdminShipmentSchema>
 export const addAgentSchema = z.object({
     companyName: z.string().min(1, 'Company Name is required'),
     name: z.string().min(1, 'Agent Name is required'),
-    email: z.string().email('Invalid email address'),
+    email: companyEmailSchema,
     phone: z.string().min(1, 'Phone number is required'),
     sendInvite: z.boolean(),
 });
@@ -94,7 +100,7 @@ export type AddAgentInput = z.infer<typeof addAgentSchema>;
 export const addAdminImporterSchema = z.object({
     companyName: z.string().min(1, 'Company Name is required'),
     name: z.string().min(1, 'Importer Name is required'),
-    email: z.string().email('Invalid email address'),
+    email: companyEmailSchema,
     phone: z.string().min(1, 'Phone number is required'),
     sendInvite: z.boolean(),
 });
@@ -112,3 +118,19 @@ export const createAdminPaymentSchema = z.object({
 });
 
 export type CreateAdminPaymentInput = z.infer<typeof createAdminPaymentSchema>;
+
+export const signupSchema = z.object({
+    role: z.enum(['Importer', 'Agent']),
+    legalBusinessName: z.string().min(1, 'Legal Business Name is required'),
+    tradeRegistrationNumber: z.string().min(1, 'Trade Registration Number is required'),
+    nationalAddress: z.string().min(1, 'National Address is required'),
+    fullName: z.string().min(1, 'Full Name is required'),
+    position: z.string().min(1, 'Position/Role is required'),
+    phoneNumber: z.string().min(1, 'Phone Number is required'),
+    nationalId: z.string().min(1, 'National ID is required'),
+    companyEmail: companyEmailSchema,
+    password: z.string().min(6, 'Password must be at least 6 characters'),
+    otp: z.string().length(6, 'OTP must be 6 digits'),
+});
+
+export type SignupInput = z.infer<typeof signupSchema>;

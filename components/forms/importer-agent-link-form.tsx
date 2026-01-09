@@ -6,16 +6,13 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { linkAgentSchema, type LinkAgentInput } from '@/lib/schemas';
-import { useImporterStore } from '@/lib/store/useImporterStore';
-import { toast } from 'sonner';
 
 interface ImporterAgentLinkFormProps {
     onSuccess?: () => void;
+    onSubmit?: (email: string) => Promise<void>;
 }
 
-export function ImporterAgentLinkForm({ onSuccess }: ImporterAgentLinkFormProps) {
-    const linkAgentByEmail = useImporterStore((state) => state.linkAgentByEmail);
-
+export function ImporterAgentLinkForm({ onSuccess, onSubmit: parentOnSubmit }: ImporterAgentLinkFormProps) {
     const form = useForm<LinkAgentInput>({
         resolver: zodResolver(linkAgentSchema),
         defaultValues: {
@@ -23,16 +20,17 @@ export function ImporterAgentLinkForm({ onSuccess }: ImporterAgentLinkFormProps)
         },
     });
 
-    const onSubmit = (data: LinkAgentInput) => {
-        linkAgentByEmail(data.email);
-        toast.success('Agent linked successfully');
+    const handleSubmit = async (data: LinkAgentInput) => {
+        if (parentOnSubmit) {
+            await parentOnSubmit(data.email);
+        }
         form.reset();
         onSuccess?.();
     };
 
     return (
         <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
                 <FormField
                     control={form.control}
                     name="email"

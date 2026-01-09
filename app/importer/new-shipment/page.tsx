@@ -60,9 +60,7 @@ export default function NewShipmentPage() {
                 <CardContent>
                     <CreateShipmentForm
                         role="importer"
-                        // partners={linkedAgents}
                         onSubmit={handleSubmit}
-                        // isSubmitting={isSubmitting}
                         onCancel={() => router.back()}
                     />
                 </CardContent>

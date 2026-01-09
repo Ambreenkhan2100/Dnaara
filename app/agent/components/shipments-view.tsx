@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, Search, FileText, MapPin, Calendar, DollarSign, Truck, Ship, Plane } from 'lucide-react';
+import { Plus, Search, FileText, MapPin, Calendar, DollarSign, Truck, Ship, Plane, Banknote, SaudiRiyal } from 'lucide-react';
 import { useAgentStore } from '@/lib/store/useAgentStore';
 import { useRoleStore } from '@/lib/store/useRoleStore';
 import { Shipment, ShipmentStatusEnum } from '@/types/shipment';
@@ -278,7 +278,7 @@ export function ShipmentsView() {
                             {getIcon(request.type)}
                             {request.importer?.name || 'Unknown Importer'}
                         </CardTitle>
-                        <CardDescription>ID: {request.id} • Bill: {request.bill_number}</CardDescription>
+                        <CardDescription>ID: {request.id} • B/L: {request.bill_number}</CardDescription>
                     </div>
                     <Badge variant={request.status === 'ASSIGNED' ? 'secondary' : request.status === 'CONFIRMED' ? 'default' : 'outline'}>
                         {request.status || 'PENDING'}
@@ -297,7 +297,7 @@ export function ShipmentsView() {
                         <FileText className="h-3 w-3" /> Bayan: {request.bayan_number || 'N/A'}
                     </div>
                     <div className="flex items-center gap-1 text-muted-foreground">
-                        <DollarSign className="h-3 w-3" /> Duty: {request.duty_charges || 'N/A'}
+                        <Banknote className="h-3 w-3" /> Duty: {request.duty_charges || 'N/A'}<SaudiRiyal className='size-3' />
                     </div>
                 </div>
                 {request.updates && request.updates.length > 0 && (
@@ -337,15 +337,26 @@ export function ShipmentsView() {
                         </DialogContent>
                     </Dialog>
                 )}
-                {showUpdate && (
+                {showUpdate && <>
+                    <Button size="sm" onClick={() => setUpdateDialogRequestId(request.id)}>Add Update</Button>
                     <Dialog
                         open={updateDialogRequestId === request.id}
-                        onOpenChange={(open) => setUpdateDialogRequestId(open ? request.id : null)}
+                        onOpenChange={(open) => {
+                            if (!open) {
+                                setUpdateDialogRequestId(null);
+                            }
+                        }}
                     >
-                        <DialogTrigger asChild>
+                        {/* <DialogTrigger asChild>
                             <Button size="sm">Add Update</Button>
-                        </DialogTrigger>
-                        <DialogContent>
+                        </DialogTrigger> */}
+                        <DialogContent onPointerDownOutside={(e) => {
+                            // Prevent closing when clicking on Select dropdown
+                            const target = e.target as HTMLElement;
+                            if (target.closest('[role="listbox"]') || target.closest('[data-radix-select-viewport]')) {
+                                e.preventDefault();
+                            }
+                        }}>
                             <DialogHeader>
                                 <DialogTitle>Update Shipment Status</DialogTitle>
                                 <DialogDescription>Add a note or file to update the status.</DialogDescription>
@@ -384,7 +395,8 @@ export function ShipmentsView() {
                             </DialogFooter>
                         </DialogContent>
                     </Dialog>
-                )}
+                </>
+                }
                 {showUpdate && (
                     <Dialog
                         open={paymentDialogRequestId === request.id}
