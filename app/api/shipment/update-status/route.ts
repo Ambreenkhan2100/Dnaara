@@ -12,27 +12,30 @@ export async function POST(request: Request) {
     const body = await request.json();
     const { shipmentId, status, note, file } = body;
 
-    if (!shipmentId || !status) {
-        return NextResponse.json({ error: 'Shipment ID and Status are required' }, { status: 400 });
+    if (!shipmentId) {
+        return NextResponse.json({ error: 'Shipment ID is required' }, { status: 400 });
     }
 
     const client = await pool.connect();
     try {
         await client.query('BEGIN');
 
-        // Update shipment status
-        const updateQuery = `
+        if (status) {
+            // Update shipment status
+            const updateQuery = `
             UPDATE shipments 
             SET status = $1, updated_at = CURRENT_TIMESTAMP
             WHERE id = $2
             RETURNING id
         `;
-        const updateRes = await client.query(updateQuery, [status, shipmentId]);
+            const updateRes = await client.query(updateQuery, [status, shipmentId]);
 
-        if (updateRes.rowCount === 0) {
-            await client.query('ROLLBACK');
-            return NextResponse.json({ error: 'Shipment not found' }, { status: 404 });
+            if (updateRes.rowCount === 0) {
+                await client.query('ROLLBACK');
+                return NextResponse.json({ error: 'Shipment not found' }, { status: 404 });
+            }
         }
+
 
         // Add update entry if note or file is provided
         if (note || file) {
@@ -56,5 +59,45 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
     } finally {
         client.release();
+    }
+}
+
+export async function GET(request: Request) {
+    try {
+        const { searchParams } = new URL(request.url);
+        const shipmentId = searchParams.get('shipmentId');
+
+        if (!shipmentId) {
+            return NextResponse.json(
+                { error: 'Shipment ID is required' },
+                { status: 400 }
+            );
+        }
+
+        const client = await pool.connect();
+        // Fetch all updates for the shipment, ordered by created_at in descending order
+        const updates = await client.query(
+            `SELECT 
+                up.id,
+                up.shipment_id as "shipmentId",
+                up.update_text,
+                up.document_url as "fileUrl",
+                up.created_by as "createdBy",
+                up.created_at as "createdAt",
+                u.legal_business_name as "senderName"
+             FROM updates up
+             JOIN user_profiles u ON up.created_by = u.user_id
+             WHERE shipment_id = $1
+             ORDER BY up.created_at DESC`,
+            [shipmentId]
+        );
+
+        return NextResponse.json(updates.rows);
+    } catch (error) {
+        console.error('Error fetching shipment updates:', error);
+        return NextResponse.json(
+            { error: 'Failed to fetch shipment updates' },
+            { status: 500 }
+        );
     }
 }
