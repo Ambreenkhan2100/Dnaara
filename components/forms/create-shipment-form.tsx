@@ -52,8 +52,7 @@ export interface CreateShipmentFormData {
 
 interface CreateShipmentFormProps {
     role: 'agent' | 'importer' | 'admin';
-    // currentUserId: string; // Passed from parent
-    onSubmit: (data: CreateShipmentFormData) => Promise<void>; // Callback after successful submission
+    onSubmit: (data: CreateShipmentFormData) => Promise<void>;
     onCancel: () => void;
 }
 
