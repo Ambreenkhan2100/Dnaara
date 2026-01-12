@@ -36,3 +36,18 @@ export interface Admin extends BaseUser {
     role: 'admin';
 }
 
+
+export interface UseProfile {
+    id: string;
+    user_id: string;
+    legal_business_name: string;
+    trade_registration_number: string;
+    national_address: string;
+    full_name: string;
+    position: string;
+    phone_number: string;
+    national_id: string;
+    company_email: string;
+    created_at: string;
+    emails: string[]
+}
