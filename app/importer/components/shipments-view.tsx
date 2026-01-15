@@ -124,7 +124,7 @@ export function ShipmentsView() {
                             {getIcon(request.type)}
                             {request.agent?.name || 'Unknown Agent'}
                         </CardTitle>
-                        <CardDescription>ID: {request.id} • B/L: {request.bill_number}</CardDescription>
+                        <CardDescription>ID: {request.shipment_id ?? 'N/A'} • B/L: {request.bill_number}</CardDescription>
                     </div>
                     <Badge variant={request.status === 'ASSIGNED' ? 'secondary' : request.status === 'CONFIRMED' ? 'default' : 'outline'}>
                         {request.status || 'PENDING'}

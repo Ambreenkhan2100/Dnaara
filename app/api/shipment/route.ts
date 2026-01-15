@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { Pool } from 'pg';
 import { uploadBase64ToSupabase } from '@/lib/utils/fileupload';
+import { generateUniqueShipmentId } from '@/lib/utils/shipment-utils';
 
 const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
@@ -13,20 +14,35 @@ export async function GET(request: Request) {
         // Fetch shipments where the user is involved (created_by, importer_id, or agent_id)
         // Also fetch related trucks and updates
         const query = `
-            SELECT 
-                s.*,
-                json_agg(DISTINCT st.*) FILTER (WHERE st.id IS NOT NULL) as trucks,
-                json_agg(DISTINCT u.*) FILTER (WHERE u.id IS NOT NULL) as updates,
-                json_build_object('id', imp.id, 'name', imp.legal_business_name, 'email', imp.company_email) as importer,
-                json_build_object('id', agt.id, 'name', agt.legal_business_name, 'email', agt.company_email) as agent
-            FROM shipments s
-            LEFT JOIN shipment_trucks st ON s.id = st.shipment_id
-            LEFT JOIN updates u ON s.id = u.shipment_id
-            LEFT JOIN user_profiles imp ON s.importer_id = imp.user_id
-            LEFT JOIN user_profiles agt ON s.agent_id = agt.user_id
-            WHERE s.created_by = $1 OR s.importer_id = $1 OR s.agent_id = $1
-            GROUP BY s.id, imp.id, agt.id
-            ORDER BY s.created_at DESC
+           SELECT 
+            s.*,
+            json_agg(DISTINCT st.*) FILTER (WHERE st.id IS NOT NULL) as trucks,
+            (
+                SELECT json_agg(
+                    json_build_object(
+                        'id', u.id,
+                        'shipment_id', u.shipment_id,
+                        'update_text', u.update_text,
+                        'document_url', u.document_url,
+                        'created_by', u.created_by,
+                        'created_at', u.created_at,
+                        'sender_name', up.legal_business_name
+                    )
+                    ORDER BY u.created_at DESC
+                )
+                FROM updates u
+                LEFT JOIN user_profiles up ON u.created_by = up.user_id
+                WHERE u.shipment_id = s.id
+            ) as updates,
+            json_build_object('id', imp.id, 'name', imp.legal_business_name, 'email', imp.company_email) as importer,
+            json_build_object('id', agt.id, 'name', agt.legal_business_name, 'email', agt.company_email) as agent
+        FROM shipments s
+        LEFT JOIN shipment_trucks st ON s.id = st.shipment_id
+        LEFT JOIN user_profiles imp ON s.importer_id = imp.user_id
+        LEFT JOIN user_profiles agt ON s.agent_id = agt.user_id
+        WHERE s.created_by = $1 OR s.importer_id = $1 OR s.agent_id = $1
+        GROUP BY s.id, imp.id, agt.id
+        ORDER BY s.created_at DESC
         `;
 
         const result = await client.query(query, [userId]);
@@ -101,21 +117,24 @@ export async function POST(request: Request) {
     try {
         await client.query('BEGIN');
 
+        const shipment_id = await generateUniqueShipmentId(type, portOfShipment, portOfDestination);
+        console.log('Shipment Iddd  ', shipment_id)
+
         const insertShipmentQuery = `
       INSERT INTO shipments (
-        type, port_of_shipment, port_of_destination, expected_arrival_date,
+        shipment_id, type, port_of_shipment, port_of_destination, expected_arrival_date,
         bill_number, bayan_number, bayan_file_url,
         commercial_invoice_number, commercial_invoice_file_url,
         packing_list_file_url, purchase_order_number, other_documents_urls,
         duty_charges, comments, importer_id, agent_id, payment_partner,
         number_of_pallets, created_by
       ) VALUES (
-        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19
+        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20
       ) RETURNING id
     `;
 
         const shipmentValues = [
-            type, portOfShipment, portOfDestination, expectedArrivalDate,
+            shipment_id, type, portOfShipment, portOfDestination, expectedArrivalDate,
             billNumber, bayanNumber, bayanFileUrl,
             commercialInvoiceNumber, commercialInvoiceFileUrl,
             packingListFileUrl, purchaseOrderNumber, otherDocumentsUrls,

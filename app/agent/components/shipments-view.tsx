@@ -270,15 +270,11 @@ export function ShipmentsView() {
             <CardHeader className="pb-2">
                 <div className="flex justify-between items-start">
                     <div>
-                        <CardTitle className="text-lg flex items-center gap-2 cursor-pointer hover:text-primary"
-                            onClick={() => {
-                                router.push(`/agent/shipments/${request.id}`);
-                            }}
-                        >
+                        <CardTitle className="text-lg flex items-center gap-2">
                             {getIcon(request.type)}
                             {request.importer?.name || 'Unknown Importer'}
                         </CardTitle>
-                        <CardDescription>ID: {request.id} • B/L: {request.bill_number}</CardDescription>
+                        <CardDescription>ID: {request.shipment_id ?? 'N/A'} • B/L: {request.bill_number}</CardDescription>
                     </div>
                     <Badge variant={request.status === 'ASSIGNED' ? 'secondary' : request.status === 'CONFIRMED' ? 'default' : 'outline'}>
                         {request.status || 'PENDING'}
@@ -310,7 +306,10 @@ export function ShipmentsView() {
                 )}
             </CardContent>
             <CardFooter className="flex justify-end gap-2 pt-2">
-                {showActions && (
+
+                <Button size="sm" onClick={() => { router.push(`/agent/shipments/${request.id}`); }}>Open</Button>
+
+                {/* {showActions && (
                     <Dialog>
                         <DialogTrigger asChild>
                             <Button variant="outline" size="sm">Review</Button>
@@ -336,8 +335,8 @@ export function ShipmentsView() {
                             </DialogFooter>
                         </DialogContent>
                     </Dialog>
-                )}
-                {showUpdate && <>
+                )} */}
+                {/* {showUpdate && <>
                     <Button size="sm" onClick={() => setUpdateDialogRequestId(request.id)}>Add Update</Button>
                     <Dialog
                         open={updateDialogRequestId === request.id}
@@ -347,11 +346,7 @@ export function ShipmentsView() {
                             }
                         }}
                     >
-                        {/* <DialogTrigger asChild>
-                            <Button size="sm">Add Update</Button>
-                        </DialogTrigger> */}
                         <DialogContent onPointerDownOutside={(e) => {
-                            // Prevent closing when clicking on Select dropdown
                             const target = e.target as HTMLElement;
                             if (target.closest('[role="listbox"]') || target.closest('[data-radix-select-viewport]')) {
                                 e.preventDefault();
@@ -396,8 +391,8 @@ export function ShipmentsView() {
                         </DialogContent>
                     </Dialog>
                 </>
-                }
-                {showUpdate && (
+                } */}
+                {/* {showUpdate && (
                     <Dialog
                         open={paymentDialogRequestId === request.id}
                         onOpenChange={(open) => setPaymentDialogRequestId(open ? request.id : null)}
@@ -420,7 +415,7 @@ export function ShipmentsView() {
                             />
                         </DialogContent>
                     </Dialog>
-                )}
+                )} */}
             </CardFooter>
         </Card>
     );
