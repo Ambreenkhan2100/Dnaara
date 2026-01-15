@@ -60,6 +60,7 @@ interface CreateShipmentFormProps {
 interface Partner {
     id: string;
     name: string;
+    user_id: string;
 }
 
 export function CreateShipmentForm({ role, onSubmit, onCancel }: CreateShipmentFormProps) {
@@ -121,7 +122,7 @@ export function CreateShipmentForm({ role, onSubmit, onCancel }: CreateShipmentF
                     // const targetRole = role === 'importer' ? 'agent' : 'importer';
                     const res = await fetchFn('/api/relationship');
                     const { data } = await res.json();
-                    setPartners(data.map((item: any) => ({ id: item.id, name: item.legal_business_name })));
+                    setPartners(data.map((item: any) => ({ id: item.id, name: item.legal_business_name, user_id: item.user_id })));
                 }
             } catch (error) {
                 console.error('Error fetching partners:', error);
@@ -151,6 +152,16 @@ export function CreateShipmentForm({ role, onSubmit, onCancel }: CreateShipmentF
                 role,
                 createdById: currentUserId,
             };
+            if (role === 'importer') {
+                payload.importerId = currentUserId as string;
+                payload.agentId = formData.partnerId;
+            }
+
+            if (role === 'agent') {
+                payload.agentId = currentUserId as string;
+                payload.importerId = formData.partnerId;
+            }
+
 
             const token = localStorage.getItem('token');
             const response = await fetchFn('/api/shipment', {
@@ -298,7 +309,7 @@ export function CreateShipmentForm({ role, onSubmit, onCancel }: CreateShipmentF
                             </SelectTrigger>
                             <SelectContent>
                                 {partners?.map(partner => (
-                                    <SelectItem key={partner.id} value={partner.id}>{partner.name}</SelectItem>
+                                    <SelectItem key={partner.user_id} value={partner.user_id}>{partner.name}</SelectItem>
                                 ))}
                             </SelectContent>
                         </Select>

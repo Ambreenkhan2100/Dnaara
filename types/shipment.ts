@@ -58,6 +58,7 @@ export interface Shipment {
     is_accepted: boolean;
     is_completed: boolean;
     status: ShipmentStatus;
+    shipment_id: string
 
     // Joins/Relations
     trucks?: ShipmentTruck[];

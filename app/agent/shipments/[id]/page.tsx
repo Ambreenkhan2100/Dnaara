@@ -48,11 +48,19 @@ export default function AgentShipmentDetailsPage() {
         }
     }, [params.id, fetchFn]);
 
-    if (error || !shipment) {
+    if (error) {
         return (
             <div className="flex flex-col items-center justify-center min-h-[50vh] gap-4">
                 <p className="text-destructive font-medium">{error || 'Shipment not found'}</p>
                 <Button onClick={() => router.push('/agent')}>Go Back</Button>
+            </div>
+        );
+    }
+
+    if (!shipment) {
+        return (
+            <div className="flex flex-col items-center justify-center min-h-[50vh] gap-4">
+                <p className="text-muted-foreground font-medium">Loading...</p>
             </div>
         );
     }
@@ -78,22 +86,25 @@ export default function AgentShipmentDetailsPage() {
                 </BreadcrumbList>
             </Breadcrumb>
 
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <div>
-                    <h1 className="text-3xl font-bold flex items-center gap-3">
-                        Shipment Details
-                        <Badge variant={isCompleted ? 'default' : isConfirmed ? 'secondary' : 'outline'}>
-                            {shipment.status}
-                        </Badge>
-                    </h1>
-                    <p className="text-muted-foreground flex items-center gap-2 mt-1">
-                        <span className="font-medium">{shipment.type}</span>
-                        <span>•</span>
-                        <span className="flex items-center gap-1"><MapPin className="w-3 h-3" /> {shipment.port_of_shipment}</span>
-                        <span>→</span>
-                        <span className="flex items-center gap-1"><MapPin className="w-3 h-3" /> {shipment.port_of_destination}</span>
-                    </p>
+            <div className="flex flex-row items-stretch w-full justify-between">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div>
+                        <h1 className="text-3xl font-bold flex items-center gap-3">
+                            Shipment Details
+                            <Badge variant={isCompleted ? 'default' : isConfirmed ? 'secondary' : 'outline'}>
+                                {shipment.status}
+                            </Badge>
+                        </h1>
+                        <p className="text-muted-foreground flex items-center gap-2 mt-1">
+                            <span className="font-medium">{shipment.type}</span>
+                            <span>•</span>
+                            <span className="flex items-center gap-1"><MapPin className="w-3 h-3" /> {shipment.port_of_shipment}</span>
+                            <span>→</span>
+                            <span className="flex items-center gap-1"><MapPin className="w-3 h-3" /> {shipment.port_of_destination}</span>
+                        </p>
+                    </div>
                 </div>
+                {/* Here add the actions */}
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -140,6 +151,21 @@ export default function AgentShipmentDetailsPage() {
                             )}
                         </CardContent>
                     </Card>
+
+                    {/* Comments Section */}
+                    {shipment.comments && (
+                        <Card>
+                            <CardHeader>
+                                <CardTitle className="flex items-center gap-2">
+                                    <FileText className="w-5 h-5" />
+                                    Additional Comments
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <p className="text-sm text-muted-foreground whitespace-pre-wrap">{shipment.comments}</p>
+                            </CardContent>
+                        </Card>
+                    )}
 
                     {/* Trucks Section (Only for Land shipments) */}
                     {shipment.type === 'Land' && shipment.trucks && shipment.trucks.length > 0 && (
