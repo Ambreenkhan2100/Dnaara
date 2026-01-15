@@ -11,12 +11,33 @@ import { toast } from 'sonner';
 import { FileText, Truck, Clock, MapPin, User, DollarSign, Calendar } from 'lucide-react';
 import type { Shipment } from '@/types/shipment';
 import { useLoader } from '@/components/providers/loader-provider';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
+import { useAgentStore } from '@/lib/store/useAgentStore';
+import { useRoleStore } from '@/lib/store/useRoleStore';
+import { ShipmentStatusEnum } from '@/types/shipment';
+import { PaymentStatus } from '@/types/enums/PaymentStatus';
+import { AgentPaymentForm } from '@/components/forms/agent-payment-form';
+import { CreatePaymentInput } from '@/lib/schemas';
+import { uploadBase64ToSupabase } from '@/lib/utils/fileupload';
 
 export default function AgentShipmentDetailsPage() {
     const router = useRouter();
     const params = useParams();
     const [shipment, setShipment] = useState<Shipment | null>(null);
     const [error, setError] = useState<string | null>(null);
+
+    // Action States
+    const { rejectRequest } = useAgentStore();
+    const currentUserId = useRoleStore((state) => state.currentUserId);
+    const [actionNote, setActionNote] = useState('');
+    const [updateFile, setUpdateFile] = useState<File | null>(null);
+    const [updateStatus, setUpdateStatus] = useState('');
+    const [reviewDialogOpen, setReviewDialogOpen] = useState(false);
+    const [updateDialogOpen, setUpdateDialogOpen] = useState(false);
+    const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
 
     const { fetchFn } = useLoader();
 
@@ -47,6 +68,172 @@ export default function AgentShipmentDetailsPage() {
             fetchShipment();
         }
     }, [params.id, fetchFn]);
+
+    const fetchShipments = async () => {
+        // Re-fetch current shipment
+        try {
+            const token = localStorage.getItem('token');
+            const response = await fetchFn(`/api/shipment/${params.id}`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to fetch shipment');
+            }
+
+            const data = await response.json();
+            setShipment(data.shipment);
+        } catch (err) {
+            console.error(err);
+        }
+    };
+
+    const handleAccept = async () => {
+        if (!shipment) return;
+        try {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                toast.error('Authentication token not found');
+                return;
+            }
+
+            const res = await fetchFn('/api/shipment/accept', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    shipmentId: shipment.id,
+                    note: actionNote
+                })
+            });
+
+            if (!res.ok) {
+                throw new Error('Failed to accept shipment');
+            }
+
+            toast.success('Shipment accepted successfully');
+            setActionNote('');
+            setReviewDialogOpen(false);
+            fetchShipments();
+        } catch (error) {
+            console.error('Error accepting shipment:', error);
+            toast.error('Failed to accept shipment');
+        }
+    };
+
+    const handleReject = () => {
+        if (!shipment) return;
+        rejectRequest(shipment.id, actionNote);
+        setActionNote('');
+        setReviewDialogOpen(false);
+        // Optimistic update or refetch might receive update from store/socket or manual refetch
+        setTimeout(fetchShipments, 1000);
+    };
+
+    const handleUpdate = async () => {
+        if (!shipment) return;
+        if (!updateStatus) {
+            toast.error('Please select a status');
+            return;
+        }
+
+        try {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                toast.error('Authentication token not found');
+                return;
+            }
+
+            let fileBase64 = null;
+            if (updateFile) {
+                const reader = new FileReader();
+                fileBase64 = await new Promise((resolve) => {
+                    reader.onload = (e) => resolve(e.target?.result);
+                    reader.readAsDataURL(updateFile);
+                });
+            }
+
+            const res = await fetchFn('/api/shipment/update-status', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    shipmentId: shipment.id,
+                    status: updateStatus,
+                    note: actionNote,
+                    file: fileBase64
+                })
+            });
+
+            if (!res.ok) {
+                throw new Error('Failed to update shipment status');
+            }
+
+            toast.success('Shipment status updated successfully');
+            setActionNote('');
+            setUpdateFile(null);
+            setUpdateStatus('');
+            setUpdateDialogOpen(false);
+            fetchShipments();
+        } catch (error) {
+            console.error('Error updating shipment status:', error);
+            toast.error('Failed to update shipment status');
+        }
+    };
+
+    const createPayment = async (data: CreatePaymentInput) => {
+        try {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                toast.error('Authentication token not found');
+                return;
+            }
+
+            if (!currentUserId) {
+                toast.error('User session not found');
+                return;
+            }
+
+            const payload = {
+                shipment_id: data.shipmentId,
+                payment_type: data.paymentType === 'other' ? data.otherPaymentName : data.paymentType,
+                agent_id: currentUserId,
+                importer_id: data.importerId,
+                bayan_number: data.bayanNumber,
+                bill_number: data.billNumber,
+                amount: data.amount,
+                payment_deadline: data.paymentDeadline,
+                description: data.description,
+                payment_status: PaymentStatus.REQUESTED
+            };
+
+            const res = await fetchFn('/api/payment', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify(payload)
+            });
+
+            if (!res.ok) {
+                const errorData = await res.json();
+                throw new Error(errorData.error || 'Failed to create payment');
+            }
+
+            toast.success('Payment request created successfully');
+            setPaymentDialogOpen(false);
+        } catch (error) {
+            console.error('Error creating payment:', error);
+            toast.error(error instanceof Error ? error.message : 'Failed to create payment');
+        }
+    };
 
     if (error) {
         return (
@@ -105,6 +292,17 @@ export default function AgentShipmentDetailsPage() {
                     </div>
                 </div>
                 {/* Here add the actions */}
+                <div className="flex gap-2">
+                    {(!shipment.is_accepted && !shipment.is_completed) && (
+                        <Button onClick={() => setReviewDialogOpen(true)}>Review Request</Button>
+                    )}
+                    {(shipment.is_accepted && !shipment.is_completed) && (
+                        <>
+                            <Button variant="outline" onClick={() => setPaymentDialogOpen(true)}>Add Payment</Button>
+                            <Button onClick={() => setUpdateDialogOpen(true)}>Add Update</Button>
+                        </>
+                    )}
+                </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -338,6 +536,93 @@ export default function AgentShipmentDetailsPage() {
                     </Card>
                 </div>
             </div>
+
+            {/* Action Dialogs */}
+            <Dialog open={reviewDialogOpen} onOpenChange={setReviewDialogOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Review Shipment Request</DialogTitle>
+                        <DialogDescription>Accept or reject this shipment request.</DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                        <div className="space-y-2">
+                            <Label>Comments (Optional)</Label>
+                            <Textarea
+                                placeholder="Add a note..."
+                                value={actionNote}
+                                onChange={(e) => setActionNote(e.target.value)}
+                            />
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={handleReject}>Reject</Button>
+                        <Button onClick={handleAccept}>Accept</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            <Dialog open={updateDialogOpen} onOpenChange={setUpdateDialogOpen}>
+                <DialogContent onPointerDownOutside={(e) => {
+                    const target = e.target as HTMLElement;
+                    if (target.closest('[role="listbox"]') || target.closest('[data-radix-select-viewport]')) {
+                        e.preventDefault();
+                    }
+                }}>
+                    <DialogHeader>
+                        <DialogTitle>Update Shipment Status</DialogTitle>
+                        <DialogDescription>Add a note or file to update the status.</DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                        <div className="space-y-2">
+                            <Label>Status</Label>
+                            <Select value={updateStatus} onValueChange={setUpdateStatus}>
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Select status" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value={ShipmentStatusEnum.AT_PORT}>At the port</SelectItem>
+                                    <SelectItem value={ShipmentStatusEnum.CLEARING_IN_PROGRESS}>Clearing in progress</SelectItem>
+                                    <SelectItem value={ShipmentStatusEnum.ON_HOLD_BY_CUSTOMS}>On Hold by customs</SelectItem>
+                                    <SelectItem value={ShipmentStatusEnum.COMPLETED_BY_CUSTOMS}>Completed by customs</SelectItem>
+                                    <SelectItem value={ShipmentStatusEnum.REJECTED_BY_CUSTOMS}>Rejected by customs</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        <div className="space-y-2">
+                            <Label>Update Note</Label>
+                            <Textarea
+                                placeholder="What's the latest status?"
+                                value={actionNote}
+                                onChange={(e) => setActionNote(e.target.value)}
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <Label>Attachment (Optional)</Label>
+                            <Input type="file" onChange={(e) => setUpdateFile(e.target.files?.[0] || null)} />
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button onClick={handleUpdate}>Submit Update</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            <Dialog open={paymentDialogOpen} onOpenChange={setPaymentDialogOpen}>
+                <DialogContent className="max-w-2xl">
+                    <DialogHeader>
+                        <DialogTitle>Create Payment Request</DialogTitle>
+                        <DialogDescription>
+                            Create a payment request for {shipment.importer?.name}
+                        </DialogDescription>
+                    </DialogHeader>
+                    <AgentPaymentForm
+                        prefilledImporterId={shipment.importer?.id}
+                        prefilledShipmentId={shipment.id}
+                        shipment={shipment}
+                        onSubmit={createPayment}
+                    />
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }
