@@ -3,6 +3,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Bell, Clock, MessageSquare, Package, AlertCircle, CheckCircle } from 'lucide-react';
+import { useNotifications } from '@/hooks/useNotifications';
 
 interface Notification {
     id: string;
@@ -16,8 +17,13 @@ interface Notification {
 }
 
 export function NotificationsView() {
+    const { notifications, isConnected } =
+        useNotifications("6b7720c9-734f-4538-8901-1351729ac824");
+
+    console.log("Connected:", isConnected);
+    console.log("Notifications:", notifications);
     // Mock notifications data from admin and agent
-    const notifications: Notification[] = [
+    const notificatio: Notification[] = [
         {
             id: '1',
             type: 'alert',
@@ -134,12 +140,12 @@ export function NotificationsView() {
                     <p className="text-muted-foreground">Stay updated with messages from admin and agents</p>
                 </div>
                 <Badge variant="secondary">
-                    {notifications.filter(n => !n.read).length} Unread
+                    {notificatio.filter(n => !n.read).length} Unread
                 </Badge>
             </div>
 
             <div className="space-y-3">
-                {notifications.map((notification) => (
+                {notificatio.map((notification) => (
                     <Card
                         key={notification.id}
                         className={`${!notification.read ? 'border-l-4 border-l-primary' : ''}`}
