@@ -11,6 +11,7 @@ import type { PaymentRequest, Request } from '@/types';
 import { Shipment } from '@/types/shipment';
 import { Separator } from '@/components/ui/separator';
 import { Plane, Ship, Truck, MapPin, Calendar, FileText, DollarSign } from 'lucide-react';
+import { PaymentStatus } from '@/types/enums/PaymentStatus';
 
 interface PaymentDetailsDialogProps {
     open: boolean;
@@ -169,7 +170,7 @@ export function PaymentDetailsDialog({
                         </div>
                     </div>
                 </div>
-                {(onConfirmPayment || onRejectPayment) && (
+                {(onConfirmPayment || onRejectPayment) && payment.status === PaymentStatus.REQUESTED && (
                     <>
                         <Separator className="my-4" />
                         <div className="flex justify-end gap-2">

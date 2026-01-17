@@ -142,6 +142,20 @@ export default function ShipmentDetailsPage() {
                         </CardContent>
                     </Card>
 
+                    {shipment.comments && (
+                        <Card>
+                            <CardHeader>
+                                <CardTitle className="flex items-center gap-2">
+                                    <FileText className="w-5 h-5" />
+                                    Additional Comments
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <p className="text-sm text-gray-700 whitespace-pre-wrap">{shipment.comments}</p>
+                            </CardContent>
+                        </Card>
+                    )}
+
                     {/* Trucks Section (Only for Land shipments) */}
                     {shipment.type === 'Land' && shipment.trucks && shipment.trucks.length > 0 && (
                         <Card>
