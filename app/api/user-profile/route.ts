@@ -40,7 +40,7 @@ export async function GET(request: Request) {
 
         return NextResponse.json({
             ...profileResult.rows[0],
-            emails: emailsResult.rows
+            emails: emailsResult.rows.map((row: any) => row.email)
         });
 
     } catch (error) {
