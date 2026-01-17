@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { DollarSign, Calendar, FileText, Edit, Trash2 } from 'lucide-react';
+import { DollarSign, Calendar, FileText, Edit, Trash2, MapPin } from 'lucide-react';
 import { format } from 'date-fns';
 import { PaymentStatus } from '@/types/enums/PaymentStatus';
 import type { PaymentRequest } from '@/types';
@@ -24,7 +24,9 @@ export function PaymentCard({ payment, onClick, onEdit, onDelete }: PaymentCardP
                 <div className="flex justify-between items-start">
                     <div>
                         <CardTitle className="text-base font-medium">{payment.paymentType || 'Payment Request'}</CardTitle>
-                        <p className="text-sm text-muted-foreground">ID: {payment.id}</p>
+                        <div className="flex items-center gap-1 text-muted-foreground h-8">
+                            <MapPin className="h-3 w-3" /><p className='leading-none'> {payment.shipment?.port_of_shipment} → {payment.shipment?.port_of_destination}</p>
+                        </div>
                     </div>
                     <div className="flex items-center gap-2">
                         <Badge variant={
@@ -63,14 +65,18 @@ export function PaymentCard({ payment, onClick, onEdit, onDelete }: PaymentCardP
                 </div>
             </CardHeader>
             <CardContent>
-                <div className="grid grid-cols-2 gap-4 text-sm">
+                <div className="grid grid-cols-3 gap-4 text-sm">
                     <div className="flex items-center text-muted-foreground">
                         <DollarSign className="mr-2 h-4 w-4" />
                         SAR {payment.amount.toLocaleString()}
                     </div>
                     <div className="flex items-center text-muted-foreground">
                         <Calendar className="mr-2 h-4 w-4" />
-                        Deadline: {payment.paymentDeadline ? format(new Date(payment.paymentDeadline), 'MMM dd, yyyy') : 'N/A'}
+                        Created On: {payment.createdAt ? format(new Date(payment.createdAt), 'MMM dd, yyyy | HH:mm') : 'N/A'}
+                    </div>
+                    <div className="flex items-center text-muted-foreground">
+                        <Calendar className="mr-2 h-4 w-4" />
+                        Deadline: {payment.paymentDeadline ? format(new Date(payment.paymentDeadline), 'MMM dd, yyyy | HH:mm') : 'N/A'}
                     </div>
                 </div>
             </CardContent>

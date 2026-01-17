@@ -4,26 +4,80 @@ import { useRouter } from 'next/navigation';
 import { useRoleStore } from '@/lib/store/useRoleStore';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import {
-    Sheet,
-    SheetContent,
-    SheetDescription,
-    SheetHeader,
-    SheetTitle,
-    SheetTrigger,
-} from '@/components/ui/sheet';
 import { Badge } from '@/components/ui/badge';
-import { ROLE_KEYS } from '@/lib/constants';
-import { toast } from 'sonner';
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+} from '@/components/ui/dialog';
+import { useEffect, useState } from 'react';
+import { useLoader } from '../providers/loader-provider';
+import { UseProfile } from '@/types';
+import { Plus, Check, X, Trash2 } from 'lucide-react';
+import { Input } from '@/components/ui/input';
 
 export function AppHeader() {
     const router = useRouter();
-    const { currentRole, setRole, clearRole } = useRoleStore();
+    const { currentRole, clearRole } = useRoleStore();
 
-    const handleRoleSwitch = (role: typeof ROLE_KEYS[number], userId: string) => {
-        setRole(role, userId);
-        toast.success(`Switched to ${role} role`);
-        router.push(`/${role}`);
+    const { fetchFn } = useLoader();
+
+    const [userProfile, setUserProfile] = useState<UseProfile | null>(null);
+
+    useEffect(() => {
+        getUserProfile();
+    }, []);
+
+    const getUserProfile = async () => {
+        const res = await fetchFn('/api/user-profile');
+        if (res.ok) {
+            const data = await res.json();
+            setUserProfile(data);
+        }
+    };
+
+    const [isAddingEmail, setIsAddingEmail] = useState(false);
+    const [newEmail, setNewEmail] = useState('');
+
+    const handleAddEmail = async () => {
+        if (!newEmail || !userProfile) return;
+
+        const updatedEmails = [...(userProfile.emails || []), newEmail];
+
+        try {
+            const res = await fetchFn('/api/user-emails', {
+                method: 'POST',
+                body: JSON.stringify(updatedEmails),
+            });
+
+            if (res.ok) {
+                setUserProfile({ ...userProfile, emails: updatedEmails });
+                setIsAddingEmail(false);
+                setNewEmail('');
+            }
+        } catch (error) {
+            console.error('Error adding email:', error);
+        }
+    };
+
+    const handleDeleteEmail = async (emailToDelete: string) => {
+        if (!userProfile) return;
+
+        try {
+            const res = await fetchFn('/api/user-emails', {
+                method: 'DELETE',
+                body: JSON.stringify({ email: emailToDelete }),
+            });
+
+            if (res.ok) {
+                const updatedEmails = userProfile.emails.filter(e => e !== emailToDelete);
+                setUserProfile({ ...userProfile, emails: updatedEmails });
+            }
+        } catch (error) {
+            console.error('Error deleting email:', error);
+        }
     };
 
     const handleLogout = () => {
@@ -54,50 +108,138 @@ export function AppHeader() {
                 <div className="flex items-center gap-4">
                     {currentRole ? (
                         <>
-                            <Sheet>
-                                <SheetTrigger asChild>
-                                    <Button variant="outline" size="sm">
-                                        Switch Role
-                                    </Button>
-                                </SheetTrigger>
-                                <SheetContent>
-                                    <SheetHeader>
-                                        <SheetTitle>Switch Role</SheetTitle>
-                                        <SheetDescription>Select a role to switch to</SheetDescription>
-                                    </SheetHeader>
-                                    <div className="mt-6 space-y-2">
-                                        <Button
-                                            variant={currentRole === 'admin' ? 'default' : 'outline'}
-                                            className="w-full justify-start"
-                                            onClick={() => handleRoleSwitch('admin', 'a1')}
-                                            style={currentRole === 'admin' ? { backgroundColor: '#0bad85' } : {}}
-                                        >
-                                            Admin
-                                        </Button>
-                                        <Button
-                                            variant={currentRole === 'importer' ? 'default' : 'outline'}
-                                            className="w-full justify-start"
-                                            onClick={() => handleRoleSwitch('importer', 'i1')}
-                                            style={currentRole === 'importer' ? { backgroundColor: '#0bad85' } : {}}
-                                        >
-                                            Importer
-                                        </Button>
-                                        <Button
-                                            variant={currentRole === 'agent' ? 'default' : 'outline'}
-                                            className="w-full justify-start"
-                                            onClick={() => handleRoleSwitch('agent', 'ag1')}
-                                            style={currentRole === 'agent' ? { backgroundColor: '#0bad85' } : {}}
-                                        >
-                                            Agent
-                                        </Button>
-                                    </div>
-                                </SheetContent>
-                            </Sheet>
-                            <Avatar>
-                                <AvatarFallback>
-                                    {currentRole?.charAt(0).toUpperCase() || 'U'}
-                                </AvatarFallback>
-                            </Avatar>
+                            {userProfile && (
+                                <Dialog>
+                                    <DialogTrigger asChild>
+                                        <Avatar className="cursor-pointer hover:opacity-80 transition-opacity">
+                                            <AvatarFallback>
+                                                {userProfile.full_name?.charAt(0).toUpperCase() || 'U'}
+                                            </AvatarFallback>
+                                        </Avatar>
+                                    </DialogTrigger>
+                                    <DialogContent className="sm:max-w-[600px]">
+                                        <DialogHeader>
+                                            <DialogTitle>Profile Details</DialogTitle>
+                                        </DialogHeader>
+                                        <div className="grid gap-6 py-4">
+                                            <div className="grid grid-cols-2 gap-4">
+                                                <div className="space-y-1">
+                                                    <h4 className="text-sm font-medium leading-none text-muted-foreground">Full Name</h4>
+                                                    <p className="text-sm font-medium">{userProfile.full_name}</p>
+                                                </div>
+                                                <div className="space-y-1">
+                                                    <h4 className="text-sm font-medium leading-none text-muted-foreground">Position</h4>
+                                                    <p className="text-sm font-medium">{userProfile.position}</p>
+                                                </div>
+                                                <div className="space-y-1">
+                                                    <h4 className="text-sm font-medium leading-none text-muted-foreground">Company Email</h4>
+                                                    <p className="text-sm font-medium">{userProfile.company_email}</p>
+                                                </div>
+                                                <div className="space-y-1">
+                                                    <h4 className="text-sm font-medium leading-none text-muted-foreground">Phone Number</h4>
+                                                    <p className="text-sm font-medium">{userProfile.phone_number}</p>
+                                                </div>
+                                                <div className="space-y-1">
+                                                    <h4 className="text-sm font-medium leading-none text-muted-foreground">Legal Business Name</h4>
+                                                    <p className="text-sm font-medium">{userProfile.legal_business_name}</p>
+                                                </div>
+                                                <div className="space-y-1">
+                                                    <h4 className="text-sm font-medium leading-none text-muted-foreground">Trade Registration Number</h4>
+                                                    <p className="text-sm font-medium">{userProfile.trade_registration_number}</p>
+                                                </div>
+                                                <div className="space-y-1">
+                                                    <h4 className="text-sm font-medium leading-none text-muted-foreground">National Address</h4>
+                                                    <p className="text-sm font-medium">{userProfile.national_address}</p>
+                                                </div>
+                                                <div className="space-y-1">
+                                                    <h4 className="text-sm font-medium leading-none text-muted-foreground">National ID</h4>
+                                                    <p className="text-sm font-medium">{userProfile.national_id}</p>
+                                                </div>
+                                                <div className="space-y-1">
+                                                    <h4 className="text-sm font-medium leading-none text-muted-foreground">Registered on</h4>
+                                                    <p className="text-sm font-medium">
+                                                        {new Date(userProfile.created_at).toLocaleDateString('en-US', {
+                                                            year: 'numeric',
+                                                            month: 'long',
+                                                            day: 'numeric',
+                                                        })}
+                                                    </p>
+                                                </div>
+                                            </div>
+
+                                            <div className="space-y-3">
+                                                <div className="flex items-center justify-between">
+                                                    <h4 className="text-sm font-medium leading-none text-muted-foreground">Employee Emails</h4>
+                                                    {!isAddingEmail && (
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            className="h-6 w-6"
+                                                            onClick={() => setIsAddingEmail(true)}
+                                                        >
+                                                            <Plus className="h-4 w-4" />
+                                                        </Button>
+                                                    )}
+                                                </div>
+
+                                                {isAddingEmail && (
+                                                    <div className="flex items-center gap-2">
+                                                        <Input
+                                                            value={newEmail}
+                                                            onChange={(e) => setNewEmail(e.target.value)}
+                                                            placeholder="Enter email"
+                                                            className="h-8 text-sm"
+                                                        />
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            className="h-8 w-8 text-green-600 hover:text-green-700 hover:bg-green-50"
+                                                            onClick={handleAddEmail}
+                                                        >
+                                                            <Check className="h-4 w-4" />
+                                                        </Button>
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50"
+                                                            onClick={() => {
+                                                                setIsAddingEmail(false);
+                                                                setNewEmail('');
+                                                            }}
+                                                        >
+                                                            <X className="h-4 w-4" />
+                                                        </Button>
+                                                    </div>
+                                                )}
+
+                                                {userProfile.emails && userProfile.emails.length > 0 ? (
+                                                    <div className="grid grid-cols-1 gap-2">
+                                                        {userProfile.emails.map((email, index) => (
+                                                            <div key={index} className="flex items-center justify-between rounded-md border p-2 text-sm group">
+                                                                <span>{email}</span>
+                                                                <Button
+                                                                    variant="ghost"
+                                                                    size="icon"
+                                                                    className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity text-red-500 hover:text-red-600 hover:bg-red-50"
+                                                                    onClick={() => handleDeleteEmail(email)}
+                                                                >
+                                                                    <Trash2 className="h-3 w-3" />
+                                                                </Button>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                ) : (
+                                                    !isAddingEmail && (
+                                                        <div className="rounded-md border border-dashed p-4 text-center text-sm text-muted-foreground">
+                                                            No employee emails found
+                                                        </div>
+                                                    )
+                                                )}
+                                            </div>
+                                        </div>
+                                    </DialogContent>
+                                </Dialog>
+                            )}
                             <Button variant="ghost" size="sm" onClick={handleLogout}>
                                 Logout
                             </Button>
