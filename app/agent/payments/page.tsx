@@ -1,28 +1,21 @@
-'use client';
+'use client'
 
-import { useState, useMemo, useEffect } from 'react';
-import { useRoleStore } from '@/lib/store/useRoleStore';
-import { useLoader } from '@/components/providers/loader-provider';
-import { PaymentStatus } from '@/types/enums/PaymentStatus';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Search, DollarSign, Calendar, FileText, Plus, Edit, Trash2 } from 'lucide-react';
-import { format } from 'date-fns';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/components/ui/dialog';
-import { Textarea } from '@/components/ui/textarea';
-import { toast } from 'sonner';
+import { useRoleStore } from "@/lib/store/useRoleStore";
+import { useLoader } from "@/components/providers/loader-provider";
+import { AgentPaymentForm } from "@/components/forms/agent-payment-form";
+import { PaymentCard } from "@/components/shared/payment-card";
+import { PaymentDetailsDialog } from "@/components/shared/payment-details-dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { CreatePaymentInput } from "@/lib/schemas";
+import { PaymentStatus } from "@/types/enums/PaymentStatus";
+import { Search } from "lucide-react";
+import { useState, useEffect, useMemo } from "react";
+import { toast } from "sonner";
 import type { PaymentRequest } from '@/types';
-import { AgentPaymentForm } from '@/components/forms/agent-payment-form';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { PaymentCard } from '@/components/shared/payment-card';
-import { PaymentDetailsDialog } from '@/components/shared/payment-details-dialog';
-import { CreatePaymentInput } from '@/lib/schemas';
-import { fa } from 'zod/v4/locales';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
-export function PaymentsView() {
+export default function AgentPaymentsPage() {
     const { currentUserId } = useRoleStore();
     const { fetchFn } = useLoader();
     const [payments, setPayments] = useState<PaymentRequest[]>([]);
