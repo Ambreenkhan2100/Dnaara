@@ -80,6 +80,9 @@ export async function POST(request: Request) {
         paymentPartner,
         numberOfPallets,
         trucks,
+        certificateOfConfirmity,
+        certificateOfOrigin,
+        saberCertificate,
         role // the role of the creator
     } = body;
 
@@ -92,6 +95,15 @@ export async function POST(request: Request) {
 
     let packingListFileUrl = null;
     if (packingListFile) packingListFileUrl = await uploadBase64ToSupabase(packingListFile);
+
+    let certificateOfConfirmityUrl = null;
+    if (certificateOfConfirmity) certificateOfConfirmityUrl = await uploadBase64ToSupabase(certificateOfConfirmity);
+
+    let certificateOfOriginUrl = null;
+    if (certificateOfOrigin) certificateOfOriginUrl = await uploadBase64ToSupabase(certificateOfOrigin);
+
+    let saberCertificateUrl = null;
+    if (saberCertificate) saberCertificateUrl = await uploadBase64ToSupabase(saberCertificate);
 
     const otherDocumentsUrls: string[] = [];
     if (otherDocuments && Array.isArray(otherDocuments)) {
@@ -127,9 +139,9 @@ export async function POST(request: Request) {
         commercial_invoice_number, commercial_invoice_file_url,
         packing_list_file_url, purchase_order_number, other_documents_urls,
         duty_charges, comments, importer_id, agent_id, payment_partner,
-        number_of_pallets, created_by
+        number_of_pallets, created_by, certificate_of_confirmity_url, certificate_of_origin_url, saber_certificate_url
       ) VALUES (
-        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20
+        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23
       ) RETURNING id
     `;
 
@@ -139,7 +151,7 @@ export async function POST(request: Request) {
             commercialInvoiceNumber, commercialInvoiceFileUrl,
             packingListFileUrl, purchaseOrderNumber, otherDocumentsUrls,
             dutyCharges || null, comments, finalImporterId, finalAgentId, paymentPartner,
-            numberOfPallets || null, userId
+            numberOfPallets || null, userId, certificateOfConfirmityUrl, certificateOfOriginUrl, saberCertificateUrl
         ];
 
         const res = await client.query(insertShipmentQuery, shipmentValues);
