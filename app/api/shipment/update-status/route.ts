@@ -1,13 +1,15 @@
 import { NextResponse } from 'next/server';
 import { Pool } from 'pg';
 import { uploadBase64ToSupabase } from '@/lib/utils/fileupload';
+import { createNotification } from '@/lib/notifications';
 
 const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
 });
 
 export async function POST(request: Request) {
-    const userId = request.headers.get('x-user-id');
+    const userId = request.headers.get('x-user-id') as string;
+    const role = request.headers.get('x-user-role') as string;
 
     const body = await request.json();
     const { shipmentId, status, note, file } = body;
@@ -15,10 +17,24 @@ export async function POST(request: Request) {
     if (!shipmentId) {
         return NextResponse.json({ error: 'Shipment ID is required' }, { status: 400 });
     }
-
     const client = await pool.connect();
+    await client.query('BEGIN');
+
+    const shipmentResult = await client.query(
+        `SELECT s.*
+            FROM shipments s
+            WHERE s.id = $1`,
+        [shipmentId]
+    );
+
+    if (shipmentResult.rows.length === 0) {
+        await client.query('ROLLBACK');
+        return NextResponse.json({ error: 'Shipment not found' }, { status: 404 });
+    }
+
+    const shipment = shipmentResult.rows[0];
+
     try {
-        await client.query('BEGIN');
 
         if (status) {
             // Update shipment status
@@ -34,6 +50,19 @@ export async function POST(request: Request) {
                 await client.query('ROLLBACK');
                 return NextResponse.json({ error: 'Shipment not found' }, { status: 404 });
             }
+
+            const notification = {
+                recipientId: shipment.importer_id,
+                senderId: userId,
+                title: 'Shipment Updated',
+                message: `Shipment ${shipment.shipment_id} status had been updated to: ${status}`,
+                entityType: 'SHIPMENT',
+                entityId: shipmentId,
+                shipmentId: shipment.id,
+                emailBody: `Shipment ${shipment.shipment_id} status had been updated to: ${status}`,
+                type: 'SHIPMENT_UPDATED'
+            }
+            await createNotification(notification)
         }
 
 
@@ -49,6 +78,19 @@ export async function POST(request: Request) {
                 VALUES ($1, $2, $3, $4)
             `;
             await client.query(insertUpdateQuery, [shipmentId, note || 'Status update', fileUrl, userId]);
+
+            await createNotification({
+                recipientId: role === 'agent' ? shipment.importer_id : shipment.agent_id,
+                senderId: userId,
+                title: 'Shipment Updated',
+                message: `New updates for shipment ${shipment.shipment_id}`,
+                entityType: 'SHIPMENT',
+                entityId: shipmentId,
+                shipmentId: shipment.id,
+                emailBody: `There are updates for shipment ${shipment.shipment_id}`,
+                type: 'SHIPMENT_UPDATED'
+            });
+
         }
 
         await client.query('COMMIT');
