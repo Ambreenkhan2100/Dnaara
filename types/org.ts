@@ -3,13 +3,13 @@ export interface Balance {
     available: number;
     lastUpdated: string;
 }
-export interface Notification {
-    id: string;
-    subject: string;
-    body: string;
-    audience: 'all' | 'importer' | 'agent' | 'selected';
-    recipientIds?: string[];
-    createdAt: string;
-}
+// export interface Notification {
+//     id: string;
+//     subject: string;
+//     body: string;
+//     audience: 'all' | 'importer' | 'agent' | 'selected';
+//     recipientIds?: string[];
+//     createdAt: string;
+// }
 
 
