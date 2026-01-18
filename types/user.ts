@@ -49,5 +49,6 @@ export interface UseProfile {
     national_id: string;
     company_email: string;
     created_at: string;
-    emails: string[]
+    emails: string[];
+    role: string
 }

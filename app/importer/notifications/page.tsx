@@ -1,7 +1,5 @@
 'use client'
 
-import { Bell, Clock, MessageSquare, Package } from "lucide-react";
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useLoader } from "@/components/providers/loader-provider";
@@ -27,7 +25,7 @@ interface NotificationResponse {
     };
 }
 
-export default function AgentNotificationsPage() {
+export default function ImporterNotificationsPage() {
     const [notifications, setNotifications] = useState<Notification[]>([]);
     const [loading, setLoading] = useState(true);
     const [currentPage, setCurrentPage] = useState(1);
@@ -65,7 +63,6 @@ export default function AgentNotificationsPage() {
         }
     };
 
-    // Refetch when page changes or new notification arrives via SSE
     useEffect(() => {
         fetchNotifications(currentPage);
     }, [currentPage, refreshTrigger]);
@@ -135,7 +132,7 @@ export default function AgentNotificationsPage() {
             <div className="flex items-center justify-between">
                 <div>
                     <h2 className="text-2xl font-bold">Notifications</h2>
-                    <p className="text-muted-foreground">Stay updated with messages from importers</p>
+                    <p className="text-muted-foreground">Stay updated with messages from agents</p>
                 </div>
                 <div className="flex items-center gap-2">
                     <Badge variant="secondary">

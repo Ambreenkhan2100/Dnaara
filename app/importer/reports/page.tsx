@@ -2,6 +2,6 @@
 
 import { ReportsDashboard } from '@/components/shared/reports-dashboard';
 
-export function ReportsView() {
+export default function ImporterReportsPage() {
     return <ReportsDashboard />;
 }

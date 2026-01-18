@@ -1,3 +1,5 @@
+'use client';
+
 import { useState, useMemo, useEffect } from 'react';
 import { useRoleStore } from '@/lib/store/useRoleStore';
 import { useLoader } from '@/components/providers/loader-provider';
@@ -10,7 +12,7 @@ import type { PaymentRequest } from '@/types';
 import { PaymentCard } from '@/components/shared/payment-card';
 import { PaymentDetailsDialog } from '@/components/shared/payment-details-dialog';
 
-export function PaymentsView() {
+export default function ImporterPaymentsPage() {
     const { currentUserId } = useRoleStore();
     const { fetchFn } = useLoader();
     const [payments, setPayments] = useState<PaymentRequest[]>([]);
