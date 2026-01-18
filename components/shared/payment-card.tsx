@@ -30,12 +30,12 @@ export function PaymentCard({ payment, onClick, onEdit, onDelete }: PaymentCardP
                     </div>
                     <div className="flex items-center gap-2">
                         <Badge variant={
-                            payment.status === PaymentStatus.COMPLETED ? 'default' :
-                                payment.status === PaymentStatus.CONFIRMED ? 'secondary' : 'outline'
+                            payment.payment_status === PaymentStatus.COMPLETED ? 'default' :
+                                payment.payment_status === PaymentStatus.CONFIRMED ? 'secondary' : 'outline'
                         }>
-                            {payment.status}
+                            {payment.payment_status}
                         </Badge>
-                        {payment.status === PaymentStatus.REQUESTED && onEdit && onDelete && (
+                        {payment.payment_status === PaymentStatus.REQUESTED && onEdit && onDelete && (
                             <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                                 <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => onEdit(e, payment)}>
                                     <Edit className="h-4 w-4" />
@@ -72,7 +72,7 @@ export function PaymentCard({ payment, onClick, onEdit, onDelete }: PaymentCardP
                     </div>
                     <div className="flex items-center text-muted-foreground">
                         <Calendar className="mr-2 h-4 w-4" />
-                        Created On: {payment.createdAt ? format(new Date(payment.createdAt), 'MMM dd, yyyy | HH:mm') : 'N/A'}
+                        Created On: {payment.created_at ? format(new Date(payment.created_at), 'MMM dd, yyyy | HH:mm') : 'N/A'}
                     </div>
                     <div className="flex items-center text-muted-foreground">
                         <Calendar className="mr-2 h-4 w-4" />

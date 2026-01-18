@@ -10,16 +10,18 @@ import { Search } from 'lucide-react';
 import { toast } from 'sonner';
 import type { PaymentRequest } from '@/types';
 import { PaymentCard } from '@/components/shared/payment-card';
-import { PaymentDetailsDialog } from '@/components/shared/payment-details-dialog';
+
+
+import { useRouter } from "next/navigation";
 
 export default function ImporterPaymentsPage() {
+    const router = useRouter();
     const { currentUserId } = useRoleStore();
     const { fetchFn } = useLoader();
     const [payments, setPayments] = useState<PaymentRequest[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
-    const [selectedPayment, setSelectedPayment] = useState<PaymentRequest | null>(null);
-    const [comment, setComment] = useState('');
+
 
     const fetchPayments = async () => {
         if (!currentUserId) return;
@@ -69,15 +71,10 @@ export default function ImporterPaymentsPage() {
     }, [payments, searchQuery]);
 
     const getPaymentsByStatus = (status: PaymentStatus) => {
-        return filteredPayments.filter((p) => p.status === status);
+        return filteredPayments.filter((p) => p.payment_status === status);
     };
 
-    const handleAddComment = () => {
-        if (!selectedPayment || !comment.trim()) return;
-        console.log('Add comment', selectedPayment.id, comment);
-        setComment('');
-        toast.success('Comment added');
-    };
+
 
     const PaymentList = ({ data }: { data: PaymentRequest[] }) => (
         <div className="space-y-4">
@@ -88,7 +85,7 @@ export default function ImporterPaymentsPage() {
                     <PaymentCard
                         key={payment.id}
                         payment={payment}
-                        onClick={() => setSelectedPayment(payment)}
+                        onClick={() => router.push(`/importer/payments/${payment.id}`)}
                     />
                 ))
             )}
@@ -99,26 +96,7 @@ export default function ImporterPaymentsPage() {
         return <div className="text-center py-8">Loading payments...</div>;
     }
 
-    const acceptRejectPayment = async (id: string, status: PaymentStatus.CONFIRMED | PaymentStatus.REJECTED) => {
-        try {
-            const res = await fetchFn('/api/payment', {
-                method: 'PATCH',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ id, payment_status: status }),
-            });
 
-            if (!res.ok) throw new Error('Failed to update payment status');
-
-            toast.success(`Payment ${status.toLowerCase()} successfully`);
-            setSelectedPayment(null);
-            fetchPayments();
-        } catch (error) {
-            console.error('Error updating payment status:', error);
-            toast.error('Failed to update payment status');
-        }
-    };
 
     return (
         <div className="space-y-6">
@@ -158,15 +136,7 @@ export default function ImporterPaymentsPage() {
                 </TabsContent>
             </Tabs>
 
-            <PaymentDetailsDialog
-                open={!!selectedPayment}
-                onOpenChange={(open) => !open && setSelectedPayment(null)}
-                payment={selectedPayment}
-                shipment={selectedPayment?.shipment}
-                onAddComment={handleAddComment}
-                onConfirmPayment={(id) => acceptRejectPayment(id, PaymentStatus.CONFIRMED)}
-                onRejectPayment={(id) => acceptRejectPayment(id, PaymentStatus.REJECTED)}
-            />
+
         </div>
     );
 }

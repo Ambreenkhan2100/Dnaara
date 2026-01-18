@@ -153,8 +153,8 @@ export const useAdminStore = create<AdminState>((set) => ({
                 ...state.payments,
                 {
                     id: `pay-${Date.now()}`,
-                    status: 'REQUESTED',
-                    createdAt: new Date().toISOString(),
+                    payment_status: 'REQUESTED',
+                    created_at: new Date().toISOString(),
                     updatedAt: new Date().toISOString(),
                     comments: [],
                     ...payment,
@@ -165,7 +165,7 @@ export const useAdminStore = create<AdminState>((set) => ({
     updatePaymentStatus: (id, status) =>
         set((state) => ({
             payments: state.payments.map((p) =>
-                p.id === id ? { ...p, status, updatedAt: new Date().toISOString() } : p
+                p.id === id ? { ...p, payment_status: status, updatedAt: new Date().toISOString() } : p
             ),
         })),
 

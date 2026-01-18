@@ -4,6 +4,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { formatDistanceToNow } from "date-fns";
 import { Notification } from "@/types";
+import { useRouterWithLoader } from "@/hooks/use-router-with-loader";
+import { useRoleStore } from "@/lib/store/useRoleStore";
 
 interface NotificationCardProps {
     notification: Notification;
@@ -11,6 +13,8 @@ interface NotificationCardProps {
 }
 
 export function NotificationCard({ notification, onMarkAsRead }: NotificationCardProps) {
+    const router = useRouterWithLoader();
+    const { currentRole } = useRoleStore()
     const getIcon = (entityType: string) => {
         switch (entityType?.toLowerCase()) {
             case 'message': return <MessageSquare className="h-4 w-4" />;
@@ -61,18 +65,31 @@ export function NotificationCard({ notification, onMarkAsRead }: NotificationCar
                             </CardDescription>
                         </div>
                     </div>
-                    {!notification.isRead && (
+                    <div className="flex flex-row gap-2 items-center opacity-0 group-hover:opacity-100 transition-all duration-200 ease-in-out ">
+                        {!notification.isRead && (
+                            <Button
+                                className="cursor-pointer"
+                                variant="secondary"
+                                size="sm"
+                                // className="h-8 w-8 p-0"
+                                onClick={() => onMarkAsRead(notification.id || '')}
+                                title="Mark as read"
+                            >
+                                Mark as read
+                            </Button>
+                        )}
                         <Button
-                            className="opacity-0 group-hover:opacity-100 transition-all duration-200 ease-in-out cursor-pointer"
-                            variant="secondary"
+                            className="cursor-pointer"
+                            variant="outline"
                             size="sm"
-                            // className="h-8 w-8 p-0"
-                            onClick={() => onMarkAsRead(notification.id || '')}
-                            title="Mark as read"
+                            onClick={() => {
+                                router.push(`/${currentRole}/${notification.entityType.toLowerCase()}s/${notification.entityId}`)
+                            }}
+                            title="Open"
                         >
-                            Mark as read
+                            Open
                         </Button>
-                    )}
+                    </div>
                 </div>
             </CardHeader>
             <CardContent>

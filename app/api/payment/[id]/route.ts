@@ -25,7 +25,7 @@ export async function GET(
             SELECT 
                 p.*,
                 s.*,
-                p.id as payment_id,
+                p.id as id,
                 s.id as shipment_id
             FROM 
                 payments p

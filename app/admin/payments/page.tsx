@@ -25,7 +25,7 @@ export default function AdminPaymentsPage() {
     const getPaymentsByStatus = (status: string) => {
         let filtered = payments;
         if (status !== 'all') {
-            filtered = payments.filter((p) => p.status === status);
+            filtered = payments.filter((p) => p.payment_status === status);
         }
         return filtered.filter((p) =>
             p.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -67,7 +67,7 @@ export default function AdminPaymentsPage() {
                             </div>
                             <div className="flex items-center gap-1">
                                 <Calendar className="h-4 w-4" />
-                                Created: {format(new Date(payment.createdAt), 'PPP')}
+                                Created: {format(new Date(payment.created_at), 'PPP')}
                             </div>
                         </div>
                     </div>
@@ -76,7 +76,7 @@ export default function AdminPaymentsPage() {
                             SAR {payment.amount?.toLocaleString()}
                         </div>
                         <div className="flex flex-col items-end gap-2 mt-2">
-                            {payment.status === 'REQUESTED' && (
+                            {payment.payment_status === 'REQUESTED' && (
                                 <Button
                                     size="sm"
                                     onClick={() => updatePaymentStatus(payment.id, PaymentStatus.CONFIRMED)}
@@ -85,7 +85,7 @@ export default function AdminPaymentsPage() {
                                     Confirm Payment
                                 </Button>
                             )}
-                            {payment.status === 'CONFIRMED' && (
+                            {payment.payment_status === 'CONFIRMED' && (
                                 <Button
                                     size="sm"
                                     onClick={() => updatePaymentStatus(payment.id, PaymentStatus.COMPLETED)}
@@ -96,14 +96,14 @@ export default function AdminPaymentsPage() {
                             )}
                         </div>
                         <Badge
-                            className={`mt-1 ${payment.status === 'COMPLETED'
+                            className={`mt-1 ${payment.payment_status === 'COMPLETED'
                                 ? 'bg-green-500 hover:bg-green-600'
-                                : payment.status === 'CONFIRMED'
+                                : payment.payment_status === 'CONFIRMED'
                                     ? 'bg-blue-500 hover:bg-blue-600'
                                     : 'bg-yellow-500 hover:bg-yellow-600'
                                 }`}
                         >
-                            {payment.status}
+                            {payment.payment_status}
                         </Badge>
                     </div>
                 </div>
