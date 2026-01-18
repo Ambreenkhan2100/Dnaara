@@ -5,6 +5,84 @@ const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
 });
 
+export async function GET(
+    request: Request,
+    { params }: { params: Promise<{ id: string }> }
+) {
+    const { id: paymentId } = await params;
+    const userId = request.headers.get('x-user-id');
+
+    if (!userId) {
+        return NextResponse.json(
+            { error: 'User ID is required' },
+            { status: 401 }
+        );
+    }
+
+    const client = await pool.connect();
+    try {
+        let query = `
+            SELECT 
+                p.*,
+                s.*,
+                p.id as id,
+                s.id as shipment_id
+            FROM 
+                payments p
+            JOIN 
+                shipments s ON p.shipment_id = s.id
+            WHERE p.id = $1
+        `;
+
+        const result = await client.query(query, [paymentId]);
+
+        if (result.rows.length === 0) {
+            return NextResponse.json(
+                { error: 'Payment not found or access denied' },
+                { status: 404 }
+            );
+        }
+
+        const payment = result.rows[0];
+
+        const response = {
+            id: payment.id,
+            agent_id: payment.agent_id,
+            payment_type: payment.payment_type,
+            bayan_number: payment.bayan_number,
+            bill_number: payment.bill_number,
+            amount: payment.amount,
+            payment_deadline: payment.payment_deadline,
+            description: payment.description,
+            payment_status: payment.payment_status,
+            created_at: payment.created_at,
+            updated_at: payment.updated_at,
+            shipment: {
+                id: payment.shipment_id,
+                type: payment.shipment_type,
+                port_of_shipment: payment.port_of_shipment,
+                port_of_destination: payment.port_of_destination,
+                expected_arrival_date: payment.expected_arrival_date,
+                bill_number: payment.shipment_bill_number,
+                agent_id: payment.agent_id,
+                importer_id: payment.importer_id,
+                payment_partner: payment.payment_partner,
+                company_name: payment.company_name
+            }
+        };
+
+        return NextResponse.json(response);
+    } catch (error) {
+        console.error('Error fetching payment:', error);
+        return NextResponse.json(
+            { error: 'Failed to fetch payment' },
+            { status: 500 }
+        );
+    } finally {
+        client.release();
+    }
+}
+
 export async function DELETE(
     request: Request,
     { params }: { params: Promise<{ id: string }> }

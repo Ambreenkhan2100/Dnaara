@@ -6,7 +6,7 @@ const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
 async function verifyToken(token: string): Promise<{ userId: string, role: string } | null> {
     try {
         const decoded = jwt.verify(token, JWT_SECRET) as { userId: string, role: string };
-        return { 
+        return {
             userId: decoded.userId,
             role: decoded.role
         };
@@ -18,7 +18,7 @@ async function verifyToken(token: string): Promise<{ userId: string, role: strin
 
 export async function proxy(req: NextRequest) {
     // Skipping proxy for auth-related routes
-    if (req.nextUrl.pathname.startsWith('/api/auth')) {
+    if (req.nextUrl.pathname.startsWith('/api/auth') || req.nextUrl.pathname.startsWith('/api/notification/stream')) {
         return NextResponse.next();
     }
 

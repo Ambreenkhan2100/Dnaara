@@ -346,8 +346,8 @@ export const useAgentStore = create<AgentState>((set) => ({
                     ...payment,
                     agentId: 'ag1',
                     agentName: 'Logistics Pro', // Mock agent name
-                    status: PaymentStatus.REQUESTED,
-                    createdAt: new Date().toISOString(),
+                    payment_status: PaymentStatus.REQUESTED,
+                    created_at: new Date().toISOString(),
                     updatedAt: new Date().toISOString(),
                     comments: []
                 }

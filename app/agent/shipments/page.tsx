@@ -1,31 +1,27 @@
-'use client';
+'use client'
 
-import { useState, useEffect } from 'react';
-import { useImporterStore } from '@/lib/store/useImporterStore';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Plus, Search, FileText, MapPin, Calendar, DollarSign, Truck, Ship, Plane, SaudiRiyal, Banknote } from 'lucide-react';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { toast } from 'sonner';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useLoader } from "@/components/providers/loader-provider";
+import { FilterState, ShipmentFilter } from "@/components/shared/shipment-filter";
+import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { useRouterWithLoader } from "@/hooks/use-router-with-loader";
+import { Shipment } from "@/types/shipment";
+import { parseISO, addDays, isAfter, isBefore, startOfDay, endOfDay, isWithinInterval } from "date-fns";
+import { Plane, Ship, Truck, FileText, MapPin, Calendar, Banknote, SaudiRiyal, Search, Plus } from "lucide-react";
+import { useState, useEffect } from "react";
+import { toast } from "sonner";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 
-import { Shipment } from '@/types/shipment';
-import { ShipmentFilter, FilterState } from '@/components/shared/shipment-filter';
-import { isWithinInterval, parseISO, startOfDay, endOfDay, addDays, isBefore, isAfter } from 'date-fns';
-import { useLoader } from '@/components/providers/loader-provider';
-import { useRouterWithLoader } from '@/hooks/use-router-with-loader';
-
-export function ShipmentsView() {
+export default function AgentShipmentsPage() {
     const router = useRouterWithLoader();
-    const { linkedAgents } = useImporterStore();
     const [searchQuery, setSearchQuery] = useState('');
     const [filters, setFilters] = useState<FilterState>({});
     const [shipments, setShipments] = useState<Shipment[]>([]);
     const [loading, setLoading] = useState(true);
 
     const { fetchFn: fetchWithLoader } = useLoader();
-
     const fetchShipments = async () => {
         try {
             const token = localStorage.getItem('token');
@@ -76,7 +72,7 @@ export function ShipmentsView() {
     const filteredShipments = (list: Shipment[]) => {
         return list.filter(s => {
             const matchesSearch =
-                (s.agent?.name || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+                (s.importer?.name || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
                 s.bill_number.toLowerCase().includes(searchQuery.toLowerCase()) ||
                 (s.bayan_number || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
                 s.id.toLowerCase().includes(searchQuery.toLowerCase());
@@ -89,7 +85,7 @@ export function ShipmentsView() {
             }
 
             if (filters.agentId) {
-                if (s.agent_id !== filters.agentId) return false;
+                if (s.importer_id !== filters.agentId) return false;
             }
 
             if (filters.dateRange?.from) {
@@ -112,17 +108,14 @@ export function ShipmentsView() {
             default: return <FileText className="h-4 w-4" />;
         }
     };
-
-    const ShipmentCard = ({ request }: { request: Shipment }) => (
-        <Card key={request.id} className="mb-4 cursor-pointer hover:bg-accent/50 transition-colors" onClick={() => {
-            router.push(`/importer/shipments/${request.id}`);
-        }}>
+    const ShipmentCard = ({ request, showActions = false, showUpdate = false }: { request: Shipment, showActions?: boolean, showUpdate?: boolean }) => (
+        <Card key={request.id} className="mb-4 transition-colors">
             <CardHeader className="pb-2">
                 <div className="flex justify-between items-start">
                     <div>
                         <CardTitle className="text-lg flex items-center gap-2">
                             {getIcon(request.type)}
-                            {request.agent?.name || 'Unknown Agent'}
+                            {request.importer?.name || 'Unknown Importer'}
                         </CardTitle>
                         <CardDescription>ID: {request.shipment_id ?? 'N/A'} • B/L: {request.bill_number}</CardDescription>
                     </div>
@@ -143,7 +136,7 @@ export function ShipmentsView() {
                         <FileText className="h-3 w-3" /> Bayan: {request.bayan_number || 'N/A'}
                     </div>
                     <div className="flex items-center gap-1 text-muted-foreground">
-                        <Banknote className="h-3 w-3" />   Expected Custom Duty: {request.duty_charges || 'N/A'}<SaudiRiyal className="h-3 w-3" />
+                        <Banknote className="h-3 w-3" /> Duty: {request.duty_charges || 'N/A'}<SaudiRiyal className='size-3' />
                     </div>
                 </div>
                 {request.updates && request.updates.length > 0 && (
@@ -155,6 +148,9 @@ export function ShipmentsView() {
                     </div>
                 )}
             </CardContent>
+            <CardFooter className="flex justify-end gap-2 pt-2">
+                <Button size="sm" onClick={() => { router.push(`/agent/shipments/${request.id}`); }}>Open</Button>
+            </CardFooter>
         </Card>
     );
 
@@ -163,18 +159,7 @@ export function ShipmentsView() {
     }
 
     return (
-        <div className="space-y-6">
-            <div className="flex items-center justify-between">
-                <div>
-                    <h2 className="text-2xl font-bold tracking-tight">Shipments</h2>
-                    <p className="text-muted-foreground">Manage and track your shipments</p>
-                </div>
-                <Button onClick={() => router.push('/importer/new-shipment')} style={{ backgroundColor: '#0bad85' }}>
-                    <Plus className="mr-2 h-4 w-4" />
-                    Create New Shipment
-                </Button>
-            </div>
-
+        <div className="space-y-4">
             <div className="flex items-center justify-between gap-4">
                 <div className="relative w-full max-w-sm">
                     <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -186,20 +171,24 @@ export function ShipmentsView() {
                     />
                 </div>
                 <ShipmentFilter
-                    agents={linkedAgents}
+                    agents={[]}
                     onFilterChange={setFilters}
                     initialFilters={filters}
-                    entityLabel="Agent"
+                    entityLabel="Importer"
                 />
+                <Button onClick={() => router.push('/agent/shipments/create')}>
+                    <Plus className="mr-2 h-4 w-4" />
+                    Create new shipment
+                </Button>
             </div>
 
             <Tabs defaultValue="assigned" className="space-y-4">
                 <TabsList>
                     <TabsTrigger value="at_port">AT PORT ({atPortShipments.length})</TabsTrigger>
                     <TabsTrigger value="upcoming">UPCOMING ({upcomingShipments.length})</TabsTrigger>
-                    <TabsTrigger value="assigned">ASSIGNED ({assignedShipments.length})</TabsTrigger>
-                    <TabsTrigger value="confirmed">CONFIRMED ({confirmedShipments.length})</TabsTrigger>
-                    <TabsTrigger value="completed">COMPLETED ({completedShipments.length})</TabsTrigger>
+                    <TabsTrigger value="assigned">SHIPMENTS ASSIGNED ({assignedShipments.length})</TabsTrigger>
+                    <TabsTrigger value="confirmed">SHIPMENTS CONFIRMED ({confirmedShipments.length})</TabsTrigger>
+                    <TabsTrigger value="completed">SHIPMENTS COMPLETED ({completedShipments.length})</TabsTrigger>
                     <TabsTrigger value="all">ALL SHIPMENTS</TabsTrigger>
                 </TabsList>
 
@@ -208,7 +197,7 @@ export function ShipmentsView() {
                         <div className="text-center py-8 text-muted-foreground">No shipments at port found.</div>
                     ) : (
                         filteredShipments(atPortShipments).map(req => (
-                            <ShipmentCard key={req.id} request={req} />
+                            <ShipmentCard key={req.id} request={req} showUpdate />
                         ))
                     )}
                 </TabsContent>
@@ -218,7 +207,7 @@ export function ShipmentsView() {
                         <div className="text-center py-8 text-muted-foreground">No upcoming shipments found.</div>
                     ) : (
                         filteredShipments(upcomingShipments).map(req => (
-                            <ShipmentCard key={req.id} request={req} />
+                            <ShipmentCard key={req.id} request={req} showUpdate />
                         ))
                     )}
                 </TabsContent>
@@ -228,7 +217,7 @@ export function ShipmentsView() {
                         <div className="text-center py-8 text-muted-foreground">No assigned shipments found.</div>
                     ) : (
                         filteredShipments(assignedShipments).map(req => (
-                            <ShipmentCard key={req.id} request={req} />
+                            <ShipmentCard key={req.id} request={req} showActions />
                         ))
                     )}
                 </TabsContent>
@@ -238,7 +227,7 @@ export function ShipmentsView() {
                         <div className="text-center py-8 text-muted-foreground">No confirmed shipments found.</div>
                     ) : (
                         filteredShipments(confirmedShipments).map(req => (
-                            <ShipmentCard key={req.id} request={req} />
+                            <ShipmentCard key={req.id} request={req} showUpdate />
                         ))
                     )}
                 </TabsContent>

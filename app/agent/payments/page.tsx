@@ -1,36 +1,30 @@
-'use client';
+'use client'
 
-import { useState, useMemo, useEffect } from 'react';
-import { useRoleStore } from '@/lib/store/useRoleStore';
-import { useLoader } from '@/components/providers/loader-provider';
-import { PaymentStatus } from '@/types/enums/PaymentStatus';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Search, DollarSign, Calendar, FileText, Plus, Edit, Trash2 } from 'lucide-react';
-import { format } from 'date-fns';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/components/ui/dialog';
-import { Textarea } from '@/components/ui/textarea';
-import { toast } from 'sonner';
+import { useRoleStore } from "@/lib/store/useRoleStore";
+import { useLoader } from "@/components/providers/loader-provider";
+import { AgentPaymentForm } from "@/components/forms/agent-payment-form";
+import { PaymentCard } from "@/components/shared/payment-card";
+
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { CreatePaymentInput } from "@/lib/schemas";
+import { PaymentStatus } from "@/types/enums/PaymentStatus";
+import { Search } from "lucide-react";
+import { useState, useEffect, useMemo } from "react";
+import { toast } from "sonner";
 import type { PaymentRequest } from '@/types';
-import { AgentPaymentForm } from '@/components/forms/agent-payment-form';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { PaymentCard } from '@/components/shared/payment-card';
-import { PaymentDetailsDialog } from '@/components/shared/payment-details-dialog';
-import { CreatePaymentInput } from '@/lib/schemas';
-import { fa } from 'zod/v4/locales';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
-export function PaymentsView() {
+import { useRouter } from "next/navigation";
+
+export default function AgentPaymentsPage() {
+    const router = useRouter();
     const { currentUserId } = useRoleStore();
     const { fetchFn } = useLoader();
     const [payments, setPayments] = useState<PaymentRequest[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedPayment, setSelectedPayment] = useState<PaymentRequest | null>(null);
-    const [comment, setComment] = useState('');
-    const [createDialogOpen, setCreateDialogOpen] = useState(false);
     const [editDialogOpen, setEditDialogOpen] = useState(false);
 
     const fetchPayments = async () => {
@@ -75,13 +69,11 @@ export function PaymentsView() {
     const filteredPayments = useMemo(() => {
         return payments.filter((p) =>
             p.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            p.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            p.agentName.toLowerCase().includes(searchQuery.toLowerCase())
-        );
+            p.id.toLowerCase().includes(searchQuery.toLowerCase()));
     }, [payments, searchQuery]);
 
     const getPaymentsByStatus = (status: PaymentStatus) => {
-        return filteredPayments.filter((p) => p.status === status);
+        return filteredPayments.filter((p) => p.payment_status === status);
     };
 
     const handleDelete = async (e: React.MouseEvent<HTMLButtonElement>, id: string) => {
@@ -152,12 +144,7 @@ export function PaymentsView() {
         }
     }
 
-    const handleAddComment = () => {
-        if (!selectedPayment || !comment.trim()) return;
-        console.log('Add comment', selectedPayment.id, comment);
-        setComment('');
-        toast.success('Comment added');
-    };
+
 
     const PaymentList = ({ data }: { data: PaymentRequest[] }) => (
         <div className="space-y-4">
@@ -165,18 +152,18 @@ export function PaymentsView() {
                 <div className="text-center py-8 text-muted-foreground">No payments found</div>
             ) : (
                 data.map((payment) => (
-                    payment.status === PaymentStatus.REQUESTED ?
+                    payment.payment_status === PaymentStatus.REQUESTED ?
                         <PaymentCard
                             key={payment.id}
                             payment={payment}
-                            onClick={() => setSelectedPayment(payment)}
+                            onClick={() => router.push(`/agent/payments/${payment.id}`)}
                             onEdit={handleEdit}
                             onDelete={handleDelete}
                         /> :
                         <PaymentCard
                             key={payment.id}
                             payment={payment}
-                            onClick={() => setSelectedPayment(payment)}
+                            onClick={() => router.push(`/agent/payments/${payment.id}`)}
                         />
                 ))
             )}
@@ -249,14 +236,7 @@ export function PaymentsView() {
                 </DialogContent>
             </Dialog>
 
-            {/* View Details Dialog */}
-            <PaymentDetailsDialog
-                open={!!selectedPayment && !editDialogOpen}
-                onOpenChange={(open) => !open && setSelectedPayment(null)}
-                payment={selectedPayment}
-                shipment={selectedPayment?.shipment}
-                onAddComment={handleAddComment}
-            />
+
         </div>
     );
 }

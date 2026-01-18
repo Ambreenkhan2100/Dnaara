@@ -14,9 +14,13 @@ export async function GET(request: Request) {
         await client.query('BEGIN');
 
         const profileQuery = `
-            SELECT *
-            FROM user_profiles
-            WHERE user_id = $1
+            SELECT 
+                up.*,
+                u.id as user_id,
+                u.role
+            FROM user_profiles up
+            INNER JOIN users u ON up.user_id = u.id
+            WHERE up.user_id = $1
         `;
         const profileResult = await client.query(profileQuery, [userId]);
 
@@ -40,7 +44,7 @@ export async function GET(request: Request) {
 
         return NextResponse.json({
             ...profileResult.rows[0],
-            emails: emailsResult.rows
+            emails: emailsResult.rows.map((row: any) => row.email)
         });
 
     } catch (error) {

@@ -7,12 +7,12 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { StatusBadge } from '@/components/shared/status-badge';
 import { ImporterAgentLinkForm } from '@/components/forms/importer-agent-link-form';
 import { Plus, ArrowUpRight } from 'lucide-react';
-import { AgentDetailsDrawer } from './agent-details-drawer';
+import { AgentDetailsDrawer } from '../components/agent-details-drawer';
 import { useLoader } from '@/components/providers/loader-provider';
 import { ConnectedUser, RelationshipStatus } from '@/types/invite';
 import { toast } from 'sonner';
 
-export function AgentsView() {
+export default function ImporterAgentsPage() {
     const { fetchFn } = useLoader();
     const [linkedAgents, setLinkedAgents] = useState<ConnectedUser[]>([]);
     const [dialogOpen, setDialogOpen] = useState(false);

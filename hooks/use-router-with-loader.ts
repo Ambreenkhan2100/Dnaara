@@ -2,7 +2,7 @@
 
 import { useRouter as useNextRouter } from "next/navigation";
 import { useLoader } from "@/components/providers/loader-provider";
-import { useCallback } from "react";
+import { useCallback, useMemo } from "react";
 
 export function useRouterWithLoader() {
     const router = useNextRouter();
@@ -24,5 +24,5 @@ export function useRouterWithLoader() {
         [router, showPageLoader]
     );
 
-    return { ...router, push, replace };
+    return useMemo(() => ({ ...router, push, replace }), [router, push, replace]);
 }

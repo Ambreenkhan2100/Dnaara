@@ -1,6 +1,6 @@
-// app/api/notifications/route.ts
 import { NextResponse } from 'next/server';
 import { Pool } from 'pg';
+import type { Notification } from '@/types';
 
 const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
@@ -16,7 +16,6 @@ export async function GET(request: Request) {
 
     const client = await pool.connect();
     try {
-        // Get paginated notifications
         const query = `
             SELECT 
                 n.id,
@@ -41,6 +40,13 @@ export async function GET(request: Request) {
             WHERE n.recipient_id = $1
         `;
 
+        const unreadCountQuery = `
+            SELECT COUNT(*) FROM notifications n
+            WHERE n.is_read = false and n.recipient_id = $1
+        `;
+
+        const unreadCount = await client.query(unreadCountQuery, [userId]);
+
         const [notificationsResult, countResult] = await Promise.all([
             client.query(query, [userId, limit, offset]),
             client.query(countQuery, [userId])
@@ -50,21 +56,21 @@ export async function GET(request: Request) {
         const totalPages = Math.ceil(totalItems / limit);
 
         return NextResponse.json({
-            data: notificationsResult.rows,
+            data: notificationsResult.rows as Notification[],
             pagination: {
                 currentPage: page,
                 totalPages,
                 totalItems,
                 itemsPerPage: limit,
                 hasNextPage: page < totalPages,
-                hasPreviousPage: page > 1
+                hasPreviousPage: page > 1,
+                unreadCount: parseInt(unreadCount.rows[0].count)
             }
         });
-
     } catch (error) {
         console.error('Error fetching notifications:', error);
         return NextResponse.json(
-            { error: 'Internal Server Error' },
+            { error: 'Failed to fetch notifications' },
             { status: 500 }
         );
     } finally {
@@ -124,6 +130,39 @@ export async function PATCH(request: Request) {
         console.error('Error updating notifications:', error);
         return NextResponse.json(
             { error: 'Internal Server Error' },
+            { status: 500 }
+        );
+    } finally {
+        client.release();
+    }
+}
+
+export async function PUT(request: Request) {
+    const userId = request.headers.get('x-user-id');
+
+    const client = await pool.connect();
+    try {
+        await client.query('BEGIN');
+        
+        const result = await client.query(
+            `UPDATE notifications 
+             SET is_read = true, updated_at = NOW()
+             WHERE recipient_id = $1 AND is_read = false
+             RETURNING *`,
+            [userId]
+        );
+
+        await client.query('COMMIT');
+        
+        return NextResponse.json({
+            success: true,
+            updatedCount: result.rowCount
+        });
+    } catch (error) {
+        await client.query('ROLLBACK');
+        console.error('Error marking notifications as read:', error);
+        return NextResponse.json(
+            { error: 'Failed to update notifications' },
             { status: 500 }
         );
     } finally {
