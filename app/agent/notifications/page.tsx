@@ -1,9 +1,7 @@
-'use client';
-
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Bell, Clock, MessageSquare, Package } from 'lucide-react';
-
+import { Bell, Clock, MessageSquare, Package } from "lucide-react";
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { useNotifications } from "@/hooks/useNotifications";
 interface Notification {
     id: string;
     type: 'message' | 'shipment' | 'payment' | 'update';
@@ -13,9 +11,7 @@ interface Notification {
     time: string;
     read: boolean;
 }
-
-export function NotificationsView() {
-    // Mock notifications data
+export default function AgentNotificationsPage() {
     const notifications: Notification[] = [
         {
             id: '1',

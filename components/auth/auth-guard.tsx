@@ -71,7 +71,7 @@ export function AuthGuard({ children, allowedRoles }: AuthGuardProps) {
         };
 
         checkAuth();
-    }, [router, pathname, setRole, clearRole, allowedRoles]);
+    }, [router, pathname, setRole, clearRole, JSON.stringify(allowedRoles)]);
 
     if (isLoading) {
         return (
