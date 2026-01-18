@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { Pool } from 'pg';
 import { uploadBase64ToSupabase } from '@/lib/utils/fileupload';
 import { generateUniqueShipmentId } from '@/lib/utils/shipment-utils';
+import { createNotification } from '@/lib/notifications';
 
 const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
@@ -56,7 +57,7 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-    const userId = request.headers.get('x-user-id');
+    const userId = request.headers.get('x-user-id') as string;
 
     const body = await request.json();
     const {
@@ -131,20 +132,19 @@ export async function POST(request: Request) {
         await client.query('BEGIN');
 
         const shipment_id = await generateUniqueShipmentId(type, portOfShipment, portOfDestination);
-        console.log('Shipment Iddd  ', shipment_id)
 
         const insertShipmentQuery = `
-      INSERT INTO shipments (
-        shipment_id, type, port_of_shipment, port_of_destination, expected_arrival_date,
-        bill_number, bayan_number, bayan_file_url,
-        commercial_invoice_number, commercial_invoice_file_url,
-        packing_list_file_url, purchase_order_number, other_documents_urls,
-        duty_charges, comments, importer_id, agent_id, payment_partner,
-        number_of_pallets, created_by, certificate_of_confirmity_url, certificate_of_origin_url, saber_certificate_url
-      ) VALUES (
-        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23
-      ) RETURNING id
-    `;
+        INSERT INTO shipments (
+            shipment_id, type, port_of_shipment, port_of_destination, expected_arrival_date,
+            bill_number, bayan_number, bayan_file_url,
+            commercial_invoice_number, commercial_invoice_file_url,
+            packing_list_file_url, purchase_order_number, other_documents_urls,
+            duty_charges, comments, importer_id, agent_id, payment_partner,
+            number_of_pallets, created_by, certificate_of_confirmity_url, certificate_of_origin_url, saber_certificate_url
+        ) VALUES (
+            $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23
+        ) RETURNING id
+        `;
 
         const shipmentValues = [
             shipment_id, type, portOfShipment, portOfDestination, expectedArrivalDate,
@@ -192,6 +192,19 @@ export async function POST(request: Request) {
 
 
         await client.query('COMMIT');
+
+        const notification = {
+                        recipientId: partnerId,
+                        senderId: userId,
+                        title: 'Shipment Created',
+                        message: `Shipment ${shipment_id} has been created`,
+                        entityType: 'SHIPMENT',
+                        entityId: shipmentId,
+                        shipmentId: res.rows[0].id,
+                        emailBody: `Shipment ${shipment_id} has been created`,
+                        type: 'SHIPMENT_CREATED'
+                    }
+                    createNotification(notification)
         return NextResponse.json({ success: true, shipmentId });
     } catch (error) {
         await client.query('ROLLBACK');
