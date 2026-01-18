@@ -23,7 +23,9 @@ export default function AgentLayout({
 
     useEffect(() => {
         const tab = path.split('/').pop() as string;
-        if (tab) {
+        console.log('tab: ', tab);
+
+        if (tab?.length && tab != ALLOWED_ROLES[0]) {
             setTab(tab);
         }
     }, [path]);

@@ -11,4 +11,5 @@ export interface Notification {
     shipmentId: string;
     emailBody: string;
     type: string;
+    companyName?: string;
 }

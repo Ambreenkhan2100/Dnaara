@@ -1,6 +1,7 @@
 // app/api/notifications/route.ts
 import { NextResponse } from 'next/server';
 import { Pool } from 'pg';
+import type { Notification } from '@/types';
 
 const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
@@ -16,7 +17,6 @@ export async function GET(request: Request) {
 
     const client = await pool.connect();
     try {
-        // Get paginated notifications
         const query = `
             SELECT 
                 n.id,
@@ -50,7 +50,7 @@ export async function GET(request: Request) {
         const totalPages = Math.ceil(totalItems / limit);
 
         return NextResponse.json({
-            data: notificationsResult.rows,
+            data: notificationsResult.rows as Notification[],
             pagination: {
                 currentPage: page,
                 totalPages,
