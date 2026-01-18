@@ -5,8 +5,8 @@ import { useImporterStore } from '@/lib/store/useImporterStore';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Plus, Search, FileText, MapPin, Calendar, DollarSign, Truck, Ship, Plane, SaudiRiyal, Banknote } from 'lucide-react';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Plus, Search, FileText, MapPin, Calendar, Truck, Ship, Plane, SaudiRiyal, Banknote } from 'lucide-react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 
@@ -16,7 +16,7 @@ import { isWithinInterval, parseISO, startOfDay, endOfDay, addDays, isBefore, is
 import { useLoader } from '@/components/providers/loader-provider';
 import { useRouterWithLoader } from '@/hooks/use-router-with-loader';
 
-export function ShipmentsView() {
+export default function ImporterShipmentsPage() {
     const router = useRouterWithLoader();
     const { linkedAgents } = useImporterStore();
     const [searchQuery, setSearchQuery] = useState('');

@@ -62,7 +62,7 @@ export function AdminPaymentForm({ onSuccess }: AdminPaymentFormProps) {
             billNumber: data.billNumber,
             bayanNumber: data.bayanNumber,
             paymentDeadline: data.paymentDeadline,
-            status: PaymentStatus.REQUESTED,
+            payment_status: PaymentStatus.REQUESTED,
         });
 
         toast.success('Payment request created successfully');

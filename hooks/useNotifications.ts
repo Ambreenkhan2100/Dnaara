@@ -10,6 +10,7 @@ interface Notification {
 export function useNotifications(userId: string | null) {
     const [notifications, setNotifications] = useState<Notification[]>([]);
     const [isConnected, setIsConnected] = useState(false);
+    const [refreshTrigger, setRefreshTrigger] = useState(0);
 
     useEffect(() => {
         if (!userId) return;
@@ -35,6 +36,9 @@ export function useNotifications(userId: string | null) {
                 },
                 ...prev,
             ]);
+
+            // Increment refresh trigger to notify notification pages to refetch
+            setRefreshTrigger((prev) => prev + 1);
         };
 
         es.onerror = () => {
@@ -48,5 +52,5 @@ export function useNotifications(userId: string | null) {
         };
     }, [userId]);
 
-    return { notifications, isConnected };
+    return { notifications, isConnected, refreshTrigger };
 }

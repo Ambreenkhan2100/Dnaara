@@ -71,10 +71,10 @@ export function PaymentDetailsDialog({
                             <div>
                                 <p className="font-medium">Status</p>
                                 <Badge variant={
-                                    payment.status === 'COMPLETED' ? 'default' :
-                                        payment.status === 'CONFIRMED' ? 'secondary' : 'outline'
+                                    payment.payment_status === 'COMPLETED' ? 'default' :
+                                        payment.payment_status === 'CONFIRMED' ? 'secondary' : 'outline'
                                 }>
-                                    {payment.status}
+                                    {payment.payment_status}
                                 </Badge>
                             </div>
                             <div>
@@ -91,7 +91,7 @@ export function PaymentDetailsDialog({
                             </div>
                             <div>
                                 <p className="font-medium">Date Created</p>
-                                <p>{format(new Date(payment.createdAt), 'PPP')}</p>
+                                <p>{format(new Date(payment.created_at), 'PPP')}</p>
                             </div>
                             <div className="col-span-2">
                                 <p className="font-medium">Description</p>
@@ -170,7 +170,7 @@ export function PaymentDetailsDialog({
                         </div>
                     </div>
                 </div>
-                {(onConfirmPayment || onRejectPayment) && payment.status === PaymentStatus.REQUESTED && (
+                {(onConfirmPayment || onRejectPayment) && payment.payment_status === PaymentStatus.REQUESTED && (
                     <>
                         <Separator className="my-4" />
                         <div className="flex justify-end gap-2">
