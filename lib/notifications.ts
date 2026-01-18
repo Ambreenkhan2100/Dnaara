@@ -1,4 +1,3 @@
-// lib/notifications.ts
 import { Notification } from "@/types/notification";
 import { notificationEmitter } from "@/lib/notificationEmitter";
 import { Pool } from "pg";
@@ -45,18 +44,39 @@ export async function createNotification(notification: Notification) {
 
     try {
         const result = await client.query(query, values);
-        
+
         const createdNotification = result.rows[0];
+
+        if (notification.shipmentId) {
+            try {
+                const settingsResult = await client.query(
+                    'SELECT emails FROM shipment_notification_settings WHERE shipment_id = $1',
+                    [notification.shipmentId]
+                );
+
+                if (settingsResult.rows.length > 0 && settingsResult.rows[0].emails?.length > 0) {
+                    const emails: string[] = settingsResult.rows[0].emails;
+                    const emailSubject = notification.title;
+
+                    // Send email to each recipient
+                    await Promise.all(emails.map(email =>
+                        sendEmail(email, emailSubject, notification.emailBody)
+                    ));
+                }
+            } catch (emailError) {
+                console.error('Error sending notification emails:', emailError);
+            }
+        }
 
         notificationEmitter.emit("notify", {
             userId: notification.recipientId,
             data: {
-                type: "NEW_NOTIFICATION",
+                type: notification.type,
                 ...createdNotification,
             },
         });
         await client.query('COMMIT');
-        
+
         return createdNotification;
     } finally {
         client.release();

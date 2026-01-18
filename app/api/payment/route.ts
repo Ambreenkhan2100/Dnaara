@@ -62,7 +62,10 @@ export async function POST(request: Request) {
                 title: 'Payment Created',
                 message: `Payment for shipment bill number ${paymentData.bill_number} has been created`,
                 entityType: 'PAYMENT',
-                entityId: result.rows[0].id
+                entityId: result.rows[0].id,
+                shipmentId: paymentData.shipment_id,
+                emailBody: `Payment for shipment bill number ${paymentData.bill_number} has been created`,
+                type: 'PAYMENT_CREATED'
             }
             createNotification(notification)
             await client.query('COMMIT');

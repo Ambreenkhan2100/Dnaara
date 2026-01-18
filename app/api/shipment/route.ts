@@ -83,6 +83,7 @@ export async function POST(request: Request) {
         certificateOfConfirmity,
         certificateOfOrigin,
         saberCertificate,
+        emailsToNotify,
         role // the role of the creator
     } = body;
 
@@ -171,6 +172,24 @@ export async function POST(request: Request) {
                 ]);
             }
         }
+
+        const emailResult = await client.query(
+            'SELECT email FROM users WHERE id = ANY($1)',
+            [[finalImporterId, finalAgentId]]
+        );
+
+        const defaultEmails = emailResult.rows.map(row => row.email);
+
+        const allEmails = Array.from(new Set([
+            ...(emailsToNotify || []),
+            ...defaultEmails
+        ].filter(Boolean)));
+
+        await client.query(
+            'INSERT INTO shipment_notification_settings (shipment_id, emails) VALUES ($1, $2)',
+            [shipmentId, allEmails]
+        );
+
 
         await client.query('COMMIT');
         return NextResponse.json({ success: true, shipmentId });

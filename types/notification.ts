@@ -8,4 +8,7 @@ export interface Notification {
     entityId: string;
     isRead?: boolean;
     createdAt?: string;
+    shipmentId: string;
+    emailBody: string;
+    type: string;
 }
