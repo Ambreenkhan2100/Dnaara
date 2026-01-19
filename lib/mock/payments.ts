@@ -1,7 +1,7 @@
 import type { PaymentRequest } from '@/types';
 import { PaymentStatus } from '@/types/enums/PaymentStatus';
 
-export const payments: PaymentRequest[] = [
+export const payments: PaymentRequest | any[] = [
     {
         id: 'pay-001',
         shipmentId: 'req-001',

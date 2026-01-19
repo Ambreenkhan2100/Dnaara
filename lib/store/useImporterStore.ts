@@ -159,7 +159,7 @@ export const useImporterStore = create<ImporterState>((set, get) => ({
             updatedAt: '2025-11-22T09:00:00Z',
         }
     ], // Filter by current importer
-    payments: payments.filter((p) => p.importerId === 'i1'),
+    payments: (payments as any).filter((p: any) => p.importerId === 'i1') as any,
     transactions: [
         {
             id: 'tx-1',

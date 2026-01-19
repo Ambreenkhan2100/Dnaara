@@ -23,7 +23,7 @@ export function PaymentCard({ payment, onClick, onEdit, onDelete }: PaymentCardP
             <CardHeader className="pb-2">
                 <div className="flex justify-between items-start">
                     <div>
-                        <CardTitle className="text-base font-medium">{payment.paymentType || 'Payment Request'}</CardTitle>
+                        <CardTitle className="text-base font-medium">{payment.payment_type || 'Payment Request'}</CardTitle>
                         <div className="flex items-center gap-1 text-muted-foreground h-8">
                             <MapPin className="h-3 w-3" /><p className='leading-none'> {payment.shipment?.port_of_shipment} → {payment.shipment?.port_of_destination}</p>
                         </div>
@@ -76,7 +76,7 @@ export function PaymentCard({ payment, onClick, onEdit, onDelete }: PaymentCardP
                     </div>
                     <div className="flex items-center text-muted-foreground">
                         <Calendar className="mr-2 h-4 w-4" />
-                        Deadline: {payment.paymentDeadline ? format(new Date(payment.paymentDeadline), 'MMM dd, yyyy | HH:mm') : 'N/A'}
+                        Deadline: {payment.payment_deadline ? format(new Date(payment.payment_deadline), 'MMM dd, yyyy | HH:mm') : 'N/A'}
                     </div>
                 </div>
             </CardContent>

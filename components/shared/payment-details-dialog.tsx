@@ -79,15 +79,15 @@ export function PaymentDetailsDialog({
                             </div>
                             <div>
                                 <p className="font-medium">Bill Number</p>
-                                <p>{payment.billNumber || '-'}</p>
+                                <p>{payment.bill_number || '-'}</p>
                             </div>
                             <div>
                                 <p className="font-medium">Bayan Number</p>
-                                <p>{payment.bayanNumber || '-'}</p>
+                                <p>{payment.bayan_number || '-'}</p>
                             </div>
                             <div>
                                 <p className="font-medium">Payment Deadline</p>
-                                <p>{payment.paymentDeadline ? format(new Date(payment.paymentDeadline), 'PPP p') : '-'}</p>
+                                <p>{payment.payment_deadline ? format(new Date(payment.payment_deadline), 'PPP p') : '-'}</p>
                             </div>
                             <div>
                                 <p className="font-medium">Date Created</p>

@@ -48,7 +48,7 @@ export const addImporterSchema = z.object({
 export type AddImporterInput = z.infer<typeof addImporterSchema>;
 
 export const createPaymentSchema = z.object({
-    amount: z.coerce.number().min(1, 'Amount must be greater than 0'),
+    amount: z.coerce.string().min(1, 'Amount must be greater than 0'),
     description: z.string().min(1, 'Description is required'),
     shipmentId: z.string().min(1, 'Shipment is required'),
     importerId: z.string().min(1, 'Importer is required'),

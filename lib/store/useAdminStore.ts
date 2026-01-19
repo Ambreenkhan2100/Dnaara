@@ -146,7 +146,7 @@ export const useAdminStore = create<AdminState>((set) => ({
         })),
 
     // Payments
-    payments: [...payments],
+    payments: [...payments as any],
     createPayment: (payment) =>
         set((state) => ({
             payments: [

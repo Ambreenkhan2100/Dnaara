@@ -54,15 +54,15 @@ export function AgentPaymentForm({ initialData, prefilledImporterId, prefilledSh
     const form = useForm<CreatePaymentInput>({
         resolver: zodResolver(createPaymentSchema) as any,
         defaultValues: {
-            amount: initialData?.amount || 0,
+            amount: (initialData?.amount || 0).toString(),
             description: initialData?.description || '',
             shipmentId: initialData?.shipmentId || prefilledShipmentId || shipment?.id || '',
-            importerId: initialData?.importerId || prefilledImporterId || (shipment as any)?.importer_id || (shipment as any)?.importerId || '',
-            billNumber: initialData?.billNumber || '',
-            bayanNumber: initialData?.bayanNumber || '',
-            paymentDeadline: initialData?.paymentDeadline ? format(new Date(initialData.paymentDeadline), "yyyy-MM-dd'T'HH:mm") : '',
-            paymentType: initialData?.paymentType || '',
-            otherPaymentName: initialData?.otherPaymentName || '',
+            // importerId: initialData?.importer_id || prefilledImporterId || (shipment as any)?.importer_id || (shipment as any)?.importerId || '',
+            billNumber: initialData?.bill_number || '',
+            bayanNumber: initialData?.bayan_number || '',
+            paymentDeadline: initialData?.payment_deadline ? format(new Date(initialData.payment_deadline), "yyyy-MM-dd'T'HH:mm") : '',
+            paymentType: initialData?.payment_type || '',
+            otherPaymentName: initialData?.other_payment_name || '',
         },
     });
 

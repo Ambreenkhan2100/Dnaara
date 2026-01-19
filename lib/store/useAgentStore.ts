@@ -351,7 +351,7 @@ export const useAgentStore = create<AgentState>((set) => ({
                     updatedAt: new Date().toISOString(),
                     comments: []
                 }
-            ]
+            ] as any
         })),
 
     updatePayment: (id, data) =>

@@ -54,14 +54,14 @@ export function AdminPaymentForm({ onSuccess }: AdminPaymentFormProps) {
 
         createPayment({
             shipmentId: data.shipmentId,
-            agentId: shipment?.agentId || 'unknown',
-            agentName: shipment?.agentName || 'Unknown Agent',
-            importerId: shipment?.importerId || 'unknown',
-            amount: data.amount,
+            agent_id: shipment?.agentId || 'unknown',
+            // agentName: shipment?.agentName || 'Unknown Agent',
+            // importer_id: shipment?.importerId || 'unknown',
+            amount: data.amount.toString(),
             description: `Payment for ${data.shipmentId}`,
-            billNumber: data.billNumber,
-            bayanNumber: data.bayanNumber,
-            paymentDeadline: data.paymentDeadline,
+            bill_number: data.billNumber,
+            bayan_number: data.bayanNumber,
+            payment_deadline: data.paymentDeadline,
             payment_status: PaymentStatus.REQUESTED,
         });
 
