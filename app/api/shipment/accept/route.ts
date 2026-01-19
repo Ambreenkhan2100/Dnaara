@@ -1,3 +1,4 @@
+import { createNotification } from '@/lib/notifications';
 import { NextResponse } from 'next/server';
 import { Pool } from 'pg';
 
@@ -6,7 +7,7 @@ const pool = new Pool({
 });
 
 export async function POST(request: Request) {
-    const userId = request.headers.get('x-user-id');
+    const userId = request.headers.get('x-user-id') as string;
 
     const body = await request.json();
     const { shipmentId, note } = body;
@@ -24,7 +25,7 @@ export async function POST(request: Request) {
             UPDATE shipments 
             SET is_accepted = TRUE, status = 'CONFIRMED', updated_at = CURRENT_TIMESTAMP
             WHERE id = $1
-            RETURNING id
+            RETURNING *
         `;
         const updateRes = await client.query(updateQuery, [shipmentId]);
 
@@ -43,6 +44,18 @@ export async function POST(request: Request) {
         }
 
         await client.query('COMMIT');
+        const notification = {
+            recipientId: updateRes.rows[0].importer_id,
+            senderId: userId,
+            title: 'Shipment Updated',
+            message: `Shipment ${updateRes.rows[0].shipment_id} status had been Accepted`,
+            entityType: 'SHIPMENT',
+            entityId: shipmentId,
+            shipmentId: updateRes.rows[0].id,
+            emailBody: `Shipment ${updateRes.rows[0].shipment_id} status had been Accepted`,
+            type: 'SHIPMENT_ACCEPTED'
+        }
+        await createNotification(notification)
         return NextResponse.json({ success: true });
     } catch (error) {
         await client.query('ROLLBACK');

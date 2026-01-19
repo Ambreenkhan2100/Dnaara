@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { uploadBase64ToSupabase } from '@/lib/utils/fileupload';
 import { Pool } from 'pg';
+import { createNotification } from '@/lib/notifications';
 
 const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
@@ -8,6 +9,8 @@ const pool = new Pool({
 
 export async function PUT(request: Request) {
     try {
+        const userId = request.headers.get('x-user-id') as string;
+        const role = request.headers.get('x-user-role') as string;
 
         const { id, file } = await request.json();
 
@@ -42,7 +45,7 @@ export async function PUT(request: Request) {
             `;
 
             const result = await client.query(query, [fileUrl, id]);
-            
+
             if (result.rowCount === 0) {
                 await client.query('ROLLBACK');
                 return NextResponse.json(
@@ -52,6 +55,18 @@ export async function PUT(request: Request) {
             }
 
             await client.query('COMMIT');
+            const notification = {
+                recipientId: role === 'agent' ? result.rows[0].importer_id : result.rows[0].agent_id,
+                senderId: userId,
+                title: 'Payment Completed',
+                message: `Payment for shipment ${result.rows[0].shipment_id} has been completed`,
+                entityType: 'PAYMENT',
+                entityId: result.rows[0].payment_id,
+                shipmentId: result.rows[0].shipment_id,
+                emailBody: `Payment for shipment ${result.rows[0].shipment_id} has been completed`,
+                type: 'PAYMENT_COMPLETED'
+            }
+            await createNotification(notification)
             return NextResponse.json(result.rows[0]);
         } finally {
             client.release();
