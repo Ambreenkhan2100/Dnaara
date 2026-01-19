@@ -65,8 +65,7 @@ export default function ImporterPaymentsPage() {
     const filteredPayments = useMemo(() => {
         return payments.filter((p) =>
             p.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            p.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            p.agentName.toLowerCase().includes(searchQuery.toLowerCase())
+            p.id.toLowerCase().includes(searchQuery.toLowerCase())
         );
     }, [payments, searchQuery]);
 
