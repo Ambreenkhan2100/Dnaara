@@ -11,7 +11,7 @@ import { toast } from 'sonner';
 import { FileText, Truck, Clock, MapPin, User, DollarSign, Calendar } from 'lucide-react';
 import type { Shipment } from '@/types/shipment';
 import { useLoader } from '@/components/providers/loader-provider';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
@@ -585,6 +585,8 @@ export default function AgentShipmentDetailsPage() {
                                     <SelectItem value={ShipmentStatusEnum.ON_HOLD_BY_CUSTOMS}>On Hold by customs</SelectItem>
                                     <SelectItem value={ShipmentStatusEnum.COMPLETED_BY_CUSTOMS}>Completed by customs</SelectItem>
                                     <SelectItem value={ShipmentStatusEnum.REJECTED_BY_CUSTOMS}>Rejected by customs</SelectItem>
+                                    <SelectItem value={ShipmentStatusEnum.OTHER}>Other</SelectItem>
+                                    <SelectItem value={ShipmentStatusEnum.ADDITIONAL_DOCUMENT_REQUIRED}>Additional document required</SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>
