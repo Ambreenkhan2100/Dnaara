@@ -59,11 +59,11 @@ export async function PUT(request: Request) {
                 recipientId: role === 'agent' ? result.rows[0].importer_id : result.rows[0].agent_id,
                 senderId: userId,
                 title: 'Payment Completed',
-                message: `Payment for shipment ${result.rows[0].shipment_id} has been completed`,
+                message: `Payment for bill number ${result.rows[0].bill_number} has been completed`,
                 entityType: 'PAYMENT',
                 entityId: result.rows[0].payment_id,
                 shipmentId: result.rows[0].shipment_id,
-                emailBody: `Payment for shipment ${result.rows[0].shipment_id} has been completed`,
+                emailBody: `Payment for bill number ${result.rows[0].bill_number} has been completed`,
                 type: 'PAYMENT_COMPLETED'
             }
             await createNotification(notification)
