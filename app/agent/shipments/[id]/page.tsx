@@ -499,7 +499,7 @@ export default function AgentShipmentDetailsPage() {
                             {shipment.bayan_file_url && (
                                 <div className="flex items-center justify-between p-2 border rounded hover:bg-accent/50 transition-colors">
                                     <div className="flex items-center gap-2 overflow-hidden">
-                                        <FileText className="h-4 w-4 text-blue-500 flex-shrink-0" />
+                                        <FileText className="h-4 w-4 text-blue-500 shrink-0" />
                                         <span className="text-sm truncate">Bayan Document</span>
                                     </div>
                                     <a href={shipment.bayan_file_url} target="_blank" rel="noopener noreferrer">
@@ -510,7 +510,7 @@ export default function AgentShipmentDetailsPage() {
                             {shipment.commercial_invoice_file_url && (
                                 <div className="flex items-center justify-between p-2 border rounded hover:bg-accent/50 transition-colors">
                                     <div className="flex items-center gap-2 overflow-hidden">
-                                        <FileText className="h-4 w-4 text-blue-500 flex-shrink-0" />
+                                        <FileText className="h-4 w-4 text-blue-500 shrink-0" />
                                         <span className="text-sm truncate">Commercial Invoice</span>
                                     </div>
                                     <a href={shipment.commercial_invoice_file_url} target="_blank" rel="noopener noreferrer">
@@ -521,7 +521,7 @@ export default function AgentShipmentDetailsPage() {
                             {shipment.packing_list_file_url && (
                                 <div className="flex items-center justify-between p-2 border rounded hover:bg-accent/50 transition-colors">
                                     <div className="flex items-center gap-2 overflow-hidden">
-                                        <FileText className="h-4 w-4 text-blue-500 flex-shrink-0" />
+                                        <FileText className="h-4 w-4 text-blue-500 shrink-0" />
                                         <span className="text-sm truncate">Packing List</span>
                                     </div>
                                     <a href={shipment.packing_list_file_url} target="_blank" rel="noopener noreferrer">
@@ -532,7 +532,7 @@ export default function AgentShipmentDetailsPage() {
                             {shipment.other_documents_urls && shipment.other_documents_urls.map((url, idx) => (
                                 <div key={idx} className="flex items-center justify-between p-2 border rounded hover:bg-accent/50 transition-colors">
                                     <div className="flex items-center gap-2 overflow-hidden">
-                                        <FileText className="h-4 w-4 text-blue-500 flex-shrink-0" />
+                                        <FileText className="h-4 w-4 text-blue-500 shrink-0" />
                                         <span className="text-sm truncate">Other Doc #{idx + 1}</span>
                                     </div>
                                     <a href={url} target="_blank" rel="noopener noreferrer">
