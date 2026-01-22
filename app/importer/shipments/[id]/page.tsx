@@ -9,15 +9,27 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from '@/components/ui/breadcrumb';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { FileText, Upload, Truck, Clock, MapPin, User, DollarSign, Calendar } from 'lucide-react';
+import { FileText, Upload, Truck, Clock, MapPin, User, DollarSign, Calendar, SaudiRiyal, Banknote } from 'lucide-react';
 import type { Shipment } from '@/types/shipment';
 import { useLoader } from '@/components/providers/loader-provider';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { ShipmentStatusEnum } from '@/types/shipment';
+import { useUserStore } from '@/lib/store/useUserStore';
 
 export default function ShipmentDetailsPage() {
     const router = useRouter();
     const params = useParams();
     const [shipment, setShipment] = useState<Shipment | null>(null);
     const [error, setError] = useState<string | null>(null);
+
+    // Action States
+    const [actionNote, setActionNote] = useState('');
+    const [updateFile, setUpdateFile] = useState<File | null>(null);
+    const [updateDialogOpen, setUpdateDialogOpen] = useState(false);
+
+    const { userProfile } = useUserStore()
 
     const { fetchFn } = useLoader()
 
@@ -48,6 +60,80 @@ export default function ShipmentDetailsPage() {
             fetchShipment();
         }
     }, [params.id]);
+
+    const fetchShipments = async () => {
+        // Re-fetch current shipment
+        try {
+            const token = localStorage.getItem('token');
+            const response = await fetchFn(`/api/shipment/${params.id}`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to fetch shipment');
+            }
+
+            const data = await response.json();
+            setShipment(data.shipment);
+        } catch (err) {
+            console.error(err);
+        }
+    };
+
+    const handleUpdate = async () => {
+        if (!shipment) return;
+
+        if (!actionNote.length) {
+            toast.error('Please add a note');
+            return;
+        }
+
+        try {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                toast.error('Authentication token not found');
+                return;
+            }
+
+            let fileBase64 = null;
+            if (updateFile) {
+                const reader = new FileReader();
+                fileBase64 = await new Promise((resolve) => {
+                    reader.onload = (e) => resolve(e.target?.result);
+                    reader.readAsDataURL(updateFile);
+                });
+            }
+
+            const res = await fetchFn('/api/shipment/update-status', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    shipmentId: shipment.id,
+                    status: shipment.status,
+                    note: actionNote,
+                    file: fileBase64
+                })
+            });
+
+            if (!res.ok) {
+                throw new Error('Failed to update shipment status');
+            }
+
+            toast.success('Shipment status updated successfully');
+            setActionNote('');
+            setUpdateFile(null);
+            setUpdateDialogOpen(false);
+            fetchShipments();
+        } catch (error) {
+            console.error('Error updating shipment status:', error);
+            toast.error('Failed to update shipment status');
+        }
+    };
 
     if (error || !shipment) {
         return (
@@ -95,6 +181,9 @@ export default function ShipmentDetailsPage() {
                         <span className="flex items-center gap-1"><MapPin className="w-3 h-3" /> {shipment.port_of_destination}</span>
                     </p>
                 </div>
+                <div className="flex gap-2">
+                    <Button onClick={() => setUpdateDialogOpen(true)}>Add Update</Button>
+                </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -123,8 +212,8 @@ export default function ShipmentDetailsPage() {
                             <div className="space-y-1">
                                 <Label className="text-muted-foreground">Duty Charges</Label>
                                 <div className="font-medium flex items-center gap-2">
-                                    <DollarSign className="w-4 h-4 text-muted-foreground" />
-                                    {shipment.duty_charges?.toLocaleString() || '-'} SAR
+                                    <Banknote className="w-4 h-4 text-muted-foreground" />
+                                    {shipment.duty_charges?.toLocaleString() || '-'} <SaudiRiyal className='size-3' />
                                 </div>
                             </div>
                             {shipment.number_of_pallets && (
@@ -203,6 +292,16 @@ export default function ShipmentDetailsPage() {
                                             <div className="space-y-1">
                                                 <p className="text-sm text-muted-foreground">
                                                     {new Date(update.created_at).toLocaleString()}
+                                                    <span className="mx-1">•</span>
+                                                    {userProfile &&
+                                                        <span>
+                                                            {update.created_by === userProfile.user_id
+                                                                ? 'Created by you'
+                                                                : userProfile?.role?.toLowerCase() === 'agent'
+                                                                    ? `Created by ${shipment.importer?.name}`
+                                                                    : `Created by ${shipment.agent?.name}`}
+                                                        </span>
+                                                    }
                                                 </p>
                                                 <p className="font-medium">{update.update_text}</p>
                                                 {update.document_url && (
@@ -276,7 +375,7 @@ export default function ShipmentDetailsPage() {
                             {shipment.bayan_file_url && (
                                 <div className="flex items-center justify-between p-2 border rounded hover:bg-accent/50 transition-colors">
                                     <div className="flex items-center gap-2 overflow-hidden">
-                                        <FileText className="h-4 w-4 text-blue-500 flex-shrink-0" />
+                                        <FileText className="h-4 w-4 text-blue-500 shrink-0" />
                                         <span className="text-sm truncate">Bayan Document</span>
                                     </div>
                                     <a href={shipment.bayan_file_url} target="_blank" rel="noopener noreferrer">
@@ -287,7 +386,7 @@ export default function ShipmentDetailsPage() {
                             {shipment.commercial_invoice_file_url && (
                                 <div className="flex items-center justify-between p-2 border rounded hover:bg-accent/50 transition-colors">
                                     <div className="flex items-center gap-2 overflow-hidden">
-                                        <FileText className="h-4 w-4 text-blue-500 flex-shrink-0" />
+                                        <FileText className="h-4 w-4 text-blue-500 shrink-0" />
                                         <span className="text-sm truncate">Commercial Invoice</span>
                                     </div>
                                     <a href={shipment.commercial_invoice_file_url} target="_blank" rel="noopener noreferrer">
@@ -298,7 +397,7 @@ export default function ShipmentDetailsPage() {
                             {shipment.packing_list_file_url && (
                                 <div className="flex items-center justify-between p-2 border rounded hover:bg-accent/50 transition-colors">
                                     <div className="flex items-center gap-2 overflow-hidden">
-                                        <FileText className="h-4 w-4 text-blue-500 flex-shrink-0" />
+                                        <FileText className="h-4 w-4 text-blue-500 shrink-0" />
                                         <span className="text-sm truncate">Packing List</span>
                                     </div>
                                     <a href={shipment.packing_list_file_url} target="_blank" rel="noopener noreferrer">
@@ -306,10 +405,43 @@ export default function ShipmentDetailsPage() {
                                     </a>
                                 </div>
                             )}
+                            {shipment.certificate_of_confirmity_url && (
+                                <div className="flex items-center justify-between p-2 border rounded hover:bg-accent/50 transition-colors">
+                                    <div className="flex items-center gap-2 overflow-hidden">
+                                        <FileText className="h-4 w-4 text-blue-500 shrink-0" />
+                                        <span className="text-sm truncate">Certificate of Confirmity</span>
+                                    </div>
+                                    <a href={shipment.certificate_of_confirmity_url} target="_blank" rel="noopener noreferrer">
+                                        <Button variant="ghost" size="sm">View</Button>
+                                    </a>
+                                </div>
+                            )}
+                            {shipment.certificate_of_origin_url && (
+                                <div className="flex items-center justify-between p-2 border rounded hover:bg-accent/50 transition-colors">
+                                    <div className="flex items-center gap-2 overflow-hidden">
+                                        <FileText className="h-4 w-4 text-blue-500 shrink-0" />
+                                        <span className="text-sm truncate">Certificate of Origin</span>
+                                    </div>
+                                    <a href={shipment.certificate_of_origin_url} target="_blank" rel="noopener noreferrer">
+                                        <Button variant="ghost" size="sm">View</Button>
+                                    </a>
+                                </div>
+                            )}
+                            {shipment.saber_certificate_url && (
+                                <div className="flex items-center justify-between p-2 border rounded hover:bg-accent/50 transition-colors">
+                                    <div className="flex items-center gap-2 overflow-hidden">
+                                        <FileText className="h-4 w-4 text-blue-500 shrink-0" />
+                                        <span className="text-sm truncate">Saber Certificate</span>
+                                    </div>
+                                    <a href={shipment.saber_certificate_url} target="_blank" rel="noopener noreferrer">
+                                        <Button variant="ghost" size="sm">View</Button>
+                                    </a>
+                                </div>
+                            )}
                             {shipment.other_documents_urls && shipment.other_documents_urls.map((url, idx) => (
                                 <div key={idx} className="flex items-center justify-between p-2 border rounded hover:bg-accent/50 transition-colors">
                                     <div className="flex items-center gap-2 overflow-hidden">
-                                        <FileText className="h-4 w-4 text-blue-500 flex-shrink-0" />
+                                        <FileText className="h-4 w-4 text-blue-500 shrink-0" />
                                         <span className="text-sm truncate">Other Doc #{idx + 1}</span>
                                     </div>
                                     <a href={url} target="_blank" rel="noopener noreferrer">
@@ -318,15 +450,73 @@ export default function ShipmentDetailsPage() {
                                 </div>
                             ))}
 
-                            {(!shipment.bayan_file_url && !shipment.commercial_invoice_file_url && !shipment.packing_list_file_url) && (
-                                <div className="text-sm text-muted-foreground italic text-center py-2">
-                                    No documents attached
-                                </div>
+                            {shipment.updates && shipment.updates.some(u => u.document_url) && (
+                                <>
+                                    <div className="border-t my-4" />
+                                    <div className="text-sm font-medium text-muted-foreground mb-2">Update Documents</div>
+                                    {shipment.updates.filter(u => u.document_url).map((update, idx) => (
+                                        <div key={`update-doc-${idx}`} className="flex flex-col p-2 border rounded hover:bg-accent/50 transition-colors gap-1">
+                                            <div className="flex items-center justify-between">
+                                                <div className="flex items-center gap-2 overflow-hidden">
+                                                    <FileText className="h-4 w-4 text-blue-500 shrink-0" />
+                                                    <span className="text-sm truncate">Update Attachment</span>
+                                                </div>
+                                                <a href={update.document_url} target="_blank" rel="noopener noreferrer">
+                                                    <Button variant="ghost" size="sm">View</Button>
+                                                </a>
+                                            </div>
+                                            <div className="flex items-center text-xs text-muted-foreground gap-2 pl-6">
+                                                <span>{new Date(update.created_at).toLocaleString()}</span>
+                                                <span>•</span>
+                                                {userProfile && (
+                                                    <span>
+                                                        {update.created_by === userProfile.user_id
+                                                            ? 'Uploaded by you'
+                                                            : userProfile?.role?.toLowerCase() === 'agent'
+                                                                ? `Uploaded by ${shipment.importer?.name}`
+                                                                : `Uploaded by ${shipment.agent?.name}`}
+                                                    </span>
+                                                )}
+                                            </div>
+                                        </div>
+                                    ))}
+                                </>
                             )}
                         </CardContent>
                     </Card>
                 </div>
             </div>
+
+            <Dialog open={updateDialogOpen} onOpenChange={setUpdateDialogOpen}>
+                <DialogContent onPointerDownOutside={(e) => {
+                    const target = e.target as HTMLElement;
+                    if (target.closest('[role="listbox"]') || target.closest('[data-radix-select-viewport]')) {
+                        e.preventDefault();
+                    }
+                }}>
+                    <DialogHeader>
+                        <DialogTitle>Update Shipment Status</DialogTitle>
+                        <DialogDescription>Add a note or file to update the status.</DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                        <div className="space-y-2">
+                            <Label>Update Note</Label>
+                            <Textarea
+                                placeholder="What's the latest status?"
+                                value={actionNote}
+                                onChange={(e) => setActionNote(e.target.value)}
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <Label>Attachment (Optional)</Label>
+                            <Input type="file" onChange={(e) => setUpdateFile(e.target.files?.[0] || null)} />
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button onClick={handleUpdate}>Submit Update</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }

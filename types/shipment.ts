@@ -6,6 +6,8 @@ export enum ShipmentStatusEnum {
     ON_HOLD_BY_CUSTOMS = 'ON_HOLD_BY_CUSTOMS',
     COMPLETED_BY_CUSTOMS = 'COMPLETED_BY_CUSTOMS',
     REJECTED_BY_CUSTOMS = 'REJECTED_BY_CUSTOMS',
+    ADDITIONAL_DOCUMENT_REQUIRED = 'ADDITIONAL_DOCUMENT_REQUIRED',
+    OTHER = 'OTHER',
     ASSIGNED = 'ASSIGNED',
     CONFIRMED = 'CONFIRMED',
     COMPLETED = 'COMPLETED'
@@ -58,7 +60,10 @@ export interface Shipment {
     is_accepted: boolean;
     is_completed: boolean;
     status: ShipmentStatus;
-    shipment_id: string
+    shipment_id: string;
+    certificate_of_confirmity_url?: string;
+    certificate_of_origin_url?: string;
+    saber_certificate_url?: string;
 
     // Joins/Relations
     trucks?: ShipmentTruck[];

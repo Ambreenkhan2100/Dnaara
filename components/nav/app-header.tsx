@@ -2,6 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { useRoleStore } from '@/lib/store/useRoleStore';
+import { useUserStore } from '@/lib/store/useUserStore';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -16,10 +17,12 @@ import { useNotifications } from '@/hooks/useNotifications';
 export function AppHeader() {
     const router = useRouter();
     const { currentRole, clearRole } = useRoleStore();
+    const { userProfile, setUserProfile, clearUserProfile, updateEmails } = useUserStore();
 
     const { fetchFn } = useLoader();
 
-    const [userProfile, setUserProfile] = useState<UseProfile | null>(null);
+    // Remove local state
+    // const [userProfile, setUserProfile] = useState<UseProfile | null>(null);
     const { notifications: liveNotifications } = useNotifications(userProfile?.user_id || null);
 
     const handleNotificationClick = () => {
@@ -56,7 +59,7 @@ export function AppHeader() {
             });
 
             if (res.ok) {
-                setUserProfile({ ...userProfile, emails: updatedEmails });
+                updateEmails(updatedEmails);
                 setIsAddingEmail(false);
                 setNewEmail('');
             }
@@ -76,7 +79,7 @@ export function AppHeader() {
 
             if (res.ok) {
                 const updatedEmails = userProfile.emails.filter(e => e !== emailToDelete);
-                setUserProfile({ ...userProfile, emails: updatedEmails });
+                updateEmails(updatedEmails);
             }
         } catch (error) {
             console.error('Error deleting email:', error);
@@ -85,6 +88,7 @@ export function AppHeader() {
 
     const handleLogout = () => {
         clearRole();
+        clearUserProfile();
         localStorage.removeItem('token');
         localStorage.removeItem('user');
         router.push('/');

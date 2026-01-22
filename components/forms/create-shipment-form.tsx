@@ -11,7 +11,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogD
 import { Plus, Trash2, Edit } from 'lucide-react';
 import { toast } from 'sonner';
 import { useRoleStore } from '@/lib/store/useRoleStore';
+import { useUserStore } from '@/lib/store/useUserStore';
 import { useLoader } from '../providers/loader-provider';
+import { Checkbox } from '@/components/ui/checkbox';
+import { X, Check } from 'lucide-react';
 
 export interface TruckDetails {
     id: string;
@@ -40,6 +43,9 @@ export interface CreateShipmentFormData {
     packingListFile: string | null; // base64
     purchaseOrderNumber: string;
     otherDocuments: string[]; // base64 array
+    certificateOfConfirmity: string | null; // base64
+    certificateOfOrigin: string | null; // base64
+    saberCertificate: string | null; // base64
     dutyCharges: string;
     comments: string;
     partnerId: string; // agentId or importerId (for non-admin)
@@ -48,6 +54,7 @@ export interface CreateShipmentFormData {
     paymentPartner: string;
     numberOfPallets?: number;
     trucks?: TruckDetails[];
+    emailsToNotify: string[];
 }
 
 interface CreateShipmentFormProps {
@@ -76,6 +83,9 @@ export function CreateShipmentForm({ role, onSubmit, onCancel }: CreateShipmentF
         packingListFile: null,
         purchaseOrderNumber: '',
         otherDocuments: [],
+        certificateOfConfirmity: null,
+        certificateOfOrigin: null,
+        saberCertificate: null,
         dutyCharges: '',
         comments: '',
         partnerId: '',
@@ -84,7 +94,12 @@ export function CreateShipmentForm({ role, onSubmit, onCancel }: CreateShipmentF
         paymentPartner: '',
         numberOfPallets: undefined,
         trucks: [],
+        emailsToNotify: [],
     });
+
+    const { userProfile } = useUserStore();
+    const [sendUpdatesToOthers, setSendUpdatesToOthers] = useState(false);
+    const [newEmail, setNewEmail] = useState('');
 
     const { fetchFn } = useLoader();
 
@@ -225,6 +240,11 @@ export function CreateShipmentForm({ role, onSubmit, onCancel }: CreateShipmentF
     };
 
     const handleSaveTruck = () => {
+        if (!truckForm.vehicleNumber || !truckForm.driverName || !truckForm.driverMobileOrigin || !truckForm.driverMobileDestination) {
+            toast.error('Please fill in all truck details');
+            return;
+        }
+
         if (currentTruck) {
             // Update
             setFormData(prev => ({
@@ -239,6 +259,51 @@ export function CreateShipmentForm({ role, onSubmit, onCancel }: CreateShipmentF
             }));
         }
         setTruckDialogOpen(false);
+    };
+
+    const handleToggleSendUpdates = (checked: boolean) => {
+        setSendUpdatesToOthers(checked);
+        if (checked) {
+            // Prefill with user profile emails if available
+            setFormData(prev => ({
+                ...prev,
+                emailsToNotify: userProfile?.emails || []
+            }));
+        } else {
+            // Clear if unchecked
+            setFormData(prev => ({
+                ...prev,
+                emailsToNotify: []
+            }));
+        }
+    };
+
+    const handleAddEmail = () => {
+        if (!newEmail) return;
+
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(newEmail)) {
+            toast.error('Please enter a valid email address');
+            return;
+        }
+
+        if (formData.emailsToNotify.includes(newEmail)) {
+            toast.error('Email already added');
+            return;
+        }
+
+        setFormData(prev => ({
+            ...prev,
+            emailsToNotify: [...(prev.emailsToNotify || []), newEmail]
+        }));
+        setNewEmail('');
+    };
+
+    const handleRemoveEmail = (emailIdx: number) => {
+        setFormData(prev => ({
+            ...prev,
+            emailsToNotify: prev.emailsToNotify.filter((_, idx) => idx !== emailIdx)
+        }));
     };
 
     return (
@@ -478,6 +543,54 @@ export function CreateShipmentForm({ role, onSubmit, onCancel }: CreateShipmentF
                 </div>
 
                 <div className="space-y-2">
+                    <Label htmlFor="certificateOfConfirmity">Certificate of Confirmity *</Label>
+                    <Input
+                        id="certificateOfConfirmity"
+                        type="file"
+                        required
+                        className="cursor-pointer"
+                        onChange={async e => {
+                            if (e.target.files?.[0]) {
+                                const base64 = await convertFileToBase64(e.target.files[0]);
+                                setFormData(prev => ({ ...prev, certificateOfConfirmity: base64 }));
+                            }
+                        }}
+                    />
+                </div>
+
+                <div className="space-y-2">
+                    <Label htmlFor="certificateOfOrigin">Certificate of Origin *</Label>
+                    <Input
+                        id="certificateOfOrigin"
+                        type="file"
+                        required
+                        className="cursor-pointer"
+                        onChange={async e => {
+                            if (e.target.files?.[0]) {
+                                const base64 = await convertFileToBase64(e.target.files[0]);
+                                setFormData(prev => ({ ...prev, certificateOfOrigin: base64 }));
+                            }
+                        }}
+                    />
+                </div>
+
+                <div className="space-y-2">
+                    <Label htmlFor="saberCertificate">Saber Certificate *</Label>
+                    <Input
+                        id="saberCertificate"
+                        type="file"
+                        required
+                        className="cursor-pointer"
+                        onChange={async e => {
+                            if (e.target.files?.[0]) {
+                                const base64 = await convertFileToBase64(e.target.files[0]);
+                                setFormData(prev => ({ ...prev, saberCertificate: base64 }));
+                            }
+                        }}
+                    />
+                </div>
+
+                <div className="space-y-2">
                     <Label htmlFor="dutyCharges">Expected Duty Charges</Label>
                     <Input
                         id="dutyCharges"
@@ -562,6 +675,58 @@ export function CreateShipmentForm({ role, onSubmit, onCancel }: CreateShipmentF
                 />
             </div>
 
+
+
+            <div className="space-y-4 border p-4 rounded-md">
+                <div className="flex items-center space-x-2">
+                    <Checkbox
+                        id="sendUpdates"
+                        checked={sendUpdatesToOthers}
+                        onChange={(e) => handleToggleSendUpdates(e.target.checked)}
+                    />
+                    <Label htmlFor="sendUpdates" className="font-medium cursor-pointer">
+                        Send updates to others
+                    </Label>
+                </div>
+
+                {sendUpdatesToOthers && (
+                    <div className="space-y-3 pl-6">
+                        <div className="flex items-center space-x-2">
+                            <Input
+                                placeholder="Enter email address"
+                                value={newEmail}
+                                onChange={(e) => setNewEmail(e.target.value)}
+                                className="max-w-sm"
+                            />
+                            <Button type="button" size="icon" variant="secondary" onClick={handleAddEmail}>
+                                <Check className="h-4 w-4" />
+                            </Button>
+                        </div>
+
+                        {formData.emailsToNotify && formData.emailsToNotify.length > 0 ? (
+                            <div className="flex flex-wrap gap-2">
+                                {formData.emailsToNotify.map((email, idx) => (
+                                    <div key={idx} className="flex items-center bg-secondary text-secondary-foreground px-3 py-1 rounded-full text-sm">
+                                        <span>{email}</span>
+                                        <button
+                                            type="button"
+                                            onClick={() => handleRemoveEmail(idx)}
+                                            className="ml-2 text-muted-foreground hover:text-destructive focus:outline-none"
+                                        >
+                                            <X className="h-3 w-3" />
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <p className="text-sm text-muted-foreground italic">No emails added yet.</p>
+                        )}
+                    </div>
+                )}
+            </div>
+
+
+
             <div className="flex justify-end space-x-4">
                 <Button variant="outline" type="button" onClick={onCancel}>Cancel</Button>
                 <Button type="submit" disabled={isSubmitting} style={role === 'importer' || role === 'admin' ? { backgroundColor: '#0bad85' } : undefined}>
@@ -623,6 +788,6 @@ export function CreateShipmentForm({ role, onSubmit, onCancel }: CreateShipmentF
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
-        </form>
+        </form >
     );
 }
