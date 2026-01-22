@@ -10,6 +10,37 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip,
 import { useLoader } from '../providers/loader-provider';
 import { ShipmentStatusStats } from '@/types/shipmentStatusStats';
 
+interface PaymentStatus {
+    requested: number;
+    confirmed: number;
+    completed: number;
+}
+
+interface ShipmentTotal {
+    shipmentType: string;
+    requested: number;
+    confirmed: number;
+    completed: number;
+}
+
+interface ShipmentPaymentData {
+    type: string;
+    [key: string]: PaymentStatus | string;
+}
+
+interface PaymentData {
+    totalPayments: {
+        all: PaymentStatus;
+        byShipment: ShipmentTotal[];
+    };
+    [key: string]:
+    | PaymentStatus
+    | ShipmentTotal[]
+    | ShipmentPaymentData[]
+    | { all: PaymentStatus; byShipment: ShipmentTotal[] };
+    byShipmentType: ShipmentPaymentData[];
+}
+
 export function ReportsDashboard() {
     const { fetchFn } = useLoader();
     const [shipmentStats, setShipmentStats] = useState({
@@ -28,11 +59,14 @@ export function ReportsDashboard() {
         ON_HOLD_BY_CUSTOMS: 0,
         REJECTED: 0,
     });
-    const [paymentData, setPaymentData] = useState({
-        customsDuty: { requested: 0, confirmed: 0, completed: 0 },
-        otherPayments: { requested: 0, confirmed: 0, completed: 0 },
+    const [paymentData, setPaymentData] = useState<PaymentData>({
+        totalPayments: {
+            all: { requested: 0, confirmed: 0, completed: 0 },
+            byShipment: []
+        },
         byShipmentType: []
     });
+    const [paymentTypes, setPaymentTypes] = useState<string[]>([]);
     const [paymentFilter, setPaymentFilter] = useState('all');
     const [activeTab, setActiveTab] = useState('shipments');
 
@@ -108,6 +142,14 @@ export function ReportsDashboard() {
                     const response = await fetchFn(`/api/reports/payments`);
                     const data = await response.json();
                     setPaymentData(data);
+
+                    const types = Object.keys(data).filter(
+                        key => key !== 'byShipmentType' &&
+                            key !== 'totalPayments' &&
+                            key !== 'all' &&
+                            key !== 'byShipment'
+                    );
+                    setPaymentTypes(types);
                 } catch (error) {
                     console.error('Error fetching payment data:', error);
                 }
@@ -116,46 +158,30 @@ export function ReportsDashboard() {
         }
     }, [activeTab, fetchFn]);
 
-    const getFilteredData = () => {
+    const getPaymentData = (paymentType: string): PaymentStatus => {
+        const defaultData: PaymentStatus = { requested: 0, confirmed: 0, completed: 0 };
+
         if (paymentFilter === 'all') {
-            return paymentData;
+            const data = paymentData[paymentType];
+            return typeof data === 'object' && 'requested' in data
+                ? data as PaymentStatus
+                : defaultData;
         }
-        const filteredType = paymentData.byShipmentType.find(
-            (item: any) => item.type.toLowerCase() === paymentFilter
+
+        const shipmentData = paymentData.byShipmentType?.find(
+            (item) => item.type.toLowerCase() === paymentFilter
         );
-        return filteredType || {
-            customsDuty: { requested: 0, confirmed: 0, completed: 0 },
-            otherPayments: { requested: 0, confirmed: 0, completed: 0 }
-        };
+
+        const paymentStatus = shipmentData?.[paymentType];
+        return paymentStatus && typeof paymentStatus === 'object'
+            ? paymentStatus as PaymentStatus
+            : defaultData;
     };
 
-    const filteredData = getFilteredData();
-    const isFiltered = paymentFilter !== 'all';
-
-    const totalAmountData = [
-        {
-            name: 'Requested',
-            total: (isFiltered ? filteredData.customsDuty.requested : paymentData.customsDuty.requested) +
-                (isFiltered ? filteredData.otherPayments.requested : paymentData.otherPayments.requested)
-        },
-        {
-            name: 'Confirmed',
-            total: (isFiltered ? filteredData.customsDuty.confirmed : paymentData.customsDuty.confirmed) +
-                (isFiltered ? filteredData.otherPayments.confirmed : paymentData.otherPayments.confirmed)
-        },
-        {
-            name: 'Completed',
-            total: (isFiltered ? filteredData.customsDuty.completed : paymentData.customsDuty.completed) +
-                (isFiltered ? filteredData.otherPayments.completed : paymentData.otherPayments.completed)
-        }
-    ];
-
-    // Data for the Customs Duty chart
-    const customsDutyData = [
-        { name: 'Requested', value: isFiltered ? filteredData.customsDuty.requested : paymentData.customsDuty.requested },
-        { name: 'Confirmed', value: isFiltered ? filteredData.customsDuty.confirmed : paymentData.customsDuty.confirmed },
-        { name: 'Completed', value: isFiltered ? filteredData.customsDuty.completed : paymentData.customsDuty.completed }
-    ];
+    const totalData = paymentFilter === 'all'
+        ? paymentData.totalPayments.all
+        : paymentData.totalPayments.byShipment.find(s => s.shipmentType.toLowerCase() === paymentFilter) ||
+        { requested: 0, confirmed: 0, completed: 0 };
 
     const maxShipments = Math.max(...monthlyData.map(d => d.shipments));
 
@@ -347,39 +373,49 @@ export function ReportsDashboard() {
                             <CardContent className="space-y-4">
                                 <div className="flex justify-between items-center border-b pb-2">
                                     <span className="text-muted-foreground">Requested</span>
-                                    <span className="font-bold text-lg">SAR {totalAmountData.find(d => d.name === 'Requested')?.total.toLocaleString() || '0'}</span>
+                                    <span className="font-bold text-lg">SAR {totalData.requested.toLocaleString() || '0'}</span>
                                 </div>
                                 <div className="flex justify-between items-center border-b pb-2">
                                     <span className="text-muted-foreground">Confirmed</span>
-                                    <span className="font-bold text-lg text-blue-600">SAR {totalAmountData.find(d => d.name === 'Confirmed')?.total.toLocaleString() || '0'}</span>
+                                    <span className="font-bold text-lg text-blue-600">SAR {totalData.confirmed.toLocaleString() || '0'}</span>
                                 </div>
                                 <div className="flex justify-between items-center">
                                     <span className="text-muted-foreground">Completed</span>
-                                    <span className="font-bold text-lg text-green-600">SAR {totalAmountData.find(d => d.name === 'Completed')?.total.toLocaleString() || '0'}</span>
+                                    <span className="font-bold text-lg text-green-600">SAR {totalData.completed.toLocaleString() || '0'}</span>
                                 </div>
                             </CardContent>
                         </Card>
 
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>Customs Duty</CardTitle>
-                                <CardDescription>Duty specific payments</CardDescription>
-                            </CardHeader>
-                            <CardContent className="space-y-4">
-                                <div className="flex justify-between items-center border-b pb-2">
-                                    <span className="text-muted-foreground">Requested</span>
-                                    <span className="font-bold text-lg">SAR {customsDutyData.find(d => d.name === 'Requested')?.value.toLocaleString() || '0'}</span>
-                                </div>
-                                <div className="flex justify-between items-center border-b pb-2">
-                                    <span className="text-muted-foreground">Confirmed</span>
-                                    <span className="font-bold text-lg text-blue-600">SAR {customsDutyData.find(d => d.name === 'Confirmed')?.value.toLocaleString() || '0'}</span>
-                                </div>
-                                <div className="flex justify-between items-center">
-                                    <span className="text-muted-foreground">Completed</span>
-                                    <span className="font-bold text-lg text-green-600">SAR {customsDutyData.find(d => d.name === 'Completed')?.value.toLocaleString() || '0'}</span>
-                                </div>
-                            </CardContent>
-                        </Card>
+                        {paymentTypes.filter(p => p != 'totalPayments').map((paymentType) => {
+                            const paymentData = getPaymentData(paymentType);
+                            const statuses = [
+                                { name: 'Requested', value: paymentData.requested, className: '' },
+                                { name: 'Confirmed', value: paymentData.confirmed, className: 'text-blue-600' },
+                                { name: 'Completed', value: paymentData.completed, className: 'text-green-600' }
+                            ];
+
+                            return (
+                                <Card key={paymentType}>
+                                    <CardHeader>
+                                        <CardTitle>{paymentType}</CardTitle>
+                                        <CardDescription>{paymentType} payments</CardDescription>
+                                    </CardHeader>
+                                    <CardContent className="space-y-4">
+                                        {statuses.map((status, index) => (
+                                            <div
+                                                key={status.name}
+                                                className={`flex justify-between items-center ${index < 2 ? 'border-b pb-2' : ''}`}
+                                            >
+                                                <span className="text-muted-foreground">{status.name}</span>
+                                                <span className={`font-bold text-lg ${status.className}`}>
+                                                    SAR {status.value.toLocaleString()}
+                                                </span>
+                                            </div>
+                                        ))}
+                                    </CardContent>
+                                </Card>
+                            );
+                        })}
                     </div>
                 </TabsContent>
 

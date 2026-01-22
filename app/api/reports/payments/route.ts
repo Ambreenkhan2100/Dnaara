@@ -24,87 +24,155 @@ export async function GET(request: Request) {
         }
 
         const query = `
-            WITH payment_totals AS (
+            WITH payment_aggregates AS (
                 SELECT
                     s.type as shipment_type,
-                    p.payment_status,
                     p.payment_type,
-                    SUM(p.amount) as total_amount
-                FROM payments p
-                JOIN shipments s ON p.shipment_id = s.id
+                    COALESCE(SUM(CASE WHEN p.payment_status = 'REQUESTED' THEN p.amount ELSE 0 END), 0) as requested_amount,
+                    COALESCE(SUM(CASE WHEN p.payment_status = 'CONFIRMED' THEN p.amount ELSE 0 END), 0) as confirmed_amount,
+                    COALESCE(SUM(CASE WHEN p.payment_status = 'COMPLETED' THEN p.amount ELSE 0 END), 0) as completed_amount
+                FROM 
+                    payments p
+                JOIN 
+                    shipments s ON p.shipment_id = s.id
                 WHERE 
                     ${roleCondition}
                     AND p.payment_status IN ('REQUESTED', 'CONFIRMED', 'COMPLETED')
-                GROUP BY s.type, p.payment_status, p.payment_type
+                GROUP BY 
+                    s.type, p.payment_type
             ),
-            shipment_type_data AS (
+            payment_type_totals AS (
+                SELECT 
+                    payment_type,
+                    SUM(requested_amount) as total_requested,
+                    SUM(confirmed_amount) as total_confirmed,
+                    SUM(completed_amount) as total_completed
+                FROM payment_aggregates
+                GROUP BY payment_type
+            ),
+            overall_totals AS (
                 SELECT
+                    'all' as group_type,
+                    NULL as shipment_type,
+                    COALESCE(SUM(requested_amount), 0) as total_requested,
+                    COALESCE(SUM(confirmed_amount), 0) as total_confirmed,
+                    COALESCE(SUM(completed_amount), 0) as total_completed
+                FROM payment_aggregates
+            ),
+            -- Get totals by shipment type
+            shipment_totals AS (
+                SELECT
+                    'by_shipment' as group_type,
                     shipment_type,
-                    -- Customs Duty by status
-                    SUM(CASE WHEN payment_type = 'Customs Duty' AND payment_status = 'REQUESTED' THEN total_amount ELSE 0 END) as customs_duty_requested,
-                    SUM(CASE WHEN payment_type = 'Customs Duty' AND payment_status = 'CONFIRMED' THEN total_amount ELSE 0 END) as customs_duty_confirmed,
-                    SUM(CASE WHEN payment_type = 'Customs Duty' AND payment_status = 'COMPLETED' THEN total_amount ELSE 0 END) as customs_duty_completed,
-                    
-                    -- Other payments by status
-                    SUM(CASE WHEN payment_type != 'Customs Duty' AND payment_status = 'REQUESTED' THEN total_amount ELSE 0 END) as other_payments_requested,
-                    SUM(CASE WHEN payment_type != 'Customs Duty' AND payment_status = 'CONFIRMED' THEN total_amount ELSE 0 END) as other_payments_confirmed,
-                    SUM(CASE WHEN payment_type != 'Customs Duty' AND payment_status = 'COMPLETED' THEN total_amount ELSE 0 END) as other_payments_completed
-                FROM payment_totals
+                    COALESCE(SUM(requested_amount), 0) as total_requested,
+                    COALESCE(SUM(confirmed_amount), 0) as total_confirmed,
+                    COALESCE(SUM(completed_amount), 0) as total_completed
+                FROM payment_aggregates
                 GROUP BY shipment_type
+            ),
+            -- Combine both results
+            combined_totals AS (
+                SELECT * FROM overall_totals
+                UNION ALL
+                SELECT * FROM shipment_totals
             )
-            SELECT
-                -- Overall totals (same as before)
-                (SELECT COALESCE(SUM(customs_duty_requested), 0) FROM shipment_type_data) as customs_duty_requested,
-                (SELECT COALESCE(SUM(customs_duty_confirmed), 0) FROM shipment_type_data) as customs_duty_confirmed,
-                (SELECT COALESCE(SUM(customs_duty_completed), 0) FROM shipment_type_data) as customs_duty_completed,
-                
-                (SELECT COALESCE(SUM(other_payments_requested), 0) FROM shipment_type_data) as other_payments_requested,
-                (SELECT COALESCE(SUM(other_payments_confirmed), 0) FROM shipment_type_data) as other_payments_confirmed,
-                (SELECT COALESCE(SUM(other_payments_completed), 0) FROM shipment_type_data) as other_payments_completed,
-                
-                -- Shipment type breakdown
-                (SELECT json_agg(json_build_object(
-                    'type', shipment_type,
-                    'customsDuty', json_build_object(
-                        'requested', customs_duty_requested,
-                        'confirmed', customs_duty_confirmed,
-                        'completed', customs_duty_completed
-                    ),
-                    'otherPayments', json_build_object(
-                        'requested', other_payments_requested,
-                        'confirmed', other_payments_confirmed,
-                        'completed', other_payments_completed
+            SELECT 
+                -- Overall total payments
+                (SELECT 
+                    json_build_object(
+                        'requested', total_requested,
+                        'confirmed', total_confirmed,
+                        'completed', total_completed
                     )
-                )) FROM shipment_type_data) as by_shipment_type
+                FROM combined_totals 
+                WHERE group_type = 'all' AND shipment_type IS NULL
+                ) as total_payments,
+                
+                -- Shipment type totals as an array
+                (SELECT 
+                    json_agg(
+                        json_build_object(
+                            'shipmentType', shipment_type,
+                            'requested', total_requested,
+                            'confirmed', total_confirmed,
+                            'completed', total_completed
+                        )
+                    )
+                FROM combined_totals 
+                WHERE group_type = 'by_shipment'
+                ) as shipment_type_totals,
+
+                -- Payment types
+            COALESCE((
+                SELECT json_agg(
+                    json_build_object(
+                        'paymentType', payment_type,
+                        'requested', total_requested,
+                        'confirmed', total_confirmed,
+                        'completed', total_completed
+                    )
+                ) 
+                FROM payment_type_totals
+            ), '[]'::json) as payment_types,
+            
+            -- Shipment types
+            COALESCE((
+                SELECT json_agg(
+                    json_build_object(
+                        'shipmentType', shipment_type,
+                        'payments', (
+                            SELECT json_agg(
+                                json_build_object(
+                                    'paymentType', payment_type,
+                                    'requested', requested_amount,
+                                    'confirmed', confirmed_amount,
+                                    'completed', completed_amount
+                                )
+                            )
+                            FROM payment_aggregates pa2 
+                            WHERE pa2.shipment_type = pa1.shipment_type
+                        )
+                    )
+                )
+                FROM (SELECT DISTINCT shipment_type FROM payment_aggregates) pa1
+            ), '[]'::json) as by_shipment_type
         `;
 
         const result = await client.query(query, [userId]);
         const row = result.rows[0];
 
         const response = {
-            customsDuty: {
-                requested: parseFloat(row.customs_duty_requested) || 0,
-                confirmed: parseFloat(row.customs_duty_confirmed) || 0,
-                completed: parseFloat(row.customs_duty_completed) || 0,
+            totalPayments: {
+                all: row.total_payments,  // Overall totals
+                byShipment: row.shipment_type_totals || []  // Array of {shipmentType, requested, confirmed, completed}
             },
-            otherPayments: {
-                requested: parseFloat(row.other_payments_requested) || 0,
-                confirmed: parseFloat(row.other_payments_confirmed) || 0,
-                completed: parseFloat(row.other_payments_completed) || 0,
-            },
-            byShipmentType: row.by_shipment_type.map((item: any) => ({
-                type: item.type,
-                customsDuty: {
-                    requested: parseFloat(item.customsDuty.requested) || 0,
-                    confirmed: parseFloat(item.customsDuty.confirmed) || 0,
-                    completed: parseFloat(item.customsDuty.completed) || 0
-                },
-                otherPayments: {
-                    requested: parseFloat(item.otherPayments.requested) || 0,
-                    confirmed: parseFloat(item.otherPayments.confirmed) || 0,
-                    completed: parseFloat(item.otherPayments.completed) || 0
+            ...(row.payment_types || []).reduce((acc: any, item: any) => {
+                if (item.paymentType) {
+                    acc[item.paymentType] = {
+                        requested: parseFloat(item.requested) || 0,
+                        confirmed: parseFloat(item.confirmed) || 0,
+                        completed: parseFloat(item.completed) || 0,
+                    };
                 }
-            }))
+                return acc;
+            }, {}),
+            byShipmentType: (row.by_shipment_type || []).map((shipment: any) => {
+                const payments = (shipment.payments || []).reduce((acc: any, payment: any) => {
+                    if (payment.paymentType) {
+                        acc[payment.paymentType] = {
+                            requested: parseFloat(payment.requested) || 0,
+                            confirmed: parseFloat(payment.confirmed) || 0,
+                            completed: parseFloat(payment.completed) || 0,
+                        };
+                    }
+                    return acc;
+                }, {});
+
+                return {
+                    type: shipment.shipmentType,
+                    ...payments
+                };
+            })
         };
 
         return NextResponse.json(response);
