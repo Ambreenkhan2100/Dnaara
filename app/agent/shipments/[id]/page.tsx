@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from '@/components/ui/breadcrumb';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { FileText, Truck, Clock, MapPin, User, DollarSign, Calendar } from 'lucide-react';
+import { FileText, Truck, Clock, MapPin, User, DollarSign, Calendar, Banknote, SaudiRiyal } from 'lucide-react';
 import type { Shipment } from '@/types/shipment';
 import { useLoader } from '@/components/providers/loader-provider';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -22,6 +22,7 @@ import { PaymentStatus } from '@/types/enums/PaymentStatus';
 import { AgentPaymentForm } from '@/components/forms/agent-payment-form';
 import { CreatePaymentInput } from '@/lib/schemas';
 import { uploadBase64ToSupabase } from '@/lib/utils/fileupload';
+import { useUserStore } from '@/lib/store/useUserStore';
 
 export default function AgentShipmentDetailsPage() {
     const router = useRouter();
@@ -40,6 +41,9 @@ export default function AgentShipmentDetailsPage() {
     const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
 
     const { fetchFn } = useLoader();
+
+    const { userProfile } = useUserStore()
+
 
     useEffect(() => {
         const fetchShipment = async () => {
@@ -331,8 +335,8 @@ export default function AgentShipmentDetailsPage() {
                             <div className="space-y-1">
                                 <Label className="text-muted-foreground">Duty Charges</Label>
                                 <div className="font-medium flex items-center gap-2">
-                                    <DollarSign className="w-4 h-4 text-muted-foreground" />
-                                    {shipment.duty_charges?.toLocaleString() || '-'} SAR
+                                    <Banknote className="w-4 h-4 text-muted-foreground" />
+                                    {shipment.duty_charges?.toLocaleString() || '-'} <SaudiRiyal className='size-3' />
                                 </div>
                             </div>
                             {shipment.number_of_pallets && (
@@ -412,6 +416,16 @@ export default function AgentShipmentDetailsPage() {
                                             <div className="space-y-1">
                                                 <p className="text-sm text-muted-foreground">
                                                     {new Date(update.created_at).toLocaleString()}
+                                                    <span className="mx-1">•</span>
+                                                    {userProfile &&
+                                                        <span>
+                                                            {update.created_by === userProfile.user_id
+                                                                ? 'Created by you'
+                                                                : userProfile?.role?.toLowerCase() === 'agent'
+                                                                    ? 'Created by Importer'
+                                                                    : 'Created by Agent'}
+                                                        </span>
+                                                    }
                                                 </p>
                                                 <p className="font-medium">{update.update_text}</p>
                                                 {update.document_url && (
