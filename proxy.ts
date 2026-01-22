@@ -18,7 +18,7 @@ async function verifyToken(token: string): Promise<{ userId: string, role: strin
 
 export async function proxy(req: NextRequest) {
     // Skipping proxy for auth-related routes
-    if (req.nextUrl.pathname.startsWith('/api/auth') || req.nextUrl.pathname.startsWith('/api/notification/stream')) {
+    if (req.nextUrl.pathname.startsWith('/api/auth') || req.nextUrl.pathname.startsWith('/api/notification/stream') || req.nextUrl.pathname.startsWith('/api/cron/payment-reminders')) {
         return NextResponse.next();
     }
 
