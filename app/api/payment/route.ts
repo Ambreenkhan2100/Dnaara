@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { Pool } from 'pg';
 import { PaymentData } from '@/types';
 import { createNotification } from '@/lib/notifications';
+import { uploadBase64ToSupabase } from '@/lib/utils/fileupload';
 
 const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
@@ -17,18 +18,22 @@ export async function POST(request: Request) {
             !paymentData.payment_type ||
             !paymentData.amount ||
             !paymentData.payment_deadline ||
-            !paymentData.payment_status) {
+            !paymentData.payment_status ||
+            !paymentData.payment_invoice_url) {
             return NextResponse.json(
                 { error: 'Missing required fields' },
                 { status: 400 }
             );
         }
 
+        const payment_invoice = await uploadBase64ToSupabase(paymentData.payment_invoice_url);
+
+
         const query = `
             INSERT INTO payments (
                 shipment_id, payment_type, agent_id, importer_id, bayan_number, bill_number, 
-                amount, payment_deadline, description, payment_status
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+                amount, payment_deadline, description, payment_status, payment_invoice_url
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
             RETURNING *;
         `;
 
@@ -42,7 +47,8 @@ export async function POST(request: Request) {
             paymentData.amount,
             new Date(paymentData.payment_deadline).toISOString(),
             paymentData.description || null,
-            paymentData.payment_status
+            paymentData.payment_status,
+            payment_invoice
         ];
 
         const client = await pool.connect();

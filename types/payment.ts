@@ -39,6 +39,7 @@ export interface PaymentData {
     bill_number?: string;
     amount: number;
     payment_deadline: string;
+    payment_invoice_url: string;
     description?: string;
     payment_status: PaymentStatus;
     payment_document_url?: string;
