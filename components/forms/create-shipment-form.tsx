@@ -171,9 +171,20 @@ export function CreateShipmentForm({ role, onSubmit, onCancel }: CreateShipmentF
                 payload.agentId = formData.partnerId;
             }
 
+
             if (role === 'agent') {
                 payload.agentId = currentUserId as string;
                 payload.importerId = formData.partnerId;
+            }
+
+            const payloadString = JSON.stringify(payload);
+            const payloadSize = new Blob([payloadString]).size; // Size in bytes
+            const maxSize = 50 * 1024 * 1024; // 50MB
+
+            if (payloadSize > maxSize) {
+                toast.error(`Total size (${(payloadSize / (1024 * 1024)).toFixed(2)}MB) exceeds the 50MB limit. Please reduce file sizes.`);
+                setIsSubmitting(false);
+                return;
             }
 
 

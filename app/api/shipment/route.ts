@@ -4,6 +4,15 @@ import { uploadBase64ToSupabase } from '@/lib/utils/fileupload';
 import { generateUniqueShipmentId } from '@/lib/utils/shipment-utils';
 import { createNotification } from '@/lib/notifications';
 
+export const config = {
+    api: {
+        bodyParser: {
+            sizeLimit: '50mb',
+        },
+    },
+};
+
+
 const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
 });
@@ -194,17 +203,17 @@ export async function POST(request: Request) {
         await client.query('COMMIT');
 
         const notification = {
-                        recipientId: partnerId,
-                        senderId: userId,
-                        title: 'Shipment Created',
-                        message: `Shipment ${shipment_id} has been created`,
-                        entityType: 'SHIPMENT',
-                        entityId: shipmentId,
-                        shipmentId: res.rows[0].id,
-                        emailBody: `Shipment ${shipment_id} has been created`,
-                        type: 'SHIPMENT_CREATED'
-                    }
-                    createNotification(notification)
+            recipientId: partnerId,
+            senderId: userId,
+            title: 'Shipment Created',
+            message: `Shipment ${shipment_id} has been created`,
+            entityType: 'SHIPMENT',
+            entityId: shipmentId,
+            shipmentId: res.rows[0].id,
+            emailBody: `Shipment ${shipment_id} has been created`,
+            type: 'SHIPMENT_CREATED'
+        }
+        createNotification(notification)
         return NextResponse.json({ success: true, shipmentId });
     } catch (error) {
         await client.query('ROLLBACK');
