@@ -28,19 +28,19 @@ export async function PUT(request: Request) {
         phone_number,
         national_id,
         company_email,
-        profile_photo,
-        commercial_registration,
-        vat_certificate,
-        national_address_doc
+        profile_photo_url,
+        commercial_registration_url,
+        vat_certificate_url,
+        national_address_doc_url
     } = body;
 
-    const profile_photo_url = profile_photo.startsWith('http') ? profile_photo : await uploadBase64ToSupabase(profile_photo);
+    const profile_photo = profile_photo_url.startsWith('http') ? profile_photo_url : await uploadBase64ToSupabase(profile_photo_url);
 
-    const commercial_registration_url = commercial_registration.startsWith('http') ? commercial_registration : await uploadBase64ToSupabase(commercial_registration);
+    const commercial_registration = commercial_registration_url.startsWith('http') ? commercial_registration_url : await uploadBase64ToSupabase(commercial_registration_url);
 
-    const vat_certificate_url = vat_certificate.startsWith('http') ? vat_certificate : await uploadBase64ToSupabase(vat_certificate);
+    const vat_certificate = vat_certificate_url.startsWith('http') ? vat_certificate_url : await uploadBase64ToSupabase(vat_certificate_url);
 
-    const national_address_doc_url = national_address_doc.startsWith('http') ? national_address_doc : await uploadBase64ToSupabase(national_address_doc);
+    const national_address_doc = national_address_doc_url.startsWith('http') ? national_address_doc_url : await uploadBase64ToSupabase(national_address_doc_url);
 
     const client = await pool.connect();
     try {
@@ -76,10 +76,10 @@ export async function PUT(request: Request) {
             phone_number || null,
             national_id || null,
             company_email || null,
-            profile_photo_url || null,
-            commercial_registration_url || null,
-            vat_certificate_url || null,
-            national_address_doc_url || null,
+            profile_photo || null,
+            commercial_registration || null,
+            vat_certificate || null,
+            national_address_doc || null,
             userId
         ];
 
