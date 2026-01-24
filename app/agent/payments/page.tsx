@@ -47,7 +47,7 @@ export default function AgentPaymentsPage() {
                 bayanNumber: p.bayan_number,
                 paymentDeadline: p.payment_deadline,
                 paymentType: p.payment_type,
-                status: p.payment_status as PaymentStatus,
+                payment_status: p.payment_status as PaymentStatus,
                 createdAt: p.created_at,
                 updatedAt: p.updated_at,
                 comments: [], // Placeholder
@@ -73,6 +73,10 @@ export default function AgentPaymentsPage() {
     }, [payments, searchQuery]);
 
     const getPaymentsByStatus = (status: PaymentStatus) => {
+        console.log(filteredPayments);
+
+        console.log(filteredPayments.filter((p) => p.payment_status === status));
+
         return filteredPayments.filter((p) => p.payment_status === status);
     };
 
@@ -228,7 +232,6 @@ export default function AgentPaymentsPage() {
                     </DialogHeader>
                     {selectedPayment && (
                         <AgentPaymentForm
-                            initialData={selectedPayment}
                             shipment={selectedPayment.shipment!}
                             onSubmit={handleEditSubmit}
                         />
