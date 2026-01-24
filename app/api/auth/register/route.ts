@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { query } from '@/lib/db';
 import { hashPassword, generateToken } from '@/lib/auth';
 import { RelationshipStatus } from '@/types/invite';
+import { uploadBase64ToSupabase } from '@/lib/utils/fileupload';
 
 export async function POST(req: Request) {
     try {
@@ -16,6 +17,9 @@ export async function POST(req: Request) {
             phoneNumber,
             nationalId,
             companyEmail,
+            commercialRegistration,
+            vatCertificate,
+            nationalAddressDoc,
             password,
             otp,
         } = body;
@@ -44,12 +48,22 @@ export async function POST(req: Request) {
             );
             const userId = userResult.rows[0].id;
 
+            let commercialRegistrationUrl = null;
+            if (commercialRegistration) commercialRegistrationUrl = await uploadBase64ToSupabase(commercialRegistration);
+
+            let vatCertificateUrl = null;
+            if (vatCertificate) vatCertificateUrl = await uploadBase64ToSupabase(vatCertificate);
+
+            let nationalAddressDocUrl = null;
+            if (nationalAddressDoc) nationalAddressDocUrl = await uploadBase64ToSupabase(nationalAddressDoc);
+
             // Create user profile
             await query(
                 `INSERT INTO user_profiles (
                     user_id, legal_business_name, trade_registration_number, national_address,
-                    full_name, position, phone_number, national_id, company_email
-                    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+                    full_name, position, phone_number, national_id, company_email,
+                    commercial_registration_url, vat_certificate_url, national_address_doc_url
+                    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`,
                 [
                     userId,
                     legalBusinessName,
@@ -60,6 +74,9 @@ export async function POST(req: Request) {
                     phoneNumber,
                     nationalId,
                     companyEmail,
+                    commercialRegistrationUrl,
+                    vatCertificateUrl,
+                    nationalAddressDocUrl,
                 ]
             );
 
