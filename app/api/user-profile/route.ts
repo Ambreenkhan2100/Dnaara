@@ -20,27 +20,27 @@ export async function PUT(request: Request) {
     }
 
     const {
-        legalBusinessName,
-        tradeRegistrationNumber,
-        nationalAddress,
-        fullName,
+        legal_business_name,
+        trade_registration_number,
+        national_address,
+        full_name,
         position,
-        phoneNumber,
-        nationalId,
-        companyEmail,
-        profilePhoto,
-        commercialRegistration,
-        vatCertificate,
-        nationalAddressDoc
+        phone_number,
+        national_id,
+        company_email,
+        profile_photo,
+        commercial_registration,
+        vat_certificate,
+        national_address_doc
     } = body;
 
-    const profilePhotoUrl = profilePhoto.startsWith('http') ? profilePhoto : await uploadBase64ToSupabase(profilePhoto);
+    const profile_photo_url = profile_photo.startsWith('http') ? profile_photo : await uploadBase64ToSupabase(profile_photo);
 
-    const commercialRegistrationUrl = commercialRegistration.startsWith('http') ? commercialRegistration : await uploadBase64ToSupabase(commercialRegistration);
+    const commercial_registration_url = commercial_registration.startsWith('http') ? commercial_registration : await uploadBase64ToSupabase(commercial_registration);
 
-    const vatCertificateUrl = vatCertificate.startsWith('http') ? vatCertificate : await uploadBase64ToSupabase(vatCertificate);
+    const vat_certificate_url = vat_certificate.startsWith('http') ? vat_certificate : await uploadBase64ToSupabase(vat_certificate);
 
-    const nationalAddressDocUrl = nationalAddressDoc.startsWith('http') ? nationalAddressDoc : await uploadBase64ToSupabase(nationalAddressDoc);
+    const national_address_doc_url = national_address_doc.startsWith('http') ? national_address_doc : await uploadBase64ToSupabase(national_address_doc);
 
     const client = await pool.connect();
     try {
@@ -68,18 +68,18 @@ export async function PUT(request: Request) {
         `;
 
         const updateValues = [
-            legalBusinessName || null,
-            tradeRegistrationNumber || null,
-            nationalAddress || null,
-            fullName,
+            legal_business_name || null,
+            trade_registration_number || null,
+            national_address || null,
+            full_name,
             position || null,
-            phoneNumber || null,
-            nationalId || null,
-            companyEmail || null,
-            profilePhotoUrl || null,
-            commercialRegistrationUrl || null,
-            vatCertificateUrl || null,
-            nationalAddressDocUrl || null,
+            phone_number || null,
+            national_id || null,
+            company_email || null,
+            profile_photo_url || null,
+            commercial_registration_url || null,
+            vat_certificate_url || null,
+            national_address_doc_url || null,
             userId
         ];
 
