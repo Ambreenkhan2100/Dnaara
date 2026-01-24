@@ -50,5 +50,9 @@ export interface UseProfile {
     company_email: string;
     created_at: string;
     emails: string[];
-    role: string
+    role: string;
+    commercial_registration_url?: string;
+    vat_certificate_url?: string;
+    national_address_doc_url?: string;
+    profile_photo_url?: string
 }

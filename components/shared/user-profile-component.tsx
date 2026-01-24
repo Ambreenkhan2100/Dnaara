@@ -5,8 +5,9 @@ import { useUserStore } from '@/lib/store/useUserStore';
 import { useLoader } from '@/components/providers/loader-provider';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Plus, Trash2, Edit2, Check, X } from 'lucide-react';
+import { Plus, Trash2, Edit2, Check, X, FileText } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 interface EmailRow {
     id: string;
@@ -168,57 +169,117 @@ export function UserProfileComponent() {
                 <p className="text-muted-foreground">Manage your account settings and preferences.</p>
             </div>
 
-            <Card>
-                <CardHeader>
-                    <CardTitle>Personal Information</CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div className="space-y-1">
-                            <h4 className="text-sm font-medium leading-none text-muted-foreground">Full Name</h4>
-                            <p className="text-sm font-medium">{userProfile.full_name}</p>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <Card className="lg:col-span-2">
+                    <CardHeader>
+                        <CardTitle>Personal Information</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <Avatar className="size-14">
+                                <AvatarImage src={userProfile.profile_photo_url} alt={userProfile.full_name} />
+                                <AvatarFallback className="text-lg">
+                                    {userProfile.full_name?.charAt(0).toUpperCase() || 'U'}
+                                </AvatarFallback>
+                            </Avatar>
+                            <div className="space-y-1">
+                                <h4 className="text-sm font-medium leading-none text-muted-foreground">Full Name</h4>
+                                <p className="text-sm font-medium">{userProfile.full_name}</p>
+                            </div>
+                            <div className="space-y-1">
+                                <h4 className="text-sm font-medium leading-none text-muted-foreground">Position</h4>
+                                <p className="text-sm font-medium">{userProfile.position}</p>
+                            </div>
+                            <div className="space-y-1">
+                                <h4 className="text-sm font-medium leading-none text-muted-foreground">Company Email</h4>
+                                <p className="text-sm font-medium">{userProfile.company_email}</p>
+                            </div>
+                            <div className="space-y-1">
+                                <h4 className="text-sm font-medium leading-none text-muted-foreground">Phone Number</h4>
+                                <p className="text-sm font-medium">{userProfile.phone_number}</p>
+                            </div>
+                            <div className="space-y-1">
+                                <h4 className="text-sm font-medium leading-none text-muted-foreground">Legal Business Name</h4>
+                                <p className="text-sm font-medium">{userProfile.legal_business_name}</p>
+                            </div>
+                            <div className="space-y-1">
+                                <h4 className="text-sm font-medium leading-none text-muted-foreground">Trade Registration Number</h4>
+                                <p className="text-sm font-medium">{userProfile.trade_registration_number}</p>
+                            </div>
+                            <div className="space-y-1">
+                                <h4 className="text-sm font-medium leading-none text-muted-foreground">National Address</h4>
+                                <p className="text-sm font-medium">{userProfile.national_address}</p>
+                            </div>
+                            <div className="space-y-1">
+                                <h4 className="text-sm font-medium leading-none text-muted-foreground">National ID</h4>
+                                <p className="text-sm font-medium">{userProfile.national_id}</p>
+                            </div>
+                            <div className="space-y-1">
+                                <h4 className="text-sm font-medium leading-none text-muted-foreground">Registered on</h4>
+                                <p className="text-sm font-medium">
+                                    {new Date(userProfile.created_at).toLocaleDateString('en-US', {
+                                        year: 'numeric',
+                                        month: 'long',
+                                        day: 'numeric',
+                                    })}
+                                </p>
+                            </div>
                         </div>
-                        <div className="space-y-1">
-                            <h4 className="text-sm font-medium leading-none text-muted-foreground">Position</h4>
-                            <p className="text-sm font-medium">{userProfile.position}</p>
+                    </CardContent>
+                </Card>
+
+                <Card>
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                            <FileText className="h-5 w-5" />
+                            Documents
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        <div className="flex items-center justify-between p-3 border rounded-lg">
+                            <div className="flex items-center gap-2">
+                                <FileText className="h-4 w-4 text-blue-500" />
+                                <span className="text-sm font-medium">Commercial Registration</span>
+                            </div>
+                            {userProfile.commercial_registration_url ? (
+                                <a href={userProfile.commercial_registration_url} target="_blank" rel="noopener noreferrer">
+                                    <Button variant="ghost" size="sm">View</Button>
+                                </a>
+                            ) : (
+                                <span className="text-xs text-muted-foreground">N/A</span>
+                            )}
                         </div>
-                        <div className="space-y-1">
-                            <h4 className="text-sm font-medium leading-none text-muted-foreground">Company Email</h4>
-                            <p className="text-sm font-medium">{userProfile.company_email}</p>
+
+                        <div className="flex items-center justify-between p-3 border rounded-lg">
+                            <div className="flex items-center gap-2">
+                                <FileText className="h-4 w-4 text-blue-500" />
+                                <span className="text-sm font-medium">VAT Certificate</span>
+                            </div>
+                            {userProfile.vat_certificate_url ? (
+                                <a href={userProfile.vat_certificate_url} target="_blank" rel="noopener noreferrer">
+                                    <Button variant="ghost" size="sm">View</Button>
+                                </a>
+                            ) : (
+                                <span className="text-xs text-muted-foreground">N/A</span>
+                            )}
                         </div>
-                        <div className="space-y-1">
-                            <h4 className="text-sm font-medium leading-none text-muted-foreground">Phone Number</h4>
-                            <p className="text-sm font-medium">{userProfile.phone_number}</p>
+
+                        <div className="flex items-center justify-between p-3 border rounded-lg">
+                            <div className="flex items-center gap-2">
+                                <FileText className="h-4 w-4 text-blue-500" />
+                                <span className="text-sm font-medium">National Address</span>
+                            </div>
+                            {userProfile.national_address_doc_url ? (
+                                <a href={userProfile.national_address_doc_url} target="_blank" rel="noopener noreferrer">
+                                    <Button variant="ghost" size="sm">View</Button>
+                                </a>
+                            ) : (
+                                <span className="text-xs text-muted-foreground">N/A</span>
+                            )}
                         </div>
-                        <div className="space-y-1">
-                            <h4 className="text-sm font-medium leading-none text-muted-foreground">Legal Business Name</h4>
-                            <p className="text-sm font-medium">{userProfile.legal_business_name}</p>
-                        </div>
-                        <div className="space-y-1">
-                            <h4 className="text-sm font-medium leading-none text-muted-foreground">Trade Registration Number</h4>
-                            <p className="text-sm font-medium">{userProfile.trade_registration_number}</p>
-                        </div>
-                        <div className="space-y-1">
-                            <h4 className="text-sm font-medium leading-none text-muted-foreground">National Address</h4>
-                            <p className="text-sm font-medium">{userProfile.national_address}</p>
-                        </div>
-                        <div className="space-y-1">
-                            <h4 className="text-sm font-medium leading-none text-muted-foreground">National ID</h4>
-                            <p className="text-sm font-medium">{userProfile.national_id}</p>
-                        </div>
-                        <div className="space-y-1">
-                            <h4 className="text-sm font-medium leading-none text-muted-foreground">Registered on</h4>
-                            <p className="text-sm font-medium">
-                                {new Date(userProfile.created_at).toLocaleDateString('en-US', {
-                                    year: 'numeric',
-                                    month: 'long',
-                                    day: 'numeric',
-                                })}
-                            </p>
-                        </div>
-                    </div>
-                </CardContent>
-            </Card>
+                    </CardContent>
+                </Card>
+            </div>
 
             <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">

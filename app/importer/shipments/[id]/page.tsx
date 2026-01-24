@@ -160,7 +160,7 @@ export default function ShipmentDetailsPage() {
                     </BreadcrumbItem>
                     <BreadcrumbSeparator />
                     <BreadcrumbItem>
-                        <BreadcrumbPage>Shipment {shipment.bill_number}</BreadcrumbPage>
+                        <BreadcrumbPage>Shipment: {shipment.shipment_id}</BreadcrumbPage>
                     </BreadcrumbItem>
                 </BreadcrumbList>
             </Breadcrumb>
@@ -169,7 +169,7 @@ export default function ShipmentDetailsPage() {
                 <div>
                     <h1 className="text-3xl font-bold flex items-center gap-3">
                         Shipment Details
-                        <Badge variant={isCompleted ? 'default' : isConfirmed ? 'secondary' : 'outline'}>
+                        <Badge variant={shipment.status === ShipmentStatusEnum.COMPLETED ? 'default' : shipment.status === ShipmentStatusEnum.CONFIRMED ? 'secondary' : 'outline'}>
                             {shipment.status}
                         </Badge>
                     </h1>

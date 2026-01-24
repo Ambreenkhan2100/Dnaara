@@ -529,6 +529,39 @@ export default function AgentShipmentDetailsPage() {
                                     </a>
                                 </div>
                             )}
+                            {shipment.certificate_of_confirmity_url && (
+                                <div className="flex items-center justify-between p-2 border rounded hover:bg-accent/50 transition-colors">
+                                    <div className="flex items-center gap-2 overflow-hidden">
+                                        <FileText className="h-4 w-4 text-blue-500 shrink-0" />
+                                        <span className="text-sm truncate">Certificate of Confirmity</span>
+                                    </div>
+                                    <a href={shipment.certificate_of_confirmity_url} target="_blank" rel="noopener noreferrer">
+                                        <Button variant="ghost" size="sm">View</Button>
+                                    </a>
+                                </div>
+                            )}
+                            {shipment.certificate_of_origin_url && (
+                                <div className="flex items-center justify-between p-2 border rounded hover:bg-accent/50 transition-colors">
+                                    <div className="flex items-center gap-2 overflow-hidden">
+                                        <FileText className="h-4 w-4 text-blue-500 shrink-0" />
+                                        <span className="text-sm truncate">Certificate of Origin</span>
+                                    </div>
+                                    <a href={shipment.certificate_of_origin_url} target="_blank" rel="noopener noreferrer">
+                                        <Button variant="ghost" size="sm">View</Button>
+                                    </a>
+                                </div>
+                            )}
+                            {shipment.saber_certificate_url && (
+                                <div className="flex items-center justify-between p-2 border rounded hover:bg-accent/50 transition-colors">
+                                    <div className="flex items-center gap-2 overflow-hidden">
+                                        <FileText className="h-4 w-4 text-blue-500 shrink-0" />
+                                        <span className="text-sm truncate">Saber Certificate</span>
+                                    </div>
+                                    <a href={shipment.saber_certificate_url} target="_blank" rel="noopener noreferrer">
+                                        <Button variant="ghost" size="sm">View</Button>
+                                    </a>
+                                </div>
+                            )}
                             {shipment.other_documents_urls && shipment.other_documents_urls.map((url, idx) => (
                                 <div key={idx} className="flex items-center justify-between p-2 border rounded hover:bg-accent/50 transition-colors">
                                     <div className="flex items-center gap-2 overflow-hidden">
@@ -541,10 +574,37 @@ export default function AgentShipmentDetailsPage() {
                                 </div>
                             ))}
 
-                            {(!shipment.bayan_file_url && !shipment.commercial_invoice_file_url && !shipment.packing_list_file_url) && (
-                                <div className="text-sm text-muted-foreground italic text-center py-2">
-                                    No documents attached
-                                </div>
+                            {shipment.updates && shipment.updates.some(u => u.document_url) && (
+                                <>
+                                    <div className="border-t my-4" />
+                                    <div className="text-sm font-medium text-muted-foreground mb-2">Update Documents</div>
+                                    {shipment.updates.filter(u => u.document_url).map((update, idx) => (
+                                        <div key={`update-doc-${idx}`} className="flex flex-col p-2 border rounded hover:bg-accent/50 transition-colors gap-1">
+                                            <div className="flex items-center justify-between">
+                                                <div className="flex items-center gap-2 overflow-hidden">
+                                                    <FileText className="h-4 w-4 text-blue-500 shrink-0" />
+                                                    <span className="text-sm truncate">Update Attachment</span>
+                                                </div>
+                                                <a href={update.document_url} target="_blank" rel="noopener noreferrer">
+                                                    <Button variant="ghost" size="sm">View</Button>
+                                                </a>
+                                            </div>
+                                            <div className="flex items-center text-xs text-muted-foreground gap-2 pl-6">
+                                                <span>{new Date(update.created_at).toLocaleString()}</span>
+                                                <span>•</span>
+                                                {userProfile && (
+                                                    <span>
+                                                        {update.created_by === userProfile.user_id
+                                                            ? 'Uploaded by you'
+                                                            : userProfile?.role?.toLowerCase() === 'agent'
+                                                                ? `Uploaded by ${shipment.importer?.name}`
+                                                                : `Uploaded by ${shipment.agent?.name}`}
+                                                    </span>
+                                                )}
+                                            </div>
+                                        </div>
+                                    ))}
+                                </>
                             )}
                         </CardContent>
                     </Card>
