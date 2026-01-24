@@ -43,33 +43,29 @@ const LAND_PAYMENT_OPTIONS = [
 ];
 
 interface AgentPaymentFormProps {
-    initialData?: PaymentRequest;
     prefilledImporterId?: string;
     prefilledShipmentId?: string;
     shipment: Shipment;
     onSubmit: (data: CreatePaymentInput) => void;
 }
 
-export function AgentPaymentForm({ initialData, prefilledImporterId, prefilledShipmentId, shipment, onSubmit }: AgentPaymentFormProps) {
+export function AgentPaymentForm({ prefilledImporterId, prefilledShipmentId, shipment, onSubmit }: AgentPaymentFormProps) {
     const form = useForm<CreatePaymentInput>({
         resolver: zodResolver(createPaymentSchema) as any,
         defaultValues: {
-            amount: (initialData?.amount || 0).toString(),
-            description: initialData?.description || '',
-            shipmentId: initialData?.shipmentId || prefilledShipmentId || shipment?.id || '',
-            // importerId: initialData?.importer_id || prefilledImporterId || (shipment as any)?.importer_id || (shipment as any)?.importerId || '',
-            billNumber: initialData?.bill_number || '',
-            bayanNumber: initialData?.bayan_number || '',
-            paymentDeadline: initialData?.payment_deadline ? format(new Date(initialData.payment_deadline), "yyyy-MM-dd'T'HH:mm") : '',
-            paymentType: initialData?.payment_type || '',
-            otherPaymentName: initialData?.other_payment_name || '',
+            amount: (0).toString(),
+            description: '',
+            shipmentId: prefilledShipmentId || shipment?.id || '',
+            importerId: prefilledImporterId || shipment?.importer_id || '',
+            billNumber: shipment.bill_number,
+            bayanNumber: '',
+            paymentDeadline: '',
+            paymentType: '',
+            otherPaymentName: '',
         },
     });
 
     const paymentType = form.watch('paymentType');
-
-    const selectedShipmentId = shipment?.id;
-    // const selectedShipment = allShipments.find(s => s.id === selectedShipmentId);
 
     const getBillLabel = () => {
         if (!shipment) return 'Bill Number';
@@ -138,6 +134,7 @@ export function AgentPaymentForm({ initialData, prefilledImporterId, prefilledSh
 
                 <div className="grid grid-cols-2 gap-4">
                     <FormField
+                        disabled={true}
                         control={form.control}
                         name="billNumber"
                         render={({ field }) => (
@@ -211,7 +208,7 @@ export function AgentPaymentForm({ initialData, prefilledImporterId, prefilledSh
                 />
 
                 <Button type="submit" className="w-full" style={{ backgroundColor: '#0bad85' }}>
-                    {initialData ? 'Update Payment' : 'Create Payment'}
+                    {'Create Payment'}
                 </Button>
             </form>
         </Form>
