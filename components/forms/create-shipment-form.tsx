@@ -160,6 +160,18 @@ export function CreateShipmentForm({ role, onSubmit, onCancel }: CreateShipmentF
         e.preventDefault();
         setIsSubmitting(true);
 
+        if (!formData.expectedArrivalDate) {
+            toast.error('Expected Date of Arrival is required');
+            setIsSubmitting(false);
+            return;
+        }
+
+        if (!formData.dutyCharges) {
+            toast.error('Expected Duty Charges is required');
+            setIsSubmitting(false);
+            return;
+        }
+
         try {
             const payload = {
                 ...formData,
@@ -602,10 +614,11 @@ export function CreateShipmentForm({ role, onSubmit, onCancel }: CreateShipmentF
                 </div>
 
                 <div className="space-y-2">
-                    <Label htmlFor="dutyCharges">Expected Duty Charges</Label>
+                    <Label htmlFor="dutyCharges">Expected Duty Charges *</Label>
                     <Input
                         id="dutyCharges"
                         type="number"
+                        required
                         placeholder="SAR 0.00"
                         value={formData.dutyCharges}
                         onChange={e => setFormData(prev => ({ ...prev, dutyCharges: e.target.value }))}
