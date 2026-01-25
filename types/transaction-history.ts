@@ -13,6 +13,8 @@ export interface TransactionHistoryItem {
     created_at: string;
     updated_at: string;
     shipment: Shipment;
+    payment_document_url: string;
+    payment_invoice_url: string;
 }
 
 export type TransactionHistory = TransactionHistoryItem[];

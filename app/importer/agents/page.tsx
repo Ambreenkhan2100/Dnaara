@@ -11,6 +11,7 @@ import { AgentDetailsDrawer } from '../components/agent-details-drawer';
 import { useLoader } from '@/components/providers/loader-provider';
 import { ConnectedUser, RelationshipStatus } from '@/types/invite';
 import { TransactionHistory } from '@/types/transaction-history';
+import { PaginationMeta } from '@/types/pagination';
 import { toast } from 'sonner';
 
 export default function ImporterAgentsPage() {
@@ -20,6 +21,9 @@ export default function ImporterAgentsPage() {
     const [drawerOpen, setDrawerOpen] = useState(false);
     const [drawerAgent, setDrawerAgent] = useState<ConnectedUser | null>(null);
     const [transactions, setTransactions] = useState<TransactionHistory>([]);
+
+    const [paginationMeta, setPaginationMeta] = useState<PaginationMeta | undefined>(undefined);
+    const [currentPage, setCurrentPage] = useState(1);
 
     const fetchAgents = useCallback(async () => {
         try {
@@ -57,13 +61,15 @@ export default function ImporterAgentsPage() {
         }
     }
 
-    async function showTransactionHistory(agent: ConnectedUser) {
+    async function showTransactionHistory(agent: ConnectedUser, page: number = 1) {
         try {
-            const res = await fetchFn('/api/payment/transaction-history');
+            const res = await fetchFn(`/api/payment/transaction-history?agent_id=${agent.user_id}&page=${page}&limit=5`);
             if (!res.ok) throw new Error('Failed to fetch transaction history');
 
-            const transactionData = await res.json();
-            setTransactions(transactionData);
+            const result = await res.json();
+            setTransactions(result.data);
+            setPaginationMeta(result.pagination);
+            setCurrentPage(page);
             setDrawerAgent(agent);
             setDrawerOpen(true);
         } catch (error) {
@@ -150,6 +156,8 @@ export default function ImporterAgentsPage() {
                 open={drawerOpen}
                 onOpenChange={setDrawerOpen}
                 transactions={transactions}
+                pagination={paginationMeta}
+                onPageChange={(page) => showTransactionHistory(drawerAgent, page)}
             />)}
         </div>
     );
