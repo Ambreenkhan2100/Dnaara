@@ -55,6 +55,7 @@ export async function GET(
             payment_deadline: payment.payment_deadline,
             description: payment.description,
             payment_status: payment.payment_status,
+            payment_invoice_url: payment.payment_invoice_url,
             created_at: payment.created_at,
             updated_at: payment.updated_at,
             shipment: {
@@ -68,7 +69,9 @@ export async function GET(
                 agent_id: payment.agent_id,
                 importer_id: payment.importer_id,
                 payment_partner: payment.payment_partner,
-                company_name: payment.company_name
+                company_name: payment.company_name,
+                bayan_number: payment.bayan_number,
+                duty_charges: payment.duty_charges
             }
         };
 
