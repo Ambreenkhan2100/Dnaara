@@ -54,5 +54,6 @@ export interface UseProfile {
     commercial_registration_url?: string;
     vat_certificate_url?: string;
     national_address_doc_url?: string;
-    profile_photo_url?: string
+    profile_photo_url?: string;
+    national_id_doc_url?: string;
 }

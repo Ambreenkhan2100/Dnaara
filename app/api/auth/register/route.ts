@@ -20,6 +20,7 @@ export async function POST(req: Request) {
             commercialRegistration,
             vatCertificate,
             nationalAddressDoc,
+            nationalIdDoc,
             password,
             otp,
         } = body;
@@ -57,13 +58,16 @@ export async function POST(req: Request) {
             let nationalAddressDocUrl = null;
             if (nationalAddressDoc) nationalAddressDocUrl = await uploadBase64ToSupabase(nationalAddressDoc);
 
+            let nationalIdDocUrl = null;
+            if (nationalIdDoc) nationalIdDocUrl = await uploadBase64ToSupabase(nationalIdDoc);
+
             // Create user profile
             await query(
                 `INSERT INTO user_profiles (
                     user_id, legal_business_name, trade_registration_number, national_address,
                     full_name, position, phone_number, national_id, company_email,
-                    commercial_registration_url, vat_certificate_url, national_address_doc_url
-                    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`,
+                    commercial_registration_url, vat_certificate_url, national_address_doc_url, national_id_doc_url
+                    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)`,
                 [
                     userId,
                     legalBusinessName,
@@ -77,6 +81,7 @@ export async function POST(req: Request) {
                     commercialRegistrationUrl,
                     vatCertificateUrl,
                     nationalAddressDocUrl,
+                    nationalIdDocUrl,
                 ]
             );
 

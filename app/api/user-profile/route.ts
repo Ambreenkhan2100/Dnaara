@@ -31,7 +31,8 @@ export async function PUT(request: Request) {
         profile_photo_url,
         commercial_registration_url,
         vat_certificate_url,
-        national_address_doc_url
+        national_address_doc_url,
+        national_id_doc_url
     } = body;
 
     const profile_photo = profile_photo_url.startsWith('http') ? profile_photo_url : await uploadBase64ToSupabase(profile_photo_url);
@@ -41,6 +42,8 @@ export async function PUT(request: Request) {
     const vat_certificate = vat_certificate_url.startsWith('http') ? vat_certificate_url : await uploadBase64ToSupabase(vat_certificate_url);
 
     const national_address_doc = national_address_doc_url.startsWith('http') ? national_address_doc_url : await uploadBase64ToSupabase(national_address_doc_url);
+
+    const national_id_doc = national_id_doc_url.startsWith('http') ? national_id_doc_url : await uploadBase64ToSupabase(national_id_doc_url);
 
     const client = await pool.connect();
     try {
@@ -62,6 +65,7 @@ export async function PUT(request: Request) {
                 commercial_registration_url = $10,
                 vat_certificate_url = $11,
                 national_address_doc_url = $12,
+                national_id_doc_url = $13,
                 updated_at = NOW()
             WHERE user_id = $13
             RETURNING *
@@ -80,6 +84,7 @@ export async function PUT(request: Request) {
             commercial_registration || null,
             vat_certificate || null,
             national_address_doc || null,
+            national_id_doc || null,
             userId
         ];
 
