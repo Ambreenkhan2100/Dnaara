@@ -13,15 +13,18 @@ import { TransactionHistory } from '@/types/transaction-history';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ConnectedUser } from '@/types/invite';
+import { PaginationMeta } from '@/types/pagination';
 
 interface AgentDetailsDrawerProps {
     user: ConnectedUser;
     open: boolean;
     onOpenChange: (open: boolean) => void;
-    transactions: any;
+    transactions: TransactionHistory;
+    pagination?: PaginationMeta;
+    onPageChange?: (page: number) => void;
 }
 
-export function AgentDetailsDrawer({ user, open, onOpenChange, transactions }: AgentDetailsDrawerProps) {
+export function AgentDetailsDrawer({ user, open, onOpenChange, transactions, pagination, onPageChange }: AgentDetailsDrawerProps) {
 
 
     // Filter transactions for this specific agent
@@ -90,7 +93,7 @@ export function AgentDetailsDrawer({ user, open, onOpenChange, transactions }: A
 
                         <div className="border rounded-lg divide-y">
                             {transactions.length > 0 ? (
-                                transactions.map((tx: any) => (
+                                transactions.map((tx) => (
                                     <div key={tx.id} className="p-4 hover:bg-muted/50 transition-colors">
                                         <div className="flex items-start justify-between mb-3">
                                             <div className="flex items-start gap-3 flex-1">
@@ -135,18 +138,18 @@ export function AgentDetailsDrawer({ user, open, onOpenChange, transactions }: A
                                                     <span className="font-medium">{tx.bill_number}</span>
                                                 </div>
                                             )}
-                                            {(tx.shipment['payment_invoice_url'] || tx.shipment['payment_document_url']) && (
+                                            {(tx.payment_invoice_url || tx.payment_document_url) && (
                                                 <div className="flex gap-2 mt-2">
-                                                    {tx.shipment['payment_invoice_url'] && (
-                                                        <a href={tx.shipment['payment_invoice_url']} target="_blank" rel="noopener noreferrer">
+                                                    {tx.payment_invoice_url && (
+                                                        <a href={tx.payment_invoice_url} target="_blank" rel="noopener noreferrer">
                                                             <Button variant="outline" size="sm" className="h-6 text-xs">
                                                                 <FileText className="h-3 w-3 mr-1" />
                                                                 Invoice
                                                             </Button>
                                                         </a>
                                                     )}
-                                                    {tx.shipment.payment_document_url && (
-                                                        <a href={tx.shipment.payment_document_url} target="_blank" rel="noopener noreferrer">
+                                                    {tx.payment_document_url && (
+                                                        <a href={tx.payment_document_url} target="_blank" rel="noopener noreferrer">
                                                             <Button variant="outline" size="sm" className="h-6 text-xs">
                                                                 <FileText className="h-3 w-3 mr-1" />
                                                                 Receipt
@@ -164,6 +167,33 @@ export function AgentDetailsDrawer({ user, open, onOpenChange, transactions }: A
                                 </div>
                             )}
                         </div>
+
+                        {/* Pagination Controls */}
+                        {pagination && pagination.total_pages > 1 && (
+                            <div className="flex items-center justify-between pt-4">
+                                <div className="text-sm text-muted-foreground">
+                                    Page {pagination.current_page} of {pagination.total_pages}
+                                </div>
+                                <div className="flex gap-2">
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => onPageChange?.(pagination.current_page - 1)}
+                                        disabled={!pagination.has_previous_page}
+                                    >
+                                        Previous
+                                    </Button>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => onPageChange?.(pagination.current_page + 1)}
+                                        disabled={!pagination.has_next_page}
+                                    >
+                                        Next
+                                    </Button>
+                                </div>
+                            </div>
+                        )}
                     </div>
                 </div>
             </SheetContent>
