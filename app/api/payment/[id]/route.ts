@@ -56,6 +56,7 @@ export async function GET(
             description: payment.description,
             payment_status: payment.payment_status,
             payment_invoice_url: payment.payment_invoice_url,
+            payment_document_url: payment.payment_document_url,
             created_at: payment.created_at,
             updated_at: payment.updated_at,
             shipment: {
