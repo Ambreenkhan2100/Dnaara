@@ -1,19 +1,13 @@
-import {
-    Sheet,
-    SheetContent,
-    SheetDescription,
-    SheetHeader,
-    SheetTitle,
-} from '@/components/ui/sheet';
-import { useImporterStore } from '@/lib/store/useImporterStore';
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { StatusBadge } from '@/components/shared/status-badge';
 import { format } from 'date-fns';
 import { FileText, DollarSign } from 'lucide-react';
-import { TransactionHistory } from '@/types/transaction-history';
+import { TransactionHistory } from '@/types';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { ConnectedUser } from '@/types/invite';
-import { PaginationMeta } from '@/types/pagination';
+import { ConnectedUser } from '@/types';
+import { PaginationMeta } from '@/types';
+import { PaymentStatus } from '@/types/enums/PaymentStatus';
 
 interface AgentDetailsDrawerProps {
     user: ConnectedUser;
@@ -25,18 +19,14 @@ interface AgentDetailsDrawerProps {
 }
 
 export function AgentDetailsDrawer({ user, open, onOpenChange, transactions, pagination, onPageChange }: AgentDetailsDrawerProps) {
-
-
-    // Filter transactions for this specific agent
-    // const agentTransactions = transactions.filter((t) => t.agent_id === user.id);
     const totalProcessed = transactions.reduce((acc: any, curr: any) => acc + parseFloat(curr.amount), 0);
 
     const getStatusBadgeVariant = (status: string) => {
         switch (status) {
-            case 'COMPLETED': return 'default';
-            case 'CONFIRMED': return 'secondary';
-            case 'REQUESTED': return 'outline';
-            case 'REJECTED': return 'destructive';
+            case PaymentStatus.COMPLETED: return 'default';
+            case PaymentStatus.CONFIRMED: return 'secondary';
+            case PaymentStatus.REQUESTED: return 'outline';
+            case PaymentStatus.REJECTED: return 'destructive';
             default: return 'outline';
         }
     };
@@ -169,25 +159,25 @@ export function AgentDetailsDrawer({ user, open, onOpenChange, transactions, pag
                         </div>
 
                         {/* Pagination Controls */}
-                        {pagination && pagination.total_pages > 1 && (
+                        {pagination && pagination.totalPages > 1 && (
                             <div className="flex items-center justify-between pt-4">
                                 <div className="text-sm text-muted-foreground">
-                                    Page {pagination.current_page} of {pagination.total_pages}
+                                    Page {pagination.currentPage} of {pagination.totalPages}
                                 </div>
                                 <div className="flex gap-2">
                                     <Button
                                         variant="outline"
                                         size="sm"
-                                        onClick={() => onPageChange?.(pagination.current_page - 1)}
-                                        disabled={!pagination.has_previous_page}
+                                        onClick={() => onPageChange?.(pagination.currentPage - 1)}
+                                        disabled={!pagination.hasPreviousPage}
                                     >
                                         Previous
                                     </Button>
                                     <Button
                                         variant="outline"
                                         size="sm"
-                                        onClick={() => onPageChange?.(pagination.current_page + 1)}
-                                        disabled={!pagination.has_next_page}
+                                        onClick={() => onPageChange?.(pagination.currentPage + 1)}
+                                        disabled={!pagination.hasNextPage}
                                     >
                                         Next
                                     </Button>
