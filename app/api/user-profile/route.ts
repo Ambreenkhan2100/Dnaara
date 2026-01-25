@@ -67,7 +67,7 @@ export async function PUT(request: Request) {
                 national_address_doc_url = $12,
                 national_id_doc_url = $13,
                 updated_at = NOW()
-            WHERE user_id = $13
+            WHERE user_id = $14
             RETURNING *
         `;
 
