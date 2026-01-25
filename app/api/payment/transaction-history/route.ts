@@ -59,7 +59,7 @@ export async function GET(request: Request) {
         const client = await pool.connect();
         try {
             const countResult = await client.query(countQuery, countValues);
-            const total = parseInt(countResult.rows[0].total);
+            const totalItems = parseInt(countResult.rows[0].total);
 
             const result = await client.query(query, values);
 
@@ -96,12 +96,12 @@ export async function GET(request: Request) {
             return NextResponse.json({
                 data: payments,
                 pagination: {
-                    current_page: page,
-                    per_page: limit,
-                    total,
-                    total_pages: Math.ceil(total / limit),
-                    has_next_page: page * limit < total,
-                    has_previous_page: page > 1
+                    currentPage: page,
+                    itemsPerPage: limit,
+                    totalItems,
+                    totalPages: Math.ceil(totalItems / limit),
+                    hasNextPage: page * limit < totalItems,
+                    hasPreviousPage: page > 1
                 }
             });
 

@@ -11,27 +11,23 @@ const pool = new Pool({
 export async function POST(request: Request) {
     try {
 
+        const userId = request.headers.get('x-user-id');
         const paymentData: PaymentData = await request.json();
 
-        // Validate required fields (payment_invoice_url is now optional since it can be payment_document_url)
+        // Validate required fields
         if (!paymentData.shipment_id ||
             !paymentData.payment_type ||
             !paymentData.amount ||
             !paymentData.payment_deadline ||
-            !paymentData.payment_status) {
+            !paymentData.payment_status ||
+            !paymentData.payment_invoice_url) {
             return NextResponse.json(
                 { error: 'Missing required fields' },
                 { status: 400 }
             );
         }
 
-        // Handle both payment_invoice_url and payment_document_url
-        let payment_invoice_upload = null;
-        if (paymentData.payment_invoice_url) {
-            payment_invoice_upload = await uploadBase64ToSupabase(paymentData.payment_invoice_url);
-        } else if (paymentData.payment_document_url) {
-            payment_invoice_upload = await uploadBase64ToSupabase(paymentData.payment_document_url);
-        }
+        const payment_invoice = await uploadBase64ToSupabase(paymentData.payment_invoice_url);
 
 
         const query = `
@@ -53,7 +49,7 @@ export async function POST(request: Request) {
             new Date(paymentData.payment_deadline).toISOString(),
             paymentData.description || null,
             paymentData.payment_status,
-            payment_invoice_upload
+            payment_invoice
         ];
 
         const client = await pool.connect();
@@ -66,6 +62,21 @@ export async function POST(request: Request) {
                     { status: 404 }
                 );
             }
+
+            const formattedAmount = new Intl.NumberFormat('en-SA', {
+                style: 'currency',
+                currency: 'SAR',
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            }).format(result.rows[0].amount);
+
+
+            const insertUpdateQuery = `
+                INSERT INTO updates (shipment_id, update_text, document_url, created_by)
+                VALUES ($1, $2, $3, $4)
+            `;
+            await client.query(insertUpdateQuery, [result.rows[0].shipment_id, `Payment created for amount ${formattedAmount}`,
+            result.rows[0].payment_invoice_url, userId]);
 
             const notification = {
                 recipientId: paymentData.importer_id,
