@@ -7,15 +7,28 @@ const pool = new Pool({
 
 export async function GET(request: Request) {
     try {
+        const { searchParams } = new URL(request.url);
+        const agentId = searchParams.get('agent_id');
+        const importerId = searchParams.get('importer_id');
         const userId = request.headers.get('x-user-id') as string;
-        const role = request.headers.get('x-user-role') as string;
+
+        const page = parseInt(searchParams.get('page') || '1');
+        const limit = parseInt(searchParams.get('limit') || '10');
+        const offset = (page - 1) * limit;
+
+        let countQuery = `
+            SELECT COUNT(*) as total
+            FROM payments p
+            JOIN shipments s ON p.shipment_id = s.id
+            WHERE p.payment_status = 'COMPLETED' AND
+        `;
 
         let query = `
             SELECT 
                 p.*,
                 s.*,
                 p.id as payment_id,
-                s.id as shipment_id
+                s.id as s_id
             FROM 
                 payments p
             JOIN 
@@ -24,18 +37,30 @@ export async function GET(request: Request) {
         `;
 
         const values: any[] = [];
+        const countValues: any[] = [];
 
-        if (role === 'agent') {
-            query += ` p.agent_id = $1`;
-        } else {
-            query += ` s.importer_id = $1`;
+        if (agentId) {
+            const condition = ` p.agent_id = $1 AND p.importer_id = $2`;
+            query += condition;
+            countQuery += condition;
+            values.push(agentId, userId);
+            countValues.push(agentId, userId);
+        } else if (importerId) {
+            const condition = ` p.importer_id = $1 AND p.agent_id = $2`;
+            query += condition;
+            countQuery += condition;
+            values.push(importerId, userId);
+            countValues.push(importerId, userId);
         }
-        values.push(userId);
 
-        query += ` ORDER BY p.created_at DESC`;
+        query += ` ORDER BY p.created_at DESC LIMIT $3 OFFSET $4`;
+        values.push(limit, offset);
 
         const client = await pool.connect();
         try {
+            const countResult = await client.query(countQuery, countValues);
+            const total = parseInt(countResult.rows[0].total);
+
             const result = await client.query(query, values);
 
             const payments = result.rows.map(row => {
@@ -59,12 +84,24 @@ export async function GET(request: Request) {
                     updated_at,
                     shipment: {
                         ...shipment,
-                        id: shipment.id
+                        id: shipment.s_id,
+                        shipment_id: shipment.shipment_id
                     }
                 };
             });
 
-            return NextResponse.json(payments);
+            return NextResponse.json({
+                data: payments,
+                pagination: {
+                    current_page: page,
+                    per_page: limit,
+                    total,
+                    total_pages: Math.ceil(total / limit),
+                    has_next_page: page * limit < total,
+                    has_previous_page: page > 1
+                }
+            });
+
         } finally {
             client.release();
         }
