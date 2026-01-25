@@ -66,7 +66,8 @@ export async function GET(request: Request) {
             const payments = result.rows.map(row => {
                 const {
                     payment_id, agent_id, payment_type, bayan_number, bill_number,
-                    amount, payment_deadline, description, payment_status, created_at, updated_at,
+                    amount, payment_deadline, description, payment_status, payment_document_url,
+                    payment_invoice_url, created_at, updated_at,
                     ...shipment
                 } = row;
 
@@ -80,6 +81,8 @@ export async function GET(request: Request) {
                     payment_deadline,
                     description,
                     payment_status,
+                    payment_document_url,
+                    payment_invoice_url,
                     created_at,
                     updated_at,
                     shipment: {
