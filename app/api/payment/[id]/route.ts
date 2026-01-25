@@ -26,7 +26,7 @@ export async function GET(
                 p.*,
                 s.*,
                 p.id as id,
-                s.id as shipment_id
+                s.id as s_id
             FROM 
                 payments p
             JOIN 
@@ -58,7 +58,8 @@ export async function GET(
             created_at: payment.created_at,
             updated_at: payment.updated_at,
             shipment: {
-                id: payment.shipment_id,
+                id: payment.s_id,
+                shipment_id: payment.shipment_id,
                 type: payment.shipment_type,
                 port_of_shipment: payment.port_of_shipment,
                 port_of_destination: payment.port_of_destination,
