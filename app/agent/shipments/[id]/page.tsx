@@ -214,7 +214,8 @@ export default function AgentShipmentDetailsPage() {
                 amount: data.amount,
                 payment_deadline: data.paymentDeadline,
                 description: data.description,
-                payment_status: PaymentStatus.REQUESTED
+                payment_status: PaymentStatus.REQUESTED,
+                payment_document_url: data.payment_document_url || null
             };
 
             const res = await fetchFn('/api/payment', {
@@ -661,6 +662,7 @@ export default function AgentShipmentDetailsPage() {
                                     <SelectItem value={ShipmentStatusEnum.REJECTED_BY_CUSTOMS}>Rejected by customs</SelectItem>
                                     <SelectItem value={ShipmentStatusEnum.OTHER}>Other</SelectItem>
                                     <SelectItem value={ShipmentStatusEnum.ADDITIONAL_DOCUMENT_REQUIRED}>Additional document required</SelectItem>
+                                    <SelectItem value={ShipmentStatusEnum.IN_TRANSIT}>In Transit</SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>

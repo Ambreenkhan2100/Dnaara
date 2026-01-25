@@ -9,7 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
-import { ArrowLeft, Plane, Ship, Truck, FileText, MapPin, Calendar, DollarSign } from 'lucide-react';
+import { ArrowLeft, Plane, Ship, Truck, FileText, MapPin, Calendar, DollarSign, Upload } from 'lucide-react';
 import { PaymentStatus } from '@/types/enums/PaymentStatus';
 import type { PaymentRequest } from '@/types';
 
@@ -20,6 +20,8 @@ export default function ImporterPaymentDetailsPage({ params }: { params: Promise
     const [payment, setPayment] = useState<PaymentRequest | null>(null);
     const [loading, setLoading] = useState(true);
     const [comment, setComment] = useState('');
+    const [receiptFile, setReceiptFile] = useState<string | null>(null);
+    const [receiptFileName, setReceiptFileName] = useState<string>('');
 
     const fetchPayment = async () => {
         try {
@@ -68,6 +70,59 @@ export default function ImporterPaymentDetailsPage({ params }: { params: Promise
         } catch (error) {
             console.error('Error updating payment status:', error);
             toast.error('Failed to update payment status');
+        }
+    };
+
+    const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        // Check file size (10MB limit)
+        const maxSize = 10 * 1024 * 1024; // 10MB
+        if (file.size > maxSize) {
+            toast.error(`File size (${(file.size / (1024 * 1024)).toFixed(2)}MB) exceeds the 10MB limit.`);
+            return;
+        }
+
+        setReceiptFileName(file.name);
+
+        // Convert to base64
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            const base64 = event.target?.result as string;
+            setReceiptFile(base64);
+        };
+        reader.readAsDataURL(file);
+    };
+
+    const handleCompletePayment = async () => {
+        if (!payment || !receiptFile) {
+            toast.error('Please upload a payment receipt');
+            return;
+        }
+
+        try {
+            const res = await fetchFn('/api/payment/complete', {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    id: payment.id,
+                    file: receiptFile,
+                }),
+            });
+
+            if (!res.ok) throw new Error('Failed to complete payment');
+
+            toast.success('Payment completed successfully');
+            setReceiptFile(null);
+            setReceiptFileName('');
+            fetchPayment(); // Refresh details
+        } catch (error) {
+            console.error('Error completing payment:', error);
+            toast.error('Failed to complete payment');
+        } finally {
         }
     };
 
@@ -225,39 +280,72 @@ export default function ImporterPaymentDetailsPage({ params }: { params: Promise
                             </div>
                         </div>
                     )}
-
-                    {/* Comments Section */}
-                    <div className="bg-card rounded-lg border p-6 shadow-sm space-y-4">
-                        <h2 className="text-xl font-semibold">Comments</h2>
-                        <div className="space-y-4 max-h-[300px] overflow-y-auto bg-muted/20 p-4 rounded-md">
-                            {(!payment.comments || payment.comments.length === 0) ? (
-                                <p className="text-sm text-muted-foreground text-center py-4">No comments yet.</p>
-                            ) : (
-                                payment.comments.map((c) => (
-                                    <div key={c.id} className="bg-background border p-3 rounded-md text-sm shadow-sm">
-                                        <div className="flex justify-between mb-1">
-                                            <span className="font-semibold">{c.userName}</span>
-                                            <span className="text-xs text-muted-foreground">
-                                                {format(new Date(c.createdAt), 'MMM dd, HH:mm')}
-                                            </span>
-                                        </div>
-                                        <p className="text-foreground/90">{c.content}</p>
+                    {payment.payment_status === PaymentStatus.CONFIRMED && (
+                        <div className="bg-card rounded-lg border p-6 shadow-sm space-y-4">
+                            <h2 className="text-xl font-semibold">Complete Payment</h2>
+                            <div className="space-y-3">
+                                <label className="text-sm font-medium text-muted-foreground">
+                                    Payment Receipt
+                                </label>
+                                <div className="space-y-2">
+                                    <input
+                                        type="file"
+                                        id="receipt-upload"
+                                        accept="image/*,.pdf"
+                                        onChange={handleFileChange}
+                                        className="hidden"
+                                    />
+                                    <label
+                                        htmlFor="receipt-upload"
+                                        className="flex items-center justify-center gap-2 w-full px-4 py-3 border-2 border-dashed border-muted-foreground/30 rounded-lg cursor-pointer hover:border-primary hover:bg-muted/20 transition-colors"
+                                    >
+                                        <Upload className="h-5 w-5 text-muted-foreground" />
+                                        <span className="text-sm text-muted-foreground">
+                                            {receiptFileName || 'Click to upload receipt'}
+                                        </span>
+                                    </label>
+                                    {receiptFileName && (
+                                        <p className="text-xs text-muted-foreground">
+                                            Selected: {receiptFileName}
+                                        </p>
+                                    )}
+                                </div>
+                                <Button
+                                    onClick={handleCompletePayment}
+                                    disabled={!receiptFile}
+                                    className="w-full bg-green-600 hover:bg-green-700 text-white"
+                                >
+                                    Complete Payment
+                                </Button>
+                            </div>
+                        </div>
+                    )}
+                    {(payment.payment_invoice_url?.length || payment.payment_document_url?.length) &&
+                        (<div className="bg-card rounded-lg border p-6 shadow-sm space-y-4">
+                            <h2 className="text-xl font-semibold">Documents</h2>
+                            {payment.payment_invoice_url && (
+                                <div className="flex items-center justify-between p-2 border rounded hover:bg-accent/50 transition-colors">
+                                    <div className="flex items-center gap-2 overflow-hidden">
+                                        <FileText className="h-4 w-4 text-blue-500 shrink-0" />
+                                        <span className="text-sm truncate">Payment Invoice</span>
                                     </div>
-                                ))
+                                    <a href={payment.payment_invoice_url} target="_blank" rel="noopener noreferrer">
+                                        <Button variant="ghost" size="sm">View</Button>
+                                    </a>
+                                </div>
                             )}
-                        </div>
-                        <div className="flex gap-2">
-                            <Textarea
-                                placeholder="Add a comment..."
-                                value={comment}
-                                onChange={(e) => setComment(e.target.value)}
-                                className="min-h-[80px]"
-                            />
-                            <Button onClick={handleAddComment} className="self-end">
-                                Post
-                            </Button>
-                        </div>
-                    </div>
+                            {payment.payment_document_url && (
+                                <div className="flex items-center justify-between p-2 border rounded hover:bg-accent/50 transition-colors">
+                                    <div className="flex items-center gap-2 overflow-hidden">
+                                        <FileText className="h-4 w-4 text-blue-500 shrink-0" />
+                                        <span className="text-sm truncate">Payment Receipt</span>
+                                    </div>
+                                    <a href={payment.payment_document_url} target="_blank" rel="noopener noreferrer">
+                                        <Button variant="ghost" size="sm">View</Button>
+                                    </a>
+                                </div>
+                            )}
+                        </div>)}
                 </div>
             </div>
         </div>

@@ -57,6 +57,7 @@ export const createPaymentSchema = z.object({
     paymentDeadline: z.string().optional(),
     paymentType: z.string().min(1, 'Payment type is required'),
     otherPaymentName: z.string().optional(),
+    payment_document_url: z.string().min(1, 'Payment document is required'),
 });
 
 export type CreatePaymentInput = z.infer<typeof createPaymentSchema>;

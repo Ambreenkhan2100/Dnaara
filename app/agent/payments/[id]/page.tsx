@@ -93,7 +93,7 @@ export default function AgentPaymentDetailsPage({ params }: { params: Promise<{ 
     const shipment = payment.shipment;
 
     return (
-        <div className="container mx-auto py-8 max-w-4xl space-y-8">
+        <div className="container mx-auto py-8 max-w-7xl space-y-8">
             <Button variant="ghost" onClick={() => router.back()} className="mb-4 pl-0 hover:pl-2 transition-all">
                 <ArrowLeft className="mr-2 h-4 w-4" /> Back to Payments
             </Button>
@@ -154,7 +154,7 @@ export default function AgentPaymentDetailsPage({ params }: { params: Promise<{ 
                                     {getIcon(shipment.type)}
                                     <span>{shipment.type} Shipment</span>
                                 </div>
-                                <p className="text-sm text-muted-foreground">ID: {shipment.id}</p>
+                                <p className="text-sm text-muted-foreground">ID: {shipment.shipment_id}</p>
 
                                 <Separator />
 
@@ -203,64 +203,32 @@ export default function AgentPaymentDetailsPage({ params }: { params: Promise<{ 
                     )}
                 </div>
 
-                {/* Sidebar: Actions & Comments (1/3) */}
-                <div className="space-y-6">
-                    {/* Actions */}
-                    {payment.payment_status === PaymentStatus.REQUESTED && (
-                        <div className="bg-card rounded-lg border p-6 shadow-sm space-y-4">
-                            <h2 className="text-xl font-semibold">Actions</h2>
-                            <div className="flex flex-row gap-2 w-full">
-                                <Button
-                                    variant="default"
-                                    className="w-1/2 bg-green-600 hover:bg-green-700 text-white"
-                                    onClick={() => updatePaymentStatus(PaymentStatus.CONFIRMED)}
-                                >
-                                    Accept
-                                </Button>
-                                <Button
-                                    variant="destructive"
-                                    className="w-1/2"
-                                    onClick={() => updatePaymentStatus(PaymentStatus.REJECTED)}
-                                >
-                                    Reject
-                                </Button>
+                {(payment.payment_invoice_url?.length || payment.payment_document_url?.length) &&
+                    (<div className="bg-card rounded-lg border p-6 shadow-sm space-y-4 h-fit">
+                        <h2 className="text-xl font-semibold">Documents</h2>
+                        {payment.payment_invoice_url && (
+                            <div className="flex items-center justify-between p-2 border rounded hover:bg-accent/50 transition-colors">
+                                <div className="flex items-center gap-2 overflow-hidden">
+                                    <FileText className="h-4 w-4 text-blue-500 shrink-0" />
+                                    <span className="text-sm truncate">Payment Invoice</span>
+                                </div>
+                                <a href={payment.payment_invoice_url} target="_blank" rel="noopener noreferrer">
+                                    <Button variant="ghost" size="sm">View</Button>
+                                </a>
                             </div>
-                        </div>
-                    )}
-
-                    {/* Comments Section */}
-                    <div className="bg-card rounded-lg border p-6 shadow-sm space-y-4">
-                        <h2 className="text-xl font-semibold">Comments</h2>
-                        <div className="space-y-4 max-h-[300px] overflow-y-auto bg-muted/20 p-4 rounded-md">
-                            {(!payment.comments || payment.comments.length === 0) ? (
-                                <p className="text-sm text-muted-foreground text-center py-4">No comments yet.</p>
-                            ) : (
-                                payment.comments.map((c) => (
-                                    <div key={c.id} className="bg-background border p-3 rounded-md text-sm shadow-sm">
-                                        <div className="flex justify-between mb-1">
-                                            <span className="font-semibold">{c.userName}</span>
-                                            <span className="text-xs text-muted-foreground">
-                                                {format(new Date(c.createdAt), 'MMM dd, HH:mm')}
-                                            </span>
-                                        </div>
-                                        <p className="text-foreground/90">{c.content}</p>
-                                    </div>
-                                ))
-                            )}
-                        </div>
-                        <div className="flex gap-2">
-                            <Textarea
-                                placeholder="Add a comment..."
-                                value={comment}
-                                onChange={(e) => setComment(e.target.value)}
-                                className="min-h-[80px]"
-                            />
-                            <Button onClick={handleAddComment} className="self-end">
-                                Post
-                            </Button>
-                        </div>
-                    </div>
-                </div>
+                        )}
+                        {payment.payment_document_url && (
+                            <div className="flex items-center justify-between p-2 border rounded hover:bg-accent/50 transition-colors">
+                                <div className="flex items-center gap-2 overflow-hidden">
+                                    <FileText className="h-4 w-4 text-blue-500 shrink-0" />
+                                    <span className="text-sm truncate">Payment Receipt</span>
+                                </div>
+                                <a href={payment.payment_document_url} target="_blank" rel="noopener noreferrer">
+                                    <Button variant="ghost" size="sm">View</Button>
+                                </a>
+                            </div>
+                        )}
+                    </div>)}
             </div>
         </div>
     );

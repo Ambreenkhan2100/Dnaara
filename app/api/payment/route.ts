@@ -13,20 +13,25 @@ export async function POST(request: Request) {
 
         const paymentData: PaymentData = await request.json();
 
-        // Validate required fields
+        // Validate required fields (payment_invoice_url is now optional since it can be payment_document_url)
         if (!paymentData.shipment_id ||
             !paymentData.payment_type ||
             !paymentData.amount ||
             !paymentData.payment_deadline ||
-            !paymentData.payment_status ||
-            !paymentData.payment_invoice_url) {
+            !paymentData.payment_status) {
             return NextResponse.json(
                 { error: 'Missing required fields' },
                 { status: 400 }
             );
         }
 
-        const payment_invoice = await uploadBase64ToSupabase(paymentData.payment_invoice_url);
+        // Handle both payment_invoice_url and payment_document_url
+        let payment_invoice_upload = null;
+        if (paymentData.payment_invoice_url) {
+            payment_invoice_upload = await uploadBase64ToSupabase(paymentData.payment_invoice_url);
+        } else if (paymentData.payment_document_url) {
+            payment_invoice_upload = await uploadBase64ToSupabase(paymentData.payment_document_url);
+        }
 
 
         const query = `
@@ -48,7 +53,7 @@ export async function POST(request: Request) {
             new Date(paymentData.payment_deadline).toISOString(),
             paymentData.description || null,
             paymentData.payment_status,
-            payment_invoice
+            payment_invoice_upload
         ];
 
         const client = await pool.connect();

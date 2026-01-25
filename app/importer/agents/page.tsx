@@ -10,6 +10,7 @@ import { Plus, ArrowUpRight } from 'lucide-react';
 import { AgentDetailsDrawer } from '../components/agent-details-drawer';
 import { useLoader } from '@/components/providers/loader-provider';
 import { ConnectedUser, RelationshipStatus } from '@/types/invite';
+import { TransactionHistory } from '@/types/transaction-history';
 import { toast } from 'sonner';
 
 export default function ImporterAgentsPage() {
@@ -17,7 +18,8 @@ export default function ImporterAgentsPage() {
     const [linkedAgents, setLinkedAgents] = useState<ConnectedUser[]>([]);
     const [dialogOpen, setDialogOpen] = useState(false);
     const [drawerOpen, setDrawerOpen] = useState(false);
-    const [drawerAgentId, setDrawerAgentId] = useState<string | null>(null);
+    const [drawerAgent, setDrawerAgent] = useState<ConnectedUser | null>(null);
+    const [transactions, setTransactions] = useState<TransactionHistory>([]);
 
     const fetchAgents = useCallback(async () => {
         try {
@@ -55,13 +57,23 @@ export default function ImporterAgentsPage() {
         }
     }
 
+    async function showTransactionHistory(agent: ConnectedUser) {
+        try {
+            const res = await fetchFn('/api/payment/transaction-history');
+            if (!res.ok) throw new Error('Failed to fetch transaction history');
+
+            const transactionData = await res.json();
+            setTransactions(transactionData);
+            setDrawerAgent(agent);
+            setDrawerOpen(true);
+        } catch (error) {
+            console.error('Error fetching transaction history:', error);
+            toast.error('Failed to load transaction history');
+        }
+    }
+
     return (
         <div className="space-y-6">
-            <AgentDetailsDrawer
-                agentId={drawerAgentId}
-                open={drawerOpen}
-                onOpenChange={setDrawerOpen}
-            />
             <div className="flex items-center justify-between">
                 <div>
                     <h2 className="text-2xl font-bold tracking-tight">Agents</h2>
@@ -109,14 +121,6 @@ export default function ImporterAgentsPage() {
                         accessor: (row) => row.phone_number || '-',
                     },
                     {
-                        header: 'Minimum Balance',
-                        accessor: () => '-',
-                    },
-                    {
-                        header: 'Wallet',
-                        accessor: () => '-',
-                    },
-                    {
                         header: 'Status',
                         accessor: (row) => (
                             <div className="flex items-center justify-between group">
@@ -126,8 +130,9 @@ export default function ImporterAgentsPage() {
                                     size="sm"
                                     className="opacity-0 group-hover:opacity-100 transition-opacity text-primary hover:text-primary hover:bg-primary/10"
                                     onClick={() => {
-                                        setDrawerAgentId(row.agent_id || row.id);
-                                        setDrawerOpen(true);
+                                        showTransactionHistory(row)
+                                        // setDrawerAgentId(row.agent_id || row.id);
+                                        // setDrawerOpen(true);
                                     }}
                                 >
                                     Open
@@ -139,6 +144,13 @@ export default function ImporterAgentsPage() {
                 ]}
                 emptyMessage="No agents linked yet"
             />
+
+            {(drawerAgent && drawerOpen) && (<AgentDetailsDrawer
+                user={drawerAgent as ConnectedUser}
+                open={drawerOpen}
+                onOpenChange={setDrawerOpen}
+                transactions={transactions}
+            />)}
         </div>
     );
 }

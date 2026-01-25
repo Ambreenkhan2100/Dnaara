@@ -27,6 +27,8 @@ export interface PaymentRequest {
     updated_at: string;
     comments: PaymentComment[];
     shipment?: Shipment;
+    payment_invoice_url?: string;
+    payment_document_url?: string;
 }
 
 export interface PaymentData {

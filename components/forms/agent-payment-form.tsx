@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
@@ -12,6 +13,8 @@ import type { PaymentRequest } from '@/types';
 import { Shipment } from '@/types/shipment';
 import { ShipmentType } from './create-shipment-form';
 import { format } from 'date-fns';
+import { Upload } from 'lucide-react';
+import { toast } from 'sonner';
 
 const SEA_PAYMENT_OPTIONS = [
     'Customs Duty',
@@ -50,6 +53,9 @@ interface AgentPaymentFormProps {
 }
 
 export function AgentPaymentForm({ prefilledImporterId, prefilledShipmentId, shipment, onSubmit }: AgentPaymentFormProps) {
+    // const [documentFile, setDocumentFile] = useState<string | null>(null);
+    const [documentFileName, setDocumentFileName] = useState<string>('');
+
     const form = useForm<CreatePaymentInput>({
         resolver: zodResolver(createPaymentSchema) as any,
         defaultValues: {
@@ -62,6 +68,7 @@ export function AgentPaymentForm({ prefilledImporterId, prefilledShipmentId, shi
             paymentDeadline: '',
             paymentType: '',
             otherPaymentName: '',
+            payment_document_url: '',
         },
     });
 
@@ -85,6 +92,29 @@ export function AgentPaymentForm({ prefilledImporterId, prefilledShipmentId, shi
             case ShipmentType.Land: return LAND_PAYMENT_OPTIONS;
             default: return [];
         }
+    };
+
+    const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        // Check file size (10MB limit)
+        const maxSize = 10 * 1024 * 1024; // 10MB
+        if (file.size > maxSize) {
+            toast.error(`File size (${(file.size / (1024 * 1024)).toFixed(2)}MB) exceeds the 10MB limit.`);
+            return;
+        }
+
+        setDocumentFileName(file.name);
+
+        // Convert to base64
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            const base64 = event.target?.result as string;
+            // setDocumentFile(base64);
+            form.setValue('payment_document_url', base64);
+        };
+        reader.readAsDataURL(file);
     };
 
     return (
@@ -202,6 +232,40 @@ export function AgentPaymentForm({ prefilledImporterId, prefilledShipmentId, shi
                             <FormControl>
                                 <Textarea placeholder="Payment description..." {...field} />
                             </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                    )}
+                />
+
+                <FormField
+                    control={form.control}
+                    name="payment_document_url"
+                    render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Payment Document</FormLabel>
+                            <div className="space-y-2">
+                                <input
+                                    type="file"
+                                    id="payment-document-upload"
+                                    accept="image/*,.pdf"
+                                    onChange={handleFileChange}
+                                    className="hidden"
+                                />
+                                <label
+                                    htmlFor="payment-document-upload"
+                                    className="flex items-center justify-center gap-2 w-full px-4 py-3 border-2 border-dashed border-muted-foreground/30 rounded-lg cursor-pointer hover:border-primary hover:bg-muted/20 transition-colors"
+                                >
+                                    <Upload className="h-5 w-5 text-muted-foreground" />
+                                    <span className="text-sm text-muted-foreground">
+                                        {documentFileName || 'Click to upload document'}
+                                    </span>
+                                </label>
+                                {documentFileName && (
+                                    <p className="text-xs text-muted-foreground">
+                                        Selected: {documentFileName}
+                                    </p>
+                                )}
+                            </div>
                             <FormMessage />
                         </FormItem>
                     )}

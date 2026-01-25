@@ -8,22 +8,35 @@ import {
 import { useImporterStore } from '@/lib/store/useImporterStore';
 import { StatusBadge } from '@/components/shared/status-badge';
 import { format } from 'date-fns';
-import { ArrowDownLeft, ArrowUpRight } from 'lucide-react';
+import { FileText, DollarSign } from 'lucide-react';
+import { TransactionHistory } from '@/types/transaction-history';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { ConnectedUser } from '@/types/invite';
 
 interface AgentDetailsDrawerProps {
-    agentId: string | null;
+    user: ConnectedUser;
     open: boolean;
     onOpenChange: (open: boolean) => void;
+    transactions: any;
 }
 
-export function AgentDetailsDrawer({ agentId, open, onOpenChange }: AgentDetailsDrawerProps) {
-    const { linkedAgents, transactions } = useImporterStore();
-    const agent = linkedAgents.find((a) => a.id === agentId);
+export function AgentDetailsDrawer({ user, open, onOpenChange, transactions }: AgentDetailsDrawerProps) {
 
-    if (!agent) return null;
 
-    const agentTransactions = transactions.filter((t) => t.agentId === agentId);
-    const totalProcessed = agentTransactions.reduce((acc, curr) => acc + curr.amount, 0);
+    // Filter transactions for this specific agent
+    // const agentTransactions = transactions.filter((t) => t.agent_id === user.id);
+    const totalProcessed = transactions.reduce((acc: any, curr: any) => acc + parseFloat(curr.amount), 0);
+
+    const getStatusBadgeVariant = (status: string) => {
+        switch (status) {
+            case 'COMPLETED': return 'default';
+            case 'CONFIRMED': return 'secondary';
+            case 'REQUESTED': return 'outline';
+            case 'REJECTED': return 'destructive';
+            default: return 'outline';
+        }
+    };
 
     return (
         <Sheet open={open} onOpenChange={onOpenChange}>
@@ -31,7 +44,7 @@ export function AgentDetailsDrawer({ agentId, open, onOpenChange }: AgentDetails
                 <SheetHeader className="mb-4 px-0">
                     <SheetTitle>Agent Details</SheetTitle>
                     <SheetDescription>
-                        View details and transaction history for {agent.name}
+                        View details and transaction history for {user.legal_business_name || user.full_name}
                     </SheetDescription>
                 </SheetHeader>
 
@@ -42,27 +55,25 @@ export function AgentDetailsDrawer({ agentId, open, onOpenChange }: AgentDetails
                         <div className="grid grid-cols-2 gap-4 text-sm">
                             <div>
                                 <p className="text-muted-foreground">Company Name</p>
-                                <p className="font-medium">{agent.companyName || '-'}</p>
+                                <p className="font-medium">{user.legal_business_name || '-'}</p>
                             </div>
                             <div>
                                 <p className="text-muted-foreground">Status</p>
                                 <div className="mt-1">
-                                    <StatusBadge status={agent.status === 'linked' ? 'active' : 'pending'} />
+                                    <StatusBadge status={user.relationship_status === 'ACTIVE' ? 'active' : 'pending'} />
                                 </div>
                             </div>
                             <div>
                                 <p className="text-muted-foreground">Email</p>
-                                <p className="font-medium">{agent.email}</p>
+                                <p className="font-medium">{user.company_email || '-'}</p>
                             </div>
                             <div>
                                 <p className="text-muted-foreground">Phone</p>
-                                <p className="font-medium">{agent.phone || '-'}</p>
+                                <p className="font-medium">{user.phone_number || '-'}</p>
                             </div>
                             <div>
-                                <p className="text-muted-foreground">Minimum Balance</p>
-                                <p className="font-medium">
-                                    {agent.minimumBalance ? `SAR ${agent.minimumBalance.toLocaleString()}` : '-'}
-                                </p>
+                                <p className="text-muted-foreground">Contact Person</p>
+                                <p className="font-medium">{user.full_name || '-'}</p>
                             </div>
                         </div>
                     </div>
@@ -73,31 +84,77 @@ export function AgentDetailsDrawer({ agentId, open, onOpenChange }: AgentDetails
                             <h3 className="text-lg font-semibold">Transaction History</h3>
                             <div className="text-sm">
                                 <span className="text-muted-foreground">Total Processed: </span>
-                                <span className="font-bold">SAR {totalProcessed.toLocaleString()}</span>
+                                <span className="font-bold">SAR {totalProcessed.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                             </div>
                         </div>
 
                         <div className="border rounded-lg divide-y">
-                            {agentTransactions.length > 0 ? (
-                                agentTransactions.map((tx) => (
-                                    <div key={tx.id} className="p-4 flex items-center justify-between hover:bg-muted/50 transition-colors">
-                                        <div className="flex items-center gap-3">
-                                            <div className={`p-2 rounded-full ${tx.type === 'CREDIT' ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'}`}>
-                                                {tx.type === 'CREDIT' ? (
-                                                    <ArrowDownLeft className="h-4 w-4" />
-                                                ) : (
-                                                    <ArrowUpRight className="h-4 w-4" />
-                                                )}
+                            {transactions.length > 0 ? (
+                                transactions.map((tx: any) => (
+                                    <div key={tx.id} className="p-4 hover:bg-muted/50 transition-colors">
+                                        <div className="flex items-start justify-between mb-3">
+                                            <div className="flex items-start gap-3 flex-1">
+                                                <div className="p-2 rounded-full bg-green-100 text-green-600">
+                                                    <DollarSign className="h-4 w-4" />
+                                                </div>
+                                                <div className="flex-1">
+                                                    <div className="flex items-center gap-2 mb-1">
+                                                        <p className="font-medium text-sm">{tx.payment_type}</p>
+                                                        <Badge variant={getStatusBadgeVariant(tx.payment_status)}>
+                                                            {tx.payment_status}
+                                                        </Badge>
+                                                    </div>
+                                                    <p className="text-xs text-muted-foreground mb-2">
+                                                        {format(new Date(tx.updated_at), 'MMM d, yyyy h:mm a')}
+                                                    </p>
+                                                    {tx.description && (
+                                                        <p className="text-xs text-muted-foreground">{tx.description}</p>
+                                                    )}
+                                                </div>
                                             </div>
-                                            <div>
-                                                <p className="font-medium text-sm">{tx.description}</p>
-                                                <p className="text-xs text-muted-foreground">
-                                                    {format(new Date(tx.date), 'MMM d, yyyy h:mm a')}
-                                                </p>
+                                            <div className="text-right">
+                                                <div className="font-semibold text-sm text-green-600">
+                                                    SAR {parseFloat(tx.amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                                </div>
                                             </div>
                                         </div>
-                                        <div className={`font-semibold text-sm ${tx.type === 'CREDIT' ? 'text-green-600' : 'text-red-600'}`}>
-                                            {tx.type === 'CREDIT' ? '+' : '-'} SAR {tx.amount.toLocaleString()}
+
+                                        {/* Shipment Details */}
+                                        <div className="ml-11 mt-2 p-3 bg-muted/50 rounded-lg text-xs space-y-1">
+                                            <div className="flex items-center justify-between">
+                                                <span className="text-muted-foreground">Shipment Type:</span>
+                                                <span className="font-medium">{tx.shipment.type}</span>
+                                            </div>
+                                            <div className="flex items-center justify-between">
+                                                <span className="text-muted-foreground">Route:</span>
+                                                <span className="font-medium">{tx.shipment.port_of_shipment} → {tx.shipment.port_of_destination}</span>
+                                            </div>
+                                            {tx.bill_number && (
+                                                <div className="flex items-center justify-between">
+                                                    <span className="text-muted-foreground">Bill Number:</span>
+                                                    <span className="font-medium">{tx.bill_number}</span>
+                                                </div>
+                                            )}
+                                            {(tx.shipment['payment_invoice_url'] || tx.shipment['payment_document_url']) && (
+                                                <div className="flex gap-2 mt-2">
+                                                    {tx.shipment['payment_invoice_url'] && (
+                                                        <a href={tx.shipment['payment_invoice_url']} target="_blank" rel="noopener noreferrer">
+                                                            <Button variant="outline" size="sm" className="h-6 text-xs">
+                                                                <FileText className="h-3 w-3 mr-1" />
+                                                                Invoice
+                                                            </Button>
+                                                        </a>
+                                                    )}
+                                                    {tx.shipment.payment_document_url && (
+                                                        <a href={tx.shipment.payment_document_url} target="_blank" rel="noopener noreferrer">
+                                                            <Button variant="outline" size="sm" className="h-6 text-xs">
+                                                                <FileText className="h-3 w-3 mr-1" />
+                                                                Receipt
+                                                            </Button>
+                                                        </a>
+                                                    )}
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
                                 ))
