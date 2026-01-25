@@ -18,7 +18,10 @@ export async function GET(request: Request,
             SELECT 
                 s.*,
                 json_agg(DISTINCT st.*) FILTER (WHERE st.id IS NOT NULL) as trucks,
-                json_agg(DISTINCT u.*) FILTER (WHERE u.id IS NOT NULL) as updates,
+                COALESCE(
+                    json_agg(u.* ORDER BY u.created_at DESC) FILTER (WHERE u.id IS NOT NULL),
+                    '[]'::json
+                ) as updates,
                 json_build_object('id', imp.id, 'name', imp.username, 'email', imp.email) as importer,
                 json_build_object('id', agt.id, 'name', agt.username, 'email', agt.email) as agent
             FROM shipments s
