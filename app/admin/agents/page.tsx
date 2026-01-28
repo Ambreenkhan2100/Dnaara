@@ -1,8 +1,7 @@
 'use client';
 
-import { useState, useMemo } from 'react';
-import { useAdminStore } from '@/lib/store/useAdminStore';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useState, useMemo, useEffect } from 'react';
+import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -10,23 +9,56 @@ import { Search, Plus, Mail, Phone, Building2, User } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/components/ui/dialog';
 import { AdminAgentForm } from '@/components/forms/admin-agent-form';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { useLoader } from '@/components/providers/loader-provider';
+
+interface AgentData {
+    id: string;
+    email: string;
+    role: string;
+    status: string;
+    phone_number?: string;
+    name: string;
+    full_name: string;
+    created_at: string;
+}
 
 export default function AdminAgentsPage() {
-    const { users } = useAdminStore();
+    const { fetchFn } = useLoader();
+    const [agents, setAgents] = useState<AgentData[]>([]);
     const [searchQuery, setSearchQuery] = useState('');
     const [createDialogOpen, setCreateDialogOpen] = useState(false);
 
-    const agents = useMemo(() => {
-        return users.filter((u) => u.type === 'agent');
-    }, [users]);
+    const fetchAgents = async () => {
+        try {
+            const response = await fetchFn('/api/users?role=agent');
+            if (response.ok) {
+                const data = await response.json();
+                setAgents(data);
+            } else {
+                console.error('Failed to fetch agents');
+            }
+        } catch (error) {
+            console.error('Error fetching agents:', error);
+        }
+    };
+
+    useEffect(() => {
+        fetchAgents();
+    }, [fetchFn]);
 
     const filteredAgents = useMemo(() => {
         return agents.filter((agent) =>
-            agent.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            (agent as any).companyName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            agent.email.toLowerCase().includes(searchQuery.toLowerCase())
+            agent.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            agent.full_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            agent.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            agent.phone_number?.toLowerCase().includes(searchQuery.toLowerCase())
         );
     }, [agents, searchQuery]);
+
+    const handleAgentCreated = () => {
+        setCreateDialogOpen(false);
+        fetchAgents(); // Refresh the list
+    };
 
     return (
         <div className="h-full flex-1 flex-col space-y-8 p-8 md:flex">
@@ -52,7 +84,7 @@ export default function AdminAgentsPage() {
                                     Enter the agent's details to add them to the system.
                                 </DialogDescription>
                             </DialogHeader>
-                            <AdminAgentForm onSuccess={() => setCreateDialogOpen(false)} />
+                            <AdminAgentForm onSuccess={handleAgentCreated} />
                         </DialogContent>
                     </Dialog>
                 </div>
@@ -85,7 +117,7 @@ export default function AdminAgentsPage() {
                                 {filteredAgents.length === 0 ? (
                                     <TableRow>
                                         <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
-                                            No agents found
+                                            {searchQuery ? 'No agents found matching your search' : 'No agents found'}
                                         </TableCell>
                                     </TableRow>
                                 ) : (
@@ -94,13 +126,13 @@ export default function AdminAgentsPage() {
                                             <TableCell className="font-medium">
                                                 <div className="flex items-center gap-2">
                                                     <Building2 className="h-4 w-4 text-muted-foreground" />
-                                                    {(agent as any).companyName || '-'}
+                                                    {agent.name}
                                                 </div>
                                             </TableCell>
                                             <TableCell>
                                                 <div className="flex items-center gap-2">
                                                     <User className="h-4 w-4 text-muted-foreground" />
-                                                    {agent.name}
+                                                    {agent.full_name}
                                                 </div>
                                             </TableCell>
                                             <TableCell>
@@ -112,21 +144,21 @@ export default function AdminAgentsPage() {
                                             <TableCell>
                                                 <div className="flex items-center gap-2">
                                                     <Phone className="h-4 w-4 text-muted-foreground" />
-                                                    {agent.phone || '-'}
+                                                    {agent.phone_number || '-'}
                                                 </div>
                                             </TableCell>
                                             <TableCell>
                                                 <Badge
                                                     variant={
-                                                        agent.status === 'active'
+                                                        agent.status?.toLowerCase() === 'active'
                                                             ? 'default'
-                                                            : agent.status === 'pending'
+                                                            : agent.status?.toLowerCase() === 'pending'
                                                                 ? 'secondary'
                                                                 : 'destructive'
                                                     }
-                                                    className={agent.status === 'active' ? 'bg-green-500 hover:bg-green-600' : ''}
+                                                    className={agent.status?.toLowerCase() === 'active' ? 'bg-green-500 hover:bg-green-600' : ''}
                                                 >
-                                                    {agent.status.toUpperCase()}
+                                                    {agent.status?.toUpperCase()}
                                                 </Badge>
                                             </TableCell>
                                         </TableRow>
