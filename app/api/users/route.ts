@@ -16,7 +16,7 @@ export async function GET(request: Request) {
     const client = await pool.connect();
     try {
         const result = await client.query(
-            `SELECT u.id, up.legal_business_name as name 
+            `SELECT u.*, up.legal_business_name as name, up.full_name, up.phone_number 
        FROM users u 
        JOIN user_profiles up ON u.id = up.user_id 
        WHERE u.role = $1`,

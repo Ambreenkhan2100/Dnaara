@@ -1,32 +1,63 @@
 'use client';
 
-import { useState, useMemo } from 'react';
-import { useAdminStore } from '@/lib/store/useAdminStore';
+import { useState, useMemo, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Search, Plus, Mail, Phone, Building2, User } from 'lucide-react';
+import { Search, Plus, Mail, Phone, Building2, User, RefreshCw } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/components/ui/dialog';
 import { AdminImporterForm } from '@/components/forms/admin-importer-form';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { useLoader } from '@/components/providers/loader-provider';
+
+interface ImporterData {
+    id: string;
+    email: string;
+    role: string;
+    status: string;
+    phone_number?: string;
+    name: string;
+    full_name: string;
+    created_at: string;
+}
 
 export default function AdminImportersPage() {
-    const { users } = useAdminStore();
+    const { fetchFn } = useLoader();
+    const [importers, setImporters] = useState<ImporterData[]>([]);
     const [searchQuery, setSearchQuery] = useState('');
     const [createDialogOpen, setCreateDialogOpen] = useState(false);
 
-    const importers = useMemo(() => {
-        return users.filter((u) => u.type === 'importer');
-    }, [users]);
+    const fetchImporters = async () => {
+        try {
+            const response = await fetchFn('/api/users?role=importer');
+            if (response.ok) {
+                const data = await response.json();
+                setImporters(data);
+            } else {
+                console.error('Failed to fetch importers');
+            }
+        } catch (error) {
+            console.error('Error fetching importers:', error);
+        }
+    };
+
+    useEffect(() => {
+        fetchImporters();
+    }, [fetchFn]);
 
     const filteredImporters = useMemo(() => {
         return importers.filter((importer) =>
-            importer.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            (importer as any).businessName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            importer.email.toLowerCase().includes(searchQuery.toLowerCase())
+            importer.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            importer.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            importer.phone_number?.toLowerCase().includes(searchQuery.toLowerCase())
         );
     }, [importers, searchQuery]);
+
+    const handleImporterCreated = () => {
+        setCreateDialogOpen(false);
+        fetchImporters(); // Refresh the list
+    };
 
     return (
         <div className="h-full flex-1 flex-col space-y-8 p-8 md:flex">
@@ -52,7 +83,7 @@ export default function AdminImportersPage() {
                                     Enter the importer's details to add them to the system.
                                 </DialogDescription>
                             </DialogHeader>
-                            <AdminImporterForm onSuccess={() => setCreateDialogOpen(false)} />
+                            <AdminImporterForm onSuccess={handleImporterCreated} />
                         </DialogContent>
                     </Dialog>
                 </div>
@@ -78,14 +109,14 @@ export default function AdminImportersPage() {
                                     <TableHead>Importer Name</TableHead>
                                     <TableHead>Email</TableHead>
                                     <TableHead>Phone</TableHead>
-                                    <TableHead>Status</TableHead>
+                                    {/* <TableHead>Status</TableHead> */}
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
                                 {filteredImporters.length === 0 ? (
                                     <TableRow>
                                         <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
-                                            No importers found
+                                            {searchQuery ? 'No importers found matching your search' : 'No importers found'}
                                         </TableCell>
                                     </TableRow>
                                 ) : (
@@ -94,13 +125,13 @@ export default function AdminImportersPage() {
                                             <TableCell className="font-medium">
                                                 <div className="flex items-center gap-2">
                                                     <Building2 className="h-4 w-4 text-muted-foreground" />
-                                                    {(importer as any).businessName || '-'}
+                                                    {importer.name}
                                                 </div>
                                             </TableCell>
                                             <TableCell>
                                                 <div className="flex items-center gap-2">
                                                     <User className="h-4 w-4 text-muted-foreground" />
-                                                    {importer.name}
+                                                    {importer.full_name}
                                                 </div>
                                             </TableCell>
                                             <TableCell>
@@ -112,21 +143,21 @@ export default function AdminImportersPage() {
                                             <TableCell>
                                                 <div className="flex items-center gap-2">
                                                     <Phone className="h-4 w-4 text-muted-foreground" />
-                                                    {importer.phone || '-'}
+                                                    {importer.phone_number || '-'}
                                                 </div>
                                             </TableCell>
                                             <TableCell>
                                                 <Badge
                                                     variant={
-                                                        importer.status === 'active'
+                                                        importer.status?.toLowerCase() === 'active'
                                                             ? 'default'
-                                                            : importer.status === 'pending'
+                                                            : importer.status?.toLowerCase() === 'pending'
                                                                 ? 'secondary'
                                                                 : 'destructive'
                                                     }
-                                                    className={importer.status === 'active' ? 'bg-green-500 hover:bg-green-600' : ''}
+                                                    className={importer.status?.toLowerCase() === 'active' ? 'bg-green-500 hover:bg-green-600' : ''}
                                                 >
-                                                    {importer.status.toUpperCase()}
+                                                    {importer.status?.toUpperCase()}
                                                 </Badge>
                                             </TableCell>
                                         </TableRow>
