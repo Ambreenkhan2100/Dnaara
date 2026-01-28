@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Plus, Trash2, Edit2, Check, X, FileText } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { EditUserProfile } from './edit-user-profile';
 
 interface EmailRow {
     id: string;
@@ -23,6 +24,7 @@ export function UserProfileComponent() {
 
     const [localEmails, setLocalEmails] = useState<EmailRow[]>([]);
     const [isSaving, setIsSaving] = useState(false);
+    const [isEditOpen, setIsEditOpen] = useState(false);
 
     // Initialize local emails from store when profile loads
     useEffect(() => {
@@ -164,10 +166,18 @@ export function UserProfileComponent() {
 
     return (
         <div className={`space-y-6`}>
-            <div className="mb-6">
-                <h2 className="text-2xl font-bold tracking-tight">Profile Details</h2>
-                <p className="text-muted-foreground">Manage your account settings and preferences.</p>
+            <div className="mb-6 flex items-center justify-between">
+                <div>
+                    <h2 className="text-2xl font-bold tracking-tight">Profile Details</h2>
+                    <p className="text-muted-foreground">Manage your account settings and preferences.</p>
+                </div>
+                <Button onClick={() => setIsEditOpen(true)}>
+                    <Edit2 className="mr-2 h-4 w-4" />
+                    Edit
+                </Button>
             </div>
+
+            <EditUserProfile open={isEditOpen} onOpenChange={setIsEditOpen} />
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <Card className="lg:col-span-2">
