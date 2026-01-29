@@ -5,13 +5,15 @@ import { useRouter } from 'next/navigation';
 import { useLoader } from '@/components/providers/loader-provider';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { ArrowLeft, Plane, Ship, Truck, FileText, MapPin, Calendar, DollarSign } from 'lucide-react';
+import { PaymentStatus } from '@/types/enums/PaymentStatus';
 import type { PaymentRequest } from '@/types';
 
-export default function AgentPaymentDetailsPage({ params }: { params: Promise<{ id: string }> }) {
+export default function AdminPaymentDetailsPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = use(params);
     const router = useRouter();
     const { fetchFn } = useLoader();
@@ -79,7 +81,9 @@ export default function AgentPaymentDetailsPage({ params }: { params: Promise<{ 
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                {/* Main Content: Payment & Shipment Info (2/3) */}
                 <div className="lg:col-span-2 space-y-6">
+                    {/* Payment Information */}
                     <div className="bg-card rounded-lg border p-6 shadow-sm space-y-6">
                         <h2 className="text-xl font-semibold">Payment Information</h2>
                         <div className="grid grid-cols-2 gap-6">

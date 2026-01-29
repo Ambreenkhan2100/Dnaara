@@ -1,26 +1,51 @@
 'use client';
 
-import { useState, useMemo } from 'react';
-import { useAdminStore } from '@/lib/store/useAdminStore';
-import { Card, CardContent } from '@/components/ui/card';
+import { useState, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Search, Plus, Calendar, FileText } from 'lucide-react';
+import { Search, Plus } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/components/ui/dialog';
 import { AdminPaymentForm } from '@/components/forms/admin-payment-form';
 import { PaymentDetailsDialog } from '@/components/shared/payment-details-dialog';
-import { format } from 'date-fns';
+import { PaymentCard } from '@/components/shared/payment-card';
 import type { PaymentRequest } from '@/types';
+import { toast } from 'sonner';
 import { PaymentStatus } from '@/types/enums/PaymentStatus';
+import { useRouterWithLoader } from '@/hooks/use-router-with-loader';
 
 export default function AdminPaymentsPage() {
-    const { payments, updatePaymentStatus, shipments, addPaymentComment } = useAdminStore();
+    const [payments, setPayments] = useState<PaymentRequest[]>([]);
     const [searchQuery, setSearchQuery] = useState('');
     const [createDialogOpen, setCreateDialogOpen] = useState(false);
-    const [selectedPayment, setSelectedPayment] = useState<PaymentRequest | null>(null);
-    const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
+    const [loading, setLoading] = useState(true);
+    const router = useRouterWithLoader()
+
+    const fetchPayments = async () => {
+        setLoading(true);
+        try {
+            const token = localStorage.getItem('token');
+            const res = await fetch('/api/admin/payment', {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'x-user-role': 'admin',
+                },
+            });
+
+            if (!res.ok) throw new Error('Failed to fetch payments');
+            const data = await res.json();
+            setPayments(data);
+        } catch (error) {
+            console.error('Error fetching payments:', error);
+            toast.error('Failed to load payments');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchPayments();
+    }, []);
 
     const getPaymentsByStatus = (status: string) => {
         let filtered = payments;
@@ -29,98 +54,14 @@ export default function AdminPaymentsPage() {
         }
         return filtered.filter((p) =>
             p.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            p.shipmentId.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            p.shipment?.id?.toLowerCase().includes(searchQuery.toLowerCase()) ||
             p.description?.toLowerCase().includes(searchQuery.toLowerCase())
         );
     };
 
     const handleCardClick = (payment: PaymentRequest) => {
-        setSelectedPayment(payment);
-        setDetailsDialogOpen(true);
+        router.push(`/admin/payments/${payment.id}`)
     };
-
-    const handleAddComment = (paymentId: string, comment: string) => {
-        addPaymentComment(paymentId, comment);
-    };
-
-    const getShipmentForPayment = (shipmentId: string) => {
-        return shipments.find(s => s.id === shipmentId);
-    };
-
-    const renderPaymentCard = (payment: PaymentRequest) => (
-        <Card
-            key={payment.id}
-            className="mb-4 hover:shadow-md transition-shadow cursor-pointer"
-            onClick={() => handleCardClick(payment)}
-        >
-            <CardContent className="p-6">
-                <div className="flex items-start justify-between">
-                    <div className="space-y-1">
-                        <div className="flex items-center gap-2">
-                            <span className="font-semibold text-lg">{payment.description || `Payment for ${payment.shipmentId}`}</span>
-                            <Badge variant="outline">{payment.id}</Badge>
-                        </div>
-                        <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                            <div className="flex items-center gap-1">
-                                <FileText className="h-4 w-4" />
-                                Shipment: {payment.shipmentId}
-                            </div>
-                            <div className="flex items-center gap-1">
-                                <Calendar className="h-4 w-4" />
-                                Created: {format(new Date(payment.created_at), 'PPP')}
-                            </div>
-                        </div>
-                    </div>
-                    <div className="text-right">
-                        <div className="text-2xl font-bold text-[#0bad85]">
-                            SAR {payment.amount?.toLocaleString()}
-                        </div>
-                        <div className="flex flex-col items-end gap-2 mt-2">
-                            {payment.payment_status === 'REQUESTED' && (
-                                <Button
-                                    size="sm"
-                                    onClick={() => updatePaymentStatus(payment.id, PaymentStatus.CONFIRMED)}
-                                    className="bg-blue-600 hover:bg-blue-700 text-white"
-                                >
-                                    Confirm Payment
-                                </Button>
-                            )}
-                            {payment.payment_status === 'CONFIRMED' && (
-                                <Button
-                                    size="sm"
-                                    onClick={() => updatePaymentStatus(payment.id, PaymentStatus.COMPLETED)}
-                                    className="bg-green-600 hover:bg-green-700 text-white"
-                                >
-                                    Mark Completed
-                                </Button>
-                            )}
-                        </div>
-                        <Badge
-                            className={`mt-1 ${payment.payment_status === 'COMPLETED'
-                                ? 'bg-green-500 hover:bg-green-600'
-                                : payment.payment_status === 'CONFIRMED'
-                                    ? 'bg-blue-500 hover:bg-blue-600'
-                                    : 'bg-yellow-500 hover:bg-yellow-600'
-                                }`}
-                        >
-                            {payment.payment_status}
-                        </Badge>
-                    </div>
-                </div>
-
-                {payment.comments && payment.comments.length > 0 && (
-                    <div className="mt-4 p-3 bg-muted/50 rounded-md text-sm space-y-2">
-                        <span className="font-semibold block">Comments:</span>
-                        {payment.comments.map((comment: PaymentRequest['comments'][number]) => (
-                            <div key={comment.id} className="text-muted-foreground">
-                                <span className="font-medium text-foreground">{comment.userName}:</span> {comment.content}
-                            </div>
-                        ))}
-                    </div>
-                )}
-            </CardContent>
-        </Card>
-    );
 
     return (
         <div className="h-full flex-1 flex-col space-y-8 p-8 md:flex">
@@ -146,7 +87,10 @@ export default function AdminPaymentsPage() {
                                     Enter payment details for a shipment.
                                 </DialogDescription>
                             </DialogHeader>
-                            <AdminPaymentForm onSuccess={() => setCreateDialogOpen(false)} />
+                            <AdminPaymentForm onSuccess={() => {
+                                setCreateDialogOpen(false);
+                                fetchPayments();
+                            }} />
                         </DialogContent>
                     </Dialog>
                 </div>
@@ -163,56 +107,75 @@ export default function AdminPaymentsPage() {
                     />
                 </div>
 
-                <Tabs defaultValue="requested" className="space-y-4">
-                    <TabsList>
-                        <TabsTrigger value="requested">PAYMENTS REQUESTED</TabsTrigger>
-                        <TabsTrigger value="confirmed">PAYMENTS CONFIRMED</TabsTrigger>
-                        <TabsTrigger value="completed">PAYMENTS COMPLETED</TabsTrigger>
-                        <TabsTrigger value="all">ALL PAYMENTS</TabsTrigger>
-                    </TabsList>
+                {loading ? (
+                    <div className="text-center py-8 text-muted-foreground">Loading payments...</div>
+                ) : (
+                    <Tabs defaultValue="requested" className="space-y-4">
+                        <TabsList>
+                            <TabsTrigger value="requested">PAYMENTS REQUESTED</TabsTrigger>
+                            <TabsTrigger value="confirmed">PAYMENTS CONFIRMED</TabsTrigger>
+                            <TabsTrigger value="completed">PAYMENTS COMPLETED</TabsTrigger>
+                            <TabsTrigger value="all">ALL PAYMENTS</TabsTrigger>
+                        </TabsList>
 
-                    <TabsContent value="requested" className="space-y-4">
-                        {getPaymentsByStatus('REQUESTED').length === 0 ? (
-                            <div className="text-center py-8 text-muted-foreground">No requested payments found</div>
-                        ) : (
-                            getPaymentsByStatus('REQUESTED').map(renderPaymentCard)
-                        )}
-                    </TabsContent>
+                        <TabsContent value="requested" className="space-y-4">
+                            {getPaymentsByStatus(PaymentStatus.REQUESTED).length === 0 ? (
+                                <div className="text-center py-8 text-muted-foreground">No requested payments found</div>
+                            ) : (
+                                getPaymentsByStatus(PaymentStatus.REQUESTED).map((payment) => (
+                                    <PaymentCard
+                                        key={payment.id}
+                                        payment={payment}
+                                        onClick={() => handleCardClick(payment)}
+                                    />
+                                ))
+                            )}
+                        </TabsContent>
 
-                    <TabsContent value="confirmed" className="space-y-4">
-                        {getPaymentsByStatus('CONFIRMED').length === 0 ? (
-                            <div className="text-center py-8 text-muted-foreground">No confirmed payments found</div>
-                        ) : (
-                            getPaymentsByStatus('CONFIRMED').map(renderPaymentCard)
-                        )}
-                    </TabsContent>
+                        <TabsContent value="confirmed" className="space-y-4">
+                            {getPaymentsByStatus(PaymentStatus.CONFIRMED).length === 0 ? (
+                                <div className="text-center py-8 text-muted-foreground">No confirmed payments found</div>
+                            ) : (
+                                getPaymentsByStatus(PaymentStatus.CONFIRMED).map((payment) => (
+                                    <PaymentCard
+                                        key={payment.id}
+                                        payment={payment}
+                                        onClick={() => handleCardClick(payment)}
+                                    />
+                                ))
+                            )}
+                        </TabsContent>
 
-                    <TabsContent value="completed" className="space-y-4">
-                        {getPaymentsByStatus('COMPLETED').length === 0 ? (
-                            <div className="text-center py-8 text-muted-foreground">No completed payments found</div>
-                        ) : (
-                            getPaymentsByStatus('COMPLETED').map(renderPaymentCard)
-                        )}
-                    </TabsContent>
+                        <TabsContent value="completed" className="space-y-4">
+                            {getPaymentsByStatus(PaymentStatus.COMPLETED).length === 0 ? (
+                                <div className="text-center py-8 text-muted-foreground">No completed payments found</div>
+                            ) : (
+                                getPaymentsByStatus(PaymentStatus.COMPLETED).map((payment) => (
+                                    <PaymentCard
+                                        key={payment.id}
+                                        payment={payment}
+                                        onClick={() => handleCardClick(payment)}
+                                    />
+                                ))
+                            )}
+                        </TabsContent>
 
-                    <TabsContent value="all" className="space-y-4">
-                        {getPaymentsByStatus('all').length === 0 ? (
-                            <div className="text-center py-8 text-muted-foreground">No payments found</div>
-                        ) : (
-                            getPaymentsByStatus('all').map(renderPaymentCard)
-                        )}
-                    </TabsContent>
-                </Tabs>
+                        <TabsContent value="all" className="space-y-4">
+                            {getPaymentsByStatus('all').length === 0 ? (
+                                <div className="text-center py-8 text-muted-foreground">No payments found</div>
+                            ) : (
+                                getPaymentsByStatus('all').map((payment) => (
+                                    <PaymentCard
+                                        key={payment.id}
+                                        payment={payment}
+                                        onClick={() => handleCardClick(payment)}
+                                    />
+                                ))
+                            )}
+                        </TabsContent>
+                    </Tabs>
+                )}
             </div>
-
-            {/* Payment Details Dialog */}
-            <PaymentDetailsDialog
-                open={detailsDialogOpen}
-                onOpenChange={setDetailsDialogOpen}
-                payment={selectedPayment}
-                shipment={selectedPayment ? getShipmentForPayment(selectedPayment.shipmentId) : undefined}
-                onAddComment={handleAddComment}
-            />
         </div>
     );
 }
