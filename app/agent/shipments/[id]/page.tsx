@@ -215,7 +215,7 @@ export default function AgentShipmentDetailsPage() {
                 payment_deadline: data.paymentDeadline,
                 description: data.description,
                 payment_status: PaymentStatus.REQUESTED,
-                payment_document_url: data.payment_document_url || null
+                payment_invoice_url: data.payment_document_url || null
             };
 
             const res = await fetchFn('/api/payment', {
