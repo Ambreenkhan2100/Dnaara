@@ -37,13 +37,13 @@ export async function PUT(request: Request) {
 
     const profile_photo = profile_photo_url.startsWith('http') ? profile_photo_url : await uploadBase64ToSupabase(profile_photo_url);
 
-    const commercial_registration = commercial_registration_url.startsWith('http') ? commercial_registration_url : await uploadBase64ToSupabase(commercial_registration_url);
+    const commercial_registration = commercial_registration_url?.length > 0 ? commercial_registration_url.startsWith('http') ? commercial_registration_url : await uploadBase64ToSupabase(commercial_registration_url) : null;
 
-    const vat_certificate = vat_certificate_url.startsWith('http') ? vat_certificate_url : await uploadBase64ToSupabase(vat_certificate_url);
+    const vat_certificate = vat_certificate_url?.length > 0 ? vat_certificate_url.startsWith('http') ? vat_certificate_url : await uploadBase64ToSupabase(vat_certificate_url) : null;
 
-    const national_address_doc = national_address_doc_url.startsWith('http') ? national_address_doc_url : await uploadBase64ToSupabase(national_address_doc_url);
+    const national_address_doc = national_address_doc_url?.length > 0 ? national_address_doc_url.startsWith('http') ? national_address_doc_url : await uploadBase64ToSupabase(national_address_doc_url) : null;
 
-    const national_id_doc = national_id_doc_url.startsWith('http') ? national_id_doc_url : await uploadBase64ToSupabase(national_id_doc_url);
+    const national_id_doc = national_id_doc_url?.length > 0 ? national_id_doc_url.startsWith('http') ? national_id_doc_url : await uploadBase64ToSupabase(national_id_doc_url) : null;
 
     const client = await pool.connect();
     try {

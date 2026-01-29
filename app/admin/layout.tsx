@@ -12,16 +12,16 @@ export default function AdminLayout({
     children: React.ReactNode;
 }) {
     return (
-        <AuthGuard allowedRoles={ALLOWED_ROLES}>
-            <div className="flex">
-                <SideNav role="admin" />
-                <div className="flex-1">
-                    <div className="container max-w-7xl px-6 py-6">
-                        {children}
-                    </div>
+        // <AuthGuard allowedRoles={ALLOWED_ROLES}>
+        <div className="flex">
+            <SideNav role="admin" />
+            <div className="flex-1">
+                <div className="container max-w-7xl px-6 py-6">
+                    {children}
                 </div>
             </div>
-        </AuthGuard>
+        </div>
+        // </AuthGuard>
     );
 }
 
