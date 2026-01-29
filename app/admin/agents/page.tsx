@@ -156,9 +156,9 @@ export default function AdminAgentsPage() {
                                                                 ? 'secondary'
                                                                 : 'destructive'
                                                     }
-                                                    className={agent.status?.toLowerCase() === 'active' ? 'bg-green-500 hover:bg-green-600' : ''}
+                                                    className={agent.status?.toLowerCase() === 'active' ? 'bg-green-500 hover:bg-green-600' : 'bg-green-500 hover:bg-green-600'}
                                                 >
-                                                    {agent.status?.toUpperCase()}
+                                                    {agent.status?.toUpperCase() || 'Active'}
                                                 </Badge>
                                             </TableCell>
                                         </TableRow>

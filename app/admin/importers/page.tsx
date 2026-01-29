@@ -109,7 +109,7 @@ export default function AdminImportersPage() {
                                     <TableHead>Importer Name</TableHead>
                                     <TableHead>Email</TableHead>
                                     <TableHead>Phone</TableHead>
-                                    {/* <TableHead>Status</TableHead> */}
+                                    <TableHead>Status</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -155,9 +155,9 @@ export default function AdminImportersPage() {
                                                                 ? 'secondary'
                                                                 : 'destructive'
                                                     }
-                                                    className={importer.status?.toLowerCase() === 'active' ? 'bg-green-500 hover:bg-green-600' : ''}
+                                                    className={importer.status?.toLowerCase() === 'active' ? 'bg-green-500 hover:bg-green-600' : 'bg-green-500 hover:bg-green-600'}
                                                 >
-                                                    {importer.status?.toUpperCase()}
+                                                    {importer.status?.toUpperCase() || 'Active'}
                                                 </Badge>
                                             </TableCell>
                                         </TableRow>
