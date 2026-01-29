@@ -125,6 +125,9 @@ export async function POST(request: Request) {
     } else if (role === 'importer') {
         finalImporterId = userId;
         finalAgentId = partnerId;
+    } else if (role === 'admin') {
+        finalImporterId = importerId;
+        finalAgentId = agentId;
     }
 
     const client = await pool.connect();
