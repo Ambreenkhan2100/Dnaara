@@ -1,39 +1,88 @@
 'use client';
 
-import { useState, useMemo } from 'react';
-import { useAdminStore } from '@/lib/store/useAdminStore';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useState, useMemo, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Search, Plus, Edit, Trash2, Calendar, MapPin, Ship, Plane, Truck } from 'lucide-react';
+import { Search, Plus, Calendar, MapPin, Ship, Plane, Truck, FileText, Banknote } from 'lucide-react';
 import Link from 'next/link';
-import { format } from 'date-fns';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/components/ui/dialog';
+import { format, isWithinInterval, parseISO, startOfDay, endOfDay, addDays, isAfter, isBefore } from 'date-fns';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { toast } from 'sonner';
 import { AdminShipmentForm } from '@/components/forms/admin-shipment-form';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { ShipmentFilter, FilterState } from '@/components/shared/shipment-filter';
-import { isWithinInterval, parseISO, startOfDay, endOfDay } from 'date-fns';
-import type { Request as ShipmentRequest } from '@/types';
+import type { Shipment } from '@/types/shipment';
+import { useRouter } from 'next/navigation';
+import { useLoader } from '@/components/providers/loader-provider';
+
+// Helper for icons
+const getIcon = (type: string) => {
+    switch (type?.toLowerCase()) {
+        case 'air': return <Plane className="h-4 w-4" />;
+        case 'sea': return <Ship className="h-4 w-4" />;
+        case 'land': return <Truck className="h-4 w-4" />;
+        default: return <FileText className="h-4 w-4" />;
+    }
+};
+
+// SaudiRiyal component (inline if not available, or try to import if it was working)
+// Since I can't verify if SaudiRiyal is in lucide-react (it likely isn't), I'll create a simple SVG component here to be safe.
+const SaudiRiyal = ({ className }: { className?: string }) => (
+    <span className={`font-sans font-bold ${className}`}>SAR</span>
+);
 
 export default function AdminShipmentsPage() {
-    const { shipments, deleteShipment, users } = useAdminStore();
+    const router = useRouter();
+    const [shipments, setShipments] = useState<Shipment[]>([]);
+    const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
-    const [selectedShipment, setSelectedShipment] = useState<ShipmentRequest | null>(null);
-    // const [createDialogOpen, setCreateDialogOpen] = useState(false); // Removed
+    const [selectedShipment, setSelectedShipment] = useState<Shipment | null>(null);
     const [editDialogOpen, setEditDialogOpen] = useState(false);
     const [filters, setFilters] = useState<FilterState>({});
+    const { fetchFn } = useLoader();
 
-    const agents = useMemo(() => users.filter(u => (u as { type: string }).type === 'agent'), [users]);
+    const fetchShipments = async () => {
+        try {
+            const res = await fetchFn('/api/admin/shipment', {
+                headers: {
+                    'x-user-role': 'admin'
+                }
+            });
+            if (!res.ok) throw new Error('Failed to fetch shipments');
+            const data = await res.json();
+            setShipments(data.shipments || []);
+        } catch (error) {
+            console.error('Error fetching shipments:', error);
+            toast.error('Failed to load shipments');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchShipments();
+    }, []);
+
+    // Derive agents from shipments for the filter
+    const agents = useMemo(() => {
+        const agentMap = new Map();
+        shipments.forEach(s => {
+            if (s.agent) {
+                agentMap.set(s.agent.id, { id: s.agent.id, name: s.agent.name, type: 'agent' });
+            }
+        });
+        return Array.from(agentMap.values());
+    }, [shipments]);
 
     const filteredShipments = useMemo(() => {
         return shipments.filter((s) => {
             const matchesSearch =
-                s.billNumber?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                s.bayanNumber?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                s.id.toLowerCase().includes(searchQuery.toLowerCase());
+                s.bill_number?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                s.bayan_number?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                s.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                s.importer?.name.toLowerCase().includes(searchQuery.toLowerCase());
 
             if (!matchesSearch) return false;
 
@@ -43,11 +92,11 @@ export default function AdminShipmentsPage() {
             }
 
             if (filters.agentId) {
-                if (s.agentId !== filters.agentId) return false;
+                if (s.agent_id !== filters.agentId) return false;
             }
 
             if (filters.dateRange?.from) {
-                const reqDate = parseISO(s.createdAt || s.expectedArrival); // Fallback if createdAt missing
+                const reqDate = parseISO(s.created_at);
                 const from = startOfDay(filters.dateRange.from);
                 const to = filters.dateRange.to ? endOfDay(filters.dateRange.to) : endOfDay(from);
 
@@ -62,20 +111,78 @@ export default function AdminShipmentsPage() {
         return filteredShipments.filter((s) => s.status === status);
     };
 
-    const handleDelete = (e: React.MouseEvent<HTMLButtonElement>, id: string) => {
-        e.stopPropagation();
-        deleteShipment(id);
-        toast.success('Shipment deleted');
-    };
+    const atPortShipments = filteredShipments.filter(s => s.status === 'AT_PORT');
+    const upcomingShipments = filteredShipments.filter(s => {
+        if (!s.expected_arrival_date) return false;
+        const arrivalDate = parseISO(s.expected_arrival_date);
+        const now = new Date();
+        const next7Days = addDays(now, 7);
+        return isAfter(arrivalDate, now) && isBefore(arrivalDate, next7Days);
+    });
+    const assignedShipments = filteredShipments.filter(s => s.status === 'ASSIGNED');
+    const confirmedShipments = filteredShipments.filter(s => s.status === 'CONFIRMED');
+    const completedShipments = filteredShipments.filter(s => s.status === 'COMPLETED');
 
-    const handleEdit = (e: React.MouseEvent<HTMLButtonElement>, shipment: ShipmentRequest) => {
-        e.stopPropagation();
-        setSelectedShipment(shipment);
-        setEditDialogOpen(true);
-    };
+    const ShipmentCard = ({ request }: { request: Shipment }) => (
+        <Card key={request.id} className="mb-4 transition-colors">
+            <CardHeader className="pb-2">
+                <div className="flex justify-between items-start">
+                    <div>
+                        <CardTitle className="text-lg flex items-center gap-2">
+                            {getIcon(request.type)}
+                            {request.importer?.name || 'Unknown Importer'}
+                        </CardTitle>
+                        <CardDescription>ID: {request.shipment_id ?? 'N/A'} • B/L: {request.bill_number}</CardDescription>
+                    </div>
+                    <Badge variant={request.status === 'ASSIGNED' ? 'secondary' : request.status === 'CONFIRMED' ? 'default' : 'outline'}>
+                        {request.status || 'PENDING'}
+                    </Badge>
+                </div>
+            </CardHeader>
+            <CardContent className="pb-2">
+                <div className="grid grid-cols-2 gap-2 text-sm">
+                    <div className="flex items-center gap-1 text-muted-foreground">
+                        <MapPin className="h-3 w-3" /> {request.port_of_shipment} → {request.port_of_destination}
+                    </div>
+                    <div className="flex items-center gap-1 text-muted-foreground">
+                        <Calendar className="h-3 w-3" /> ETA: {request.expected_arrival_date ? new Date(request.expected_arrival_date).toLocaleDateString() : 'N/A'}
+                    </div>
+                    <div className="flex items-center gap-1 text-muted-foreground">
+                        <FileText className="h-3 w-3" /> Bayan: {request.bayan_number || 'N/A'}
+                    </div>
+                    <div className="flex items-center gap-1 text-muted-foreground">
+                        <Banknote className="h-3 w-3" /> Duty: {request.duty_charges || 'N/A'}<SaudiRiyal className='size-3' />
+                    </div>
+                </div>
+                {request.updates && request.updates.length > 0 && (
+                    <div className="mt-4 border-t pt-2">
+                        <p className="text-xs font-semibold mb-1">Latest Update:</p>
+                        <p className="text-xs text-muted-foreground">
+                            {new Date(request.updates[request.updates.length - 1].created_at).toLocaleDateString()}: {request.updates[request.updates.length - 1].update_text}
+                        </p>
+                    </div>
+                )}
+            </CardContent>
+            <CardFooter className="flex justify-end gap-2 pt-2">
+                <Button size="sm" onClick={() => { router.push(`/admin/shipments/${request.id}`); }}>Open</Button>
+            </CardFooter>
+        </Card>
+    );
 
-    const getImporterName = (id: string) => users.find(u => u.id === id)?.name || 'Unknown Importer';
-    const getAgentName = (id: string) => users.find(u => u.id === id)?.name || 'Unknown Agent';
+    const ShipmentList = ({ data }: { data: Shipment[] }) => (
+        <div className="space-y-4">
+            {data.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">No shipments found</div>
+            ) : (
+                data.map((shipment) => (
+                    <ShipmentCard
+                        key={shipment.id}
+                        request={shipment}
+                    />
+                ))
+            )}
+        </div>
+    );
 
     return (
         <div className="h-full flex-1 flex-col space-y-8 p-8 md:flex">
@@ -125,254 +232,25 @@ export default function AdminShipmentsPage() {
                     </TabsList>
 
                     <TabsContent value="at_port">
-                        <ShipmentList
-                            data={getShipmentsByStatus('AT_PORT')}
-                            getImporterName={getImporterName}
-                            getAgentName={getAgentName}
-                            onEdit={handleEdit}
-                            onDelete={handleDelete}
-                            onSelect={setSelectedShipment}
-                        />
+                        <ShipmentList data={atPortShipments} />
                     </TabsContent>
                     <TabsContent value="upcoming">
-                        <ShipmentList
-                            data={getShipmentsByStatus('UPCOMING')}
-                            getImporterName={getImporterName}
-                            getAgentName={getAgentName}
-                            onEdit={handleEdit}
-                            onDelete={handleDelete}
-                            onSelect={setSelectedShipment}
-                        />
+                        <ShipmentList data={upcomingShipments} />
                     </TabsContent>
                     <TabsContent value="assigned">
-                        <ShipmentList
-                            data={getShipmentsByStatus('ASSIGNED')}
-                            getImporterName={getImporterName}
-                            getAgentName={getAgentName}
-                            onEdit={handleEdit}
-                            onDelete={handleDelete}
-                            onSelect={setSelectedShipment}
-                        />
+                        <ShipmentList data={assignedShipments} />
                     </TabsContent>
                     <TabsContent value="confirmed">
-                        <ShipmentList
-                            data={getShipmentsByStatus('CONFIRMED')}
-                            getImporterName={getImporterName}
-                            getAgentName={getAgentName}
-                            onEdit={handleEdit}
-                            onDelete={handleDelete}
-                            onSelect={setSelectedShipment}
-                        />
+                        <ShipmentList data={confirmedShipments} />
                     </TabsContent>
                     <TabsContent value="completed">
-                        <ShipmentList
-                            data={getShipmentsByStatus('COMPLETED')}
-                            getImporterName={getImporterName}
-                            getAgentName={getAgentName}
-                            onEdit={handleEdit}
-                            onDelete={handleDelete}
-                            onSelect={setSelectedShipment}
-                        />
+                        <ShipmentList data={completedShipments} />
                     </TabsContent>
                     <TabsContent value="all">
-                        <ShipmentList
-                            data={filteredShipments}
-                            getImporterName={getImporterName}
-                            getAgentName={getAgentName}
-                            onEdit={handleEdit}
-                            onDelete={handleDelete}
-                            onSelect={setSelectedShipment}
-                        />
+                        <ShipmentList data={filteredShipments} />
                     </TabsContent>
                 </Tabs>
             </div>
-
-            {/* Edit Dialog */}
-            <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
-                <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-                    <DialogHeader>
-                        <DialogTitle>Edit Shipment</DialogTitle>
-                        <DialogDescription>
-                            Update the shipment details.
-                        </DialogDescription>
-                    </DialogHeader>
-                    {selectedShipment && (
-                        <AdminShipmentForm
-                            initialData={selectedShipment}
-                            onSuccess={() => {
-                                setEditDialogOpen(false);
-                                setSelectedShipment(null);
-                            }}
-                        />
-                    )}
-                </DialogContent>
-            </Dialog>
-
-            {/* View Details Dialog */}
-            <Dialog open={!!selectedShipment && !editDialogOpen} onOpenChange={(open) => !open && setSelectedShipment(null)}>
-                <DialogContent className="max-w-2xl">
-                    <DialogHeader>
-                        <DialogTitle>Shipment Details</DialogTitle>
-                    </DialogHeader>
-                    {selectedShipment && (
-                        <div className="grid grid-cols-2 gap-4 text-sm">
-                            <div>
-                                <p className="font-medium">Bill Number</p>
-                                <p>{selectedShipment.billNumber}</p>
-                            </div>
-                            <div>
-                                <p className="font-medium">Bayan Number</p>
-                                <p>{selectedShipment.bayanNumber}</p>
-                            </div>
-                            <div>
-                                <p className="font-medium">Importer</p>
-                                <p>{getImporterName(selectedShipment.importerId)}</p>
-                            </div>
-                            <div>
-                                <p className="font-medium">Agent</p>
-                                <p>{getAgentName(selectedShipment.agentId || '')}</p>
-                            </div>
-                            <div>
-                                <p className="font-medium">Origin</p>
-                                <p>{selectedShipment.portOfShipment}</p>
-                            </div>
-                            <div>
-                                <p className="font-medium">Destination</p>
-                                <p>{selectedShipment.portOfDestination}</p>
-                            </div>
-                            <div>
-                                <p className="font-medium">ETA</p>
-                                <p>{selectedShipment.expectedArrival ? format(new Date(selectedShipment.expectedArrival), 'PPP') : 'N/A'}</p>
-                            </div>
-                            <div>
-                                <p className="font-medium">Duty Amount</p>
-                                <p>SAR {selectedShipment.dutyAmount?.toLocaleString()}</p>
-                            </div>
-                            <div className="col-span-2">
-                                <p className="font-medium">Comments</p>
-                                <p className="text-muted-foreground">{selectedShipment.comments || 'No comments'}</p>
-                            </div>
-                            {/* Notification flags removed as they are not in Request type */}
-                        </div>
-                    )}
-                </DialogContent>
-            </Dialog>
-        </div >
+        </div>
     );
 }
-
-const ShipmentCard = ({
-    shipment,
-    getImporterName,
-    getAgentName,
-    onEdit,
-    onDelete,
-    onSelect
-}: {
-    shipment: ShipmentRequest;
-    getImporterName: (id: string) => string;
-    getAgentName: (id: string) => string;
-    onEdit: (e: React.MouseEvent<HTMLButtonElement>, shipment: ShipmentRequest) => void;
-    onDelete: (e: React.MouseEvent<HTMLButtonElement>, id: string) => void;
-    onSelect: (shipment: ShipmentRequest) => void;
-}) => (
-    <Card
-        className="mb-4 cursor-pointer hover:bg-accent/50 transition-colors relative group"
-        onClick={() => onSelect(shipment)}
-    >
-        <CardHeader className="pb-2">
-            <div className="flex justify-between items-start">
-                <div>
-                    <CardTitle className="text-base font-medium flex items-center gap-2">
-                        {shipment.type === 'air' && <Plane className="h-4 w-4" />}
-                        {shipment.type === 'sea' && <Ship className="h-4 w-4" />}
-                        {shipment.type === 'land' && <Truck className="h-4 w-4" />}
-                        {shipment.billNumber}
-                    </CardTitle>
-                    <p className="text-sm text-muted-foreground">ID: {shipment.id}</p>
-                </div>
-                <div className="flex items-center gap-2">
-                    <Badge variant="outline">{shipment.status}</Badge>
-                    <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => onEdit(e, shipment)}>
-                            <Edit className="h-4 w-4" />
-                        </Button>
-                        <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                                <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={(e) => e.stopPropagation()}>
-                                    <Trash2 className="h-4 w-4" />
-                                </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent onClick={(e) => e.stopPropagation()}>
-                                <AlertDialogHeader>
-                                    <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                                    <AlertDialogDescription>
-                                        This action cannot be undone. This will permanently delete the shipment.
-                                    </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                    <AlertDialogAction onClick={(e) => onDelete(e, shipment.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Delete</AlertDialogAction>
-                                </AlertDialogFooter>
-                            </AlertDialogContent>
-                        </AlertDialog>
-                    </div>
-                </div>
-            </div>
-        </CardHeader>
-        <CardContent>
-            <div className="grid grid-cols-2 gap-4 text-sm">
-                <div>
-                    <p className="text-muted-foreground text-xs">Importer</p>
-                    <p className="font-medium">{getImporterName(shipment.importerId)}</p>
-                </div>
-                <div>
-                    <p className="text-muted-foreground text-xs">Agent</p>
-                    <p className="font-medium">{getAgentName(shipment.agentId || '')}</p>
-                </div>
-                <div className="flex items-center text-muted-foreground">
-                    <MapPin className="mr-2 h-4 w-4" />
-                    {shipment.portOfShipment} → {shipment.portOfDestination}
-                </div>
-                <div className="flex items-center text-muted-foreground">
-                    <Calendar className="mr-2 h-4 w-4" />
-                    ETA: {shipment.expectedArrival ? format(new Date(shipment.expectedArrival), 'MMM dd, yyyy') : 'N/A'}
-                </div>
-            </div>
-        </CardContent>
-    </Card>
-);
-
-const ShipmentList = ({
-    data,
-    getImporterName,
-    getAgentName,
-    onEdit,
-    onDelete,
-    onSelect
-}: {
-    data: ShipmentRequest[];
-    getImporterName: (id: string) => string;
-    getAgentName: (id: string) => string;
-    onEdit: (e: React.MouseEvent<HTMLButtonElement>, shipment: ShipmentRequest) => void;
-    onDelete: (e: React.MouseEvent<HTMLButtonElement>, id: string) => void;
-    onSelect: (shipment: ShipmentRequest) => void;
-}) => (
-    <div className="space-y-4">
-        {data.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">No shipments found</div>
-        ) : (
-            data.map((shipment) => (
-                <ShipmentCard
-                    key={shipment.id}
-                    shipment={shipment}
-                    getImporterName={getImporterName}
-                    getAgentName={getAgentName}
-                    onEdit={onEdit}
-                    onDelete={onDelete}
-                    onSelect={onSelect}
-                />
-            ))
-        )}
-    </div>
-);
