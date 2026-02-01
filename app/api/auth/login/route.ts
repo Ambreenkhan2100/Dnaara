@@ -2,26 +2,12 @@ import { NextResponse } from 'next/server';
 import { query } from '@/lib/db';
 import { comparePassword, generateToken } from '@/lib/auth';
 
-const ADMIN_EMAIL = 'admin@dnaara.com';
-const ADMIN_PASSWORD = 'dnaaraAdmin123';
-
 export async function POST(req: Request) {
     try {
         const { email, password } = await req.json();
 
         if (!email || !password) {
             return NextResponse.json({ error: 'Email and password are required' }, { status: 400 });
-        }
-
-        // Check for Admin Login
-        if (email === ADMIN_EMAIL && password === ADMIN_PASSWORD) {
-            const token = generateToken({ role: 'admin', email: ADMIN_EMAIL });
-            return NextResponse.json({
-                message: 'Login successful',
-                token,
-                user: { email: ADMIN_EMAIL, role: 'admin' },
-                redirect: '/admin',
-            });
         }
 
         // Check database for user

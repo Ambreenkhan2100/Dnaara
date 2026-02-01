@@ -132,6 +132,10 @@ export const signupSchema = z.object({
     companyEmail: companyEmailSchema,
     password: z.string().min(6, 'Password must be at least 6 characters'),
     otp: z.string().length(6, 'OTP must be 6 digits'),
+    commercialRegistration: z.string().min(1, 'Commercial Registration document is required'),
+    vatCertificate: z.string().min(1, 'VAT Certificate is required'),
+    nationalAddressDoc: z.string().min(1, 'National Address document is required'),
+    nationalIdDoc: z.string().min(1, 'National ID document is required'),
 });
 
 export type SignupInput = z.infer<typeof signupSchema>;

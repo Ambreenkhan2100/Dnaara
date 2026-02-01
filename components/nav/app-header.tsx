@@ -12,6 +12,7 @@ import { useLoader } from '../providers/loader-provider';
 import { Bell } from 'lucide-react';
 import { useNotifications } from '@/hooks/useNotifications';
 import { useRouterWithLoader } from '@/hooks/use-router-with-loader';
+import { tr } from 'date-fns/locale';
 
 
 export function AppHeader() {
@@ -36,10 +37,14 @@ export function AppHeader() {
     }, [path]);
 
     const getUserProfile = async () => {
-        const res = await fetchFn('/api/user-profile');
-        if (res.ok) {
-            const data = await res.json();
-            setUserProfile(data);
+        try {
+            const res = await fetchFn('/api/user-profile');
+            if (res.ok) {
+                const data = await res.json();
+                setUserProfile(data);
+            }
+        } catch (error) {
+            console.error('Error fetching user profile:', error);
         }
     };
 

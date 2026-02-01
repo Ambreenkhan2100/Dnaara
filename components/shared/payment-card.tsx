@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { DollarSign, Calendar, FileText, Edit, Trash2, MapPin } from 'lucide-react';
+import { Calendar, Edit, Trash2, MapPin } from 'lucide-react';
 import { format } from 'date-fns';
 import { PaymentStatus } from '@/types/enums/PaymentStatus';
 import type { PaymentRequest } from '@/types';
@@ -67,7 +67,6 @@ export function PaymentCard({ payment, onClick, onEdit, onDelete }: PaymentCardP
             <CardContent>
                 <div className="grid grid-cols-3 gap-4 text-sm">
                     <div className="flex items-center text-muted-foreground">
-                        <DollarSign className="mr-2 h-4 w-4" />
                         SAR {payment.amount.toLocaleString()}
                     </div>
                     <div className="flex items-center text-muted-foreground">

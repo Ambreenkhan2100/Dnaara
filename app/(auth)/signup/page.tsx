@@ -15,6 +15,15 @@ import Link from 'next/link';
 import { Eye, EyeOff } from 'lucide-react';
 import { signupSchema, type SignupInput } from '@/lib/schemas';
 
+const convertFileToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = (error) => reject(error);
+    });
+};
+
 export default function SignupPage() {
     const router = useRouter();
     const [step, setStep] = useState(1);
@@ -44,6 +53,10 @@ export default function SignupPage() {
             companyEmail: '',
             password: '',
             otp: '',
+            commercialRegistration: '',
+            vatCertificate: '',
+            nationalAddressDoc: '',
+            nationalIdDoc: '',
         },
     });
 
@@ -58,7 +71,11 @@ export default function SignupPage() {
             'phoneNumber',
             'nationalId',
             'companyEmail',
-            'password'
+            'password',
+            'commercialRegistration',
+            'vatCertificate',
+            'nationalAddressDoc',
+            'nationalIdDoc'
         ];
 
         const isValid = await form.trigger(step1Fields);
@@ -288,6 +305,110 @@ export default function SignupPage() {
                                             </FormItem>
                                         )}
                                     />
+                                    <div className="md:col-span-2">
+                                        <FormField
+                                            control={form.control}
+                                            name="commercialRegistration"
+                                            render={({ field: { value, onChange, ...field } }) => (
+                                                <FormItem>
+                                                    <FormLabel>Commercial Registration *</FormLabel>
+                                                    <FormControl>
+                                                        <Input
+                                                            type="file"
+                                                            accept=".pdf,.jpg,.jpeg,.png"
+                                                            {...field}
+                                                            onChange={async (e) => {
+                                                                const file = e.target.files?.[0];
+                                                                if (file) {
+                                                                    const base64 = await convertFileToBase64(file);
+                                                                    onChange(base64);
+                                                                }
+                                                            }}
+                                                        />
+                                                    </FormControl>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
+                                    </div>
+                                    <div className="md:col-span-2">
+                                        <FormField
+                                            control={form.control}
+                                            name="vatCertificate"
+                                            render={({ field: { value, onChange, ...field } }) => (
+                                                <FormItem>
+                                                    <FormLabel>VAT Certificate *</FormLabel>
+                                                    <FormControl>
+                                                        <Input
+                                                            type="file"
+                                                            accept=".pdf,.jpg,.jpeg,.png"
+                                                            {...field}
+                                                            onChange={async (e) => {
+                                                                const file = e.target.files?.[0];
+                                                                if (file) {
+                                                                    const base64 = await convertFileToBase64(file);
+                                                                    onChange(base64);
+                                                                }
+                                                            }}
+                                                        />
+                                                    </FormControl>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
+                                    </div>
+                                    <div className="md:col-span-2">
+                                        <FormField
+                                            control={form.control}
+                                            name="nationalAddressDoc"
+                                            render={({ field: { value, onChange, ...field } }) => (
+                                                <FormItem>
+                                                    <FormLabel>National Address Document *</FormLabel>
+                                                    <FormControl>
+                                                        <Input
+                                                            type="file"
+                                                            accept=".pdf,.jpg,.jpeg,.png"
+                                                            {...field}
+                                                            onChange={async (e) => {
+                                                                const file = e.target.files?.[0];
+                                                                if (file) {
+                                                                    const base64 = await convertFileToBase64(file);
+                                                                    onChange(base64);
+                                                                }
+                                                            }}
+                                                        />
+                                                    </FormControl>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
+                                    </div>
+                                    <div className="md:col-span-2">
+                                        <FormField
+                                            control={form.control}
+                                            name="nationalIdDoc"
+                                            render={({ field: { value, onChange, ...field } }) => (
+                                                <FormItem>
+                                                    <FormLabel>National ID Document *</FormLabel>
+                                                    <FormControl>
+                                                        <Input
+                                                            type="file"
+                                                            accept=".pdf,.jpg,.jpeg,.png"
+                                                            {...field}
+                                                            onChange={async (e) => {
+                                                                const file = e.target.files?.[0];
+                                                                if (file) {
+                                                                    const base64 = await convertFileToBase64(file);
+                                                                    onChange(base64);
+                                                                }
+                                                            }}
+                                                        />
+                                                    </FormControl>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
+                                    </div>
                                     {/* <div className="flex flex-row w-full gap-2 mt-4 col-span-2"> */}
                                     <Button type="button" onClick={sendOtp} className="w-full col-span-2" disabled={loading}>
                                         {loading ? 'Sending OTP...' : 'Next'}
