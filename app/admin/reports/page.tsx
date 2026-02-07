@@ -40,13 +40,13 @@ export default function AdminReportsPage() {
                         <Input type="date" />
                     </div>
                     <div className="space-y-2">
-                        <Label>Importer</Label>
+                        <Label>Client</Label>
                         <Select>
                             <SelectTrigger>
-                                <SelectValue placeholder="All Importers" />
+                                <SelectValue placeholder="All Clients" />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="all">All Importers</SelectItem>
+                                <SelectItem value="all">All Clients</SelectItem>
                             </SelectContent>
                         </Select>
                     </div>

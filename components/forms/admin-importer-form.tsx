@@ -35,7 +35,7 @@ export function AdminImporterForm({ onSuccess }: AdminImporterFormProps) {
             status: data.sendInvite ? 'pending' : 'active',
         } as any);
 
-        toast.success(data.sendInvite ? 'Importer invited successfully' : 'Importer added successfully');
+        toast.success(data.sendInvite ? 'Client invited successfully' : 'Client added successfully');
         form.reset();
         onSuccess?.();
     };
@@ -62,9 +62,9 @@ export function AdminImporterForm({ onSuccess }: AdminImporterFormProps) {
                     name="name"
                     render={({ field }) => (
                         <FormItem>
-                            <FormLabel>Importer Name</FormLabel>
+                            <FormLabel>Client Name</FormLabel>
                             <FormControl>
-                                <Input placeholder="Importer Name" {...field} />
+                                <Input placeholder="Client Name" {...field} />
                             </FormControl>
                             <FormMessage />
                         </FormItem>
@@ -117,7 +117,7 @@ export function AdminImporterForm({ onSuccess }: AdminImporterFormProps) {
                                     Send Invite via Email
                                 </FormLabel>
                                 <p className="text-sm text-muted-foreground">
-                                    The importer will receive an email to set up their account.
+                                    The client will receive an email to set up their account.
                                 </p>
                             </div>
                         </FormItem>
@@ -125,7 +125,7 @@ export function AdminImporterForm({ onSuccess }: AdminImporterFormProps) {
                 />
 
                 <Button type="submit" className="w-full" style={{ backgroundColor: '#0bad85' }}>
-                    Add Importer
+                    Add Client
                 </Button>
             </form>
         </Form>

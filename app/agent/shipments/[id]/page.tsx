@@ -423,7 +423,7 @@ export default function AgentShipmentDetailsPage() {
                                                             {update.created_by === userProfile.user_id
                                                                 ? 'Created by you'
                                                                 : userProfile?.role?.toLowerCase() === 'agent'
-                                                                    ? 'Created by Importer'
+                                                                    ? 'Created by Client'
                                                                     : 'Created by Agent'}
                                                         </span>
                                                     }
@@ -469,7 +469,7 @@ export default function AgentShipmentDetailsPage() {
                             <CardHeader>
                                 <CardTitle className="flex items-center gap-2">
                                     <User className="w-5 h-5" />
-                                    Importer Details
+                                    Client Details
                                 </CardTitle>
                             </CardHeader>
                             <CardContent>
@@ -482,7 +482,7 @@ export default function AgentShipmentDetailsPage() {
                                         <Label className="text-xs text-muted-foreground">Email</Label>
                                         <div className="font-medium break-all">{shipment.importer.email}</div>
                                     </div>
-                                    <Button variant="outline" className="w-full mt-2" size="sm">Contact Importer</Button>
+                                    <Button variant="outline" className="w-full mt-2" size="sm">Contact Client</Button>
                                 </div>
                             </CardContent>
                         </Card>

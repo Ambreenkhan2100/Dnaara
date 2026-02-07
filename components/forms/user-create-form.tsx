@@ -74,7 +74,7 @@ export function UserCreateForm({ onSuccess }: UserCreateFormProps) {
                                     </SelectTrigger>
                                 </FormControl>
                                 <SelectContent>
-                                    <SelectItem value="importer">Importer</SelectItem>
+                                    <SelectItem value="importer">Client</SelectItem>
                                     <SelectItem value="agent">Agent</SelectItem>
                                 </SelectContent>
                             </Select>

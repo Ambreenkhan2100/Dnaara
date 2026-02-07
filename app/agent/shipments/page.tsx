@@ -115,7 +115,7 @@ export default function AgentShipmentsPage() {
                     <div>
                         <CardTitle className="text-lg flex items-center gap-2">
                             {getIcon(request.type)}
-                            {request.importer?.name || 'Unknown Importer'}
+                            {request.importer?.name || 'Unknown Client'}
                         </CardTitle>
                         <CardDescription>ID: {request.shipment_id ?? 'N/A'} • B/L: {request.bill_number}</CardDescription>
                     </div>
@@ -174,7 +174,7 @@ export default function AgentShipmentsPage() {
                     agents={[]}
                     onFilterChange={setFilters}
                     initialFilters={filters}
-                    entityLabel="Importer"
+                    entityLabel="Client"
                 />
                 <Button onClick={() => router.push('/agent/shipments/create')}>
                     <Plus className="mr-2 h-4 w-4" />

@@ -74,11 +74,11 @@ export function AdminShipmentForm({ onSuccess, initialData }: AdminShipmentFormP
                         name="importerId"
                         render={({ field }) => (
                             <FormItem>
-                                <FormLabel>Importer</FormLabel>
+                                <FormLabel>Client</FormLabel>
                                 <Select onValueChange={field.onChange} defaultValue={field.value}>
                                     <FormControl>
                                         <SelectTrigger>
-                                            <SelectValue placeholder="Select Importer" />
+                                            <SelectValue placeholder="Select Client" />
                                         </SelectTrigger>
                                     </FormControl>
                                     <SelectContent>
@@ -274,7 +274,7 @@ export function AdminShipmentForm({ onSuccess, initialData }: AdminShipmentFormP
                                     />
                                 </FormControl>
                                 <div className="space-y-1 leading-none">
-                                    <FormLabel>Notify Importer</FormLabel>
+                                    <FormLabel>Notify Client</FormLabel>
                                 </div>
                             </FormItem>
                         )}

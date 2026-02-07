@@ -94,7 +94,7 @@ export default function AdminNotificationsPage() {
                                 </SelectTrigger>
                                 <SelectContent>
                                     <SelectItem value="all">All Users</SelectItem>
-                                    <SelectItem value="importer">Importers Only</SelectItem>
+                                    <SelectItem value="importer">Clients Only</SelectItem>
                                     <SelectItem value="agent">Agents Only</SelectItem>
                                     <SelectItem value="selected">Selected Users (Coming Soon)</SelectItem>
                                 </SelectContent>

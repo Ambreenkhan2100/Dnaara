@@ -92,7 +92,7 @@ export default function AdminUsersPage() {
             <div className="flex items-center justify-between">
                 <div>
                     <h1 className="text-3xl font-bold">Users</h1>
-                    <p className="text-muted-foreground">Manage importers and agents</p>
+                    <p className="text-muted-foreground">Manage clients and agents</p>
                 </div>
                 <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
                     <DialogTrigger asChild>
@@ -104,7 +104,7 @@ export default function AdminUsersPage() {
                     <DialogContent>
                         <DialogHeader>
                             <DialogTitle>Create New User</DialogTitle>
-                            <DialogDescription>Add a new importer or agent to the platform</DialogDescription>
+                            <DialogDescription>Add a new client or agent to the platform</DialogDescription>
                         </DialogHeader>
                         <UserCreateForm onSuccess={() => setCreateDialogOpen(false)} />
                     </DialogContent>
@@ -114,7 +114,7 @@ export default function AdminUsersPage() {
             <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'importers' | 'agents')}>
                 <div className="flex items-center justify-between">
                     <TabsList>
-                        <TabsTrigger value="importers">Importers</TabsTrigger>
+                        <TabsTrigger value="importers">Clients</TabsTrigger>
                         <TabsTrigger value="agents">Agents</TabsTrigger>
                     </TabsList>
                     <Select value={statusFilter} onValueChange={setStatusFilter}>
