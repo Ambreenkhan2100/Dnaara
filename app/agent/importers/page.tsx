@@ -5,16 +5,24 @@ import { AgentImporterForm } from "@/components/forms/agent-importer-form";
 import { DataTable } from "@/components/tables/data-table";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { ConnectedUser, RelationshipStatus } from "@/types/invite";
-import { Plus } from "lucide-react";
+import { Plus, ArrowUpRight } from "lucide-react";
 import { useState, useCallback, useEffect } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { TransactionHistoryDrawer } from "@/components/shared/transaction-history-drawer";
+import { TransactionHistory, PaginationMeta } from "@/types";
+import { StatusBadge } from "@/components/shared/status-badge";
 
 export default function AgentImportersPage() {
     const { fetchFn } = useLoader();
     const [importers, setImporters] = useState<ConnectedUser[]>([]);
     const [dialogOpen, setDialogOpen] = useState(false);
+    const [drawerOpen, setDrawerOpen] = useState(false);
+    const [drawerUser, setDrawerUser] = useState<ConnectedUser | null>(null);
+    const [transactions, setTransactions] = useState<TransactionHistory>([]);
+    const [paginationMeta, setPaginationMeta] = useState<PaginationMeta | undefined>(undefined);
+    const [currentPage, setCurrentPage] = useState(1);
 
     const fetchImporters = useCallback(async () => {
         try {
@@ -49,6 +57,23 @@ export default function AgentImportersPage() {
         } catch (error) {
             console.error('Error adding importer:', error);
             toast.error('An unexpected error occurred');
+        }
+    }
+
+    async function showTransactionHistory(importer: ConnectedUser, page: number = 1) {
+        try {
+            const res = await fetchFn(`/api/payment/transaction-history?importer_id=${importer.user_id}&page=${page}&limit=5`);
+            if (!res.ok) throw new Error('Failed to fetch transaction history');
+
+            const result = await res.json();
+            setTransactions(result.data);
+            setPaginationMeta(result.pagination);
+            setCurrentPage(page);
+            setDrawerUser(importer);
+            setDrawerOpen(true);
+        } catch (error) {
+            console.error('Error fetching transaction history:', error);
+            toast.error('Failed to load transaction history');
         }
     }
     return (
@@ -108,9 +133,35 @@ export default function AgentImportersPage() {
                             );
                         },
                     },
+                    {
+                        header: 'Actions',
+                        accessor: (row) => (
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                className="text-primary hover:text-primary hover:bg-primary/10"
+                                onClick={() => showTransactionHistory(row)}
+                            >
+                                Open
+                                <ArrowUpRight className="ml-2 h-4 w-4" />
+                            </Button>
+                        ),
+                    },
                 ]}
+
                 emptyMessage="No importers linked yet"
             />
+
+            {(drawerUser && drawerOpen) && (<TransactionHistoryDrawer
+                user={drawerUser as ConnectedUser}
+                open={drawerOpen}
+                onOpenChange={setDrawerOpen}
+                transactions={transactions}
+                pagination={paginationMeta}
+                onPageChange={(page) => showTransactionHistory(drawerUser, page)}
+                title="Importer Details"
+                description="View details and transaction history for"
+            />)}
         </div>
     );
 }

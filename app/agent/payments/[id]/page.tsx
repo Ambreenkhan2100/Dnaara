@@ -8,7 +8,8 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
-import { ArrowLeft, Plane, Ship, Truck, FileText, MapPin, Calendar, DollarSign } from 'lucide-react';
+import { ArrowLeft, Plane, Ship, Truck, FileText, MapPin, Calendar, DollarSign, Upload } from 'lucide-react';
+import { PaymentStatus } from '@/types/enums/PaymentStatus';
 import type { PaymentRequest } from '@/types';
 
 export default function AgentPaymentDetailsPage({ params }: { params: Promise<{ id: string }> }) {
@@ -18,6 +19,8 @@ export default function AgentPaymentDetailsPage({ params }: { params: Promise<{ 
     const [payment, setPayment] = useState<PaymentRequest | null>(null);
     const [loading, setLoading] = useState(true);
     const [comment, setComment] = useState('');
+    const [receiptFile, setReceiptFile] = useState<string | null>(null);
+    const [receiptFileName, setReceiptFileName] = useState<string>('');
 
     const fetchPayment = async () => {
         try {
@@ -39,6 +42,59 @@ export default function AgentPaymentDetailsPage({ params }: { params: Promise<{ 
     useEffect(() => {
         fetchPayment();
     }, [id]);
+
+    const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        // Check file size (10MB limit)
+        const maxSize = 10 * 1024 * 1024; // 10MB
+        if (file.size > maxSize) {
+            toast.error(`File size (${(file.size / (1024 * 1024)).toFixed(2)}MB) exceeds the 10MB limit.`);
+            return;
+        }
+
+        setReceiptFileName(file.name);
+
+        // Convert to base64
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            const base64 = event.target?.result as string;
+            setReceiptFile(base64);
+        };
+        reader.readAsDataURL(file);
+    };
+
+    const handleCompletePayment = async () => {
+        if (!payment || !receiptFile) {
+            toast.error('Please upload a payment receipt');
+            return;
+        }
+
+        try {
+            const res = await fetchFn('/api/payment/complete', {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    id: payment.id,
+                    file: receiptFile,
+                }),
+            });
+
+            if (!res.ok) throw new Error('Failed to complete payment');
+
+            toast.success('Payment completed successfully');
+            setReceiptFile(null);
+            setReceiptFileName('');
+            fetchPayment(); // Refresh details
+        } catch (error) {
+            console.error('Error completing payment:', error);
+            toast.error('Failed to complete payment');
+        } finally {
+        }
+    };
 
     const getIcon = (type: string) => {
         switch (type?.toLowerCase()) {
@@ -168,32 +224,76 @@ export default function AgentPaymentDetailsPage({ params }: { params: Promise<{ 
                     )}
                 </div>
 
-                {(payment.payment_invoice_url?.length || payment.payment_document_url?.length) &&
-                    (<div className="bg-card rounded-lg border p-6 shadow-sm space-y-4 h-fit">
-                        <h2 className="text-xl font-semibold">Documents</h2>
-                        {payment.payment_invoice_url && (
-                            <div className="flex items-center justify-between p-2 border rounded hover:bg-accent/50 transition-colors">
-                                <div className="flex items-center gap-2 overflow-hidden">
-                                    <FileText className="h-4 w-4 text-blue-500 shrink-0" />
-                                    <span className="text-sm truncate">Payment Invoice</span>
+                {/* Sidebar: Actions & Comments (1/3) */}
+                <div className="space-y-6">
+                    {payment.payment_status === PaymentStatus.CONFIRMED && (
+                        <div className="bg-card rounded-lg border p-6 shadow-sm space-y-4">
+                            <h2 className="text-xl font-semibold">Complete Payment</h2>
+                            <div className="space-y-3">
+                                <label className="text-sm font-medium text-muted-foreground">
+                                    Payment Receipt
+                                </label>
+                                <div className="space-y-2">
+                                    <input
+                                        type="file"
+                                        id="receipt-upload"
+                                        accept="image/*,.pdf"
+                                        onChange={handleFileChange}
+                                        className="hidden"
+                                    />
+                                    <label
+                                        htmlFor="receipt-upload"
+                                        className="flex items-center justify-center gap-2 w-full px-4 py-3 border-2 border-dashed border-muted-foreground/30 rounded-lg cursor-pointer hover:border-primary hover:bg-muted/20 transition-colors"
+                                    >
+                                        <Upload className="h-5 w-5 text-muted-foreground" />
+                                        <span className="text-sm text-muted-foreground">
+                                            {receiptFileName || 'Click to upload receipt'}
+                                        </span>
+                                    </label>
+                                    {receiptFileName && (
+                                        <p className="text-xs text-muted-foreground">
+                                            Selected: {receiptFileName}
+                                        </p>
+                                    )}
                                 </div>
-                                <a href={payment.payment_invoice_url} target="_blank" rel="noopener noreferrer">
-                                    <Button variant="ghost" size="sm">View</Button>
-                                </a>
+                                <Button
+                                    onClick={handleCompletePayment}
+                                    disabled={!receiptFile}
+                                    className="w-full bg-green-600 hover:bg-green-700 text-white"
+                                >
+                                    Complete Payment
+                                </Button>
                             </div>
-                        )}
-                        {payment.payment_document_url && (
-                            <div className="flex items-center justify-between p-2 border rounded hover:bg-accent/50 transition-colors">
-                                <div className="flex items-center gap-2 overflow-hidden">
-                                    <FileText className="h-4 w-4 text-blue-500 shrink-0" />
-                                    <span className="text-sm truncate">Payment Receipt</span>
+                        </div>
+                    )}
+
+                    {(payment.payment_invoice_url?.length || payment.payment_document_url?.length) &&
+                        (<div className="bg-card rounded-lg border p-6 shadow-sm space-y-4 h-fit">
+                            <h2 className="text-xl font-semibold">Documents</h2>
+                            {payment.payment_invoice_url && (
+                                <div className="flex items-center justify-between p-2 border rounded hover:bg-accent/50 transition-colors">
+                                    <div className="flex items-center gap-2 overflow-hidden">
+                                        <FileText className="h-4 w-4 text-blue-500 shrink-0" />
+                                        <span className="text-sm truncate">Payment Invoice</span>
+                                    </div>
+                                    <a href={payment.payment_invoice_url} target="_blank" rel="noopener noreferrer">
+                                        <Button variant="ghost" size="sm">View</Button>
+                                    </a>
                                 </div>
-                                <a href={payment.payment_document_url} target="_blank" rel="noopener noreferrer">
-                                    <Button variant="ghost" size="sm">View</Button>
-                                </a>
-                            </div>
-                        )}
-                    </div>)}
+                            )}
+                            {payment.payment_document_url && (
+                                <div className="flex items-center justify-between p-2 border rounded hover:bg-accent/50 transition-colors">
+                                    <div className="flex items-center gap-2 overflow-hidden">
+                                        <FileText className="h-4 w-4 text-blue-500 shrink-0" />
+                                        <span className="text-sm truncate">Payment Receipt</span>
+                                    </div>
+                                    <a href={payment.payment_document_url} target="_blank" rel="noopener noreferrer">
+                                        <Button variant="ghost" size="sm">View</Button>
+                                    </a>
+                                </div>
+                            )}
+                        </div>)}
+                </div>
             </div>
         </div>
     );

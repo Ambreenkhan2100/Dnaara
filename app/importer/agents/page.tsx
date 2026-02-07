@@ -7,7 +7,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { StatusBadge } from '@/components/shared/status-badge';
 import { ImporterAgentLinkForm } from '@/components/forms/importer-agent-link-form';
 import { Plus, ArrowUpRight } from 'lucide-react';
-import { AgentDetailsDrawer } from '../components/agent-details-drawer';
+import { TransactionHistoryDrawer } from '@/components/shared/transaction-history-drawer';
 import { useLoader } from '@/components/providers/loader-provider';
 import { ConnectedUser, RelationshipStatus } from '@/types/invite';
 import { TransactionHistory } from '@/types/transaction-history';
@@ -134,11 +134,9 @@ export default function ImporterAgentsPage() {
                                 <Button
                                     variant="ghost"
                                     size="sm"
-                                    className="opacity-0 group-hover:opacity-100 transition-opacity text-primary hover:text-primary hover:bg-primary/10"
+                                    className="text-primary hover:text-primary hover:bg-primary/10"
                                     onClick={() => {
                                         showTransactionHistory(row)
-                                        // setDrawerAgentId(row.agent_id || row.id);
-                                        // setDrawerOpen(true);
                                     }}
                                 >
                                     Open
@@ -151,13 +149,15 @@ export default function ImporterAgentsPage() {
                 emptyMessage="No agents linked yet"
             />
 
-            {(drawerAgent && drawerOpen) && (<AgentDetailsDrawer
+            {(drawerAgent && drawerOpen) && (<TransactionHistoryDrawer
                 user={drawerAgent as ConnectedUser}
                 open={drawerOpen}
                 onOpenChange={setDrawerOpen}
                 transactions={transactions}
                 pagination={paginationMeta}
                 onPageChange={(page) => showTransactionHistory(drawerAgent, page)}
+                title="Agent Details"
+                description="View details and transaction history for"
             />)}
         </div>
     );

@@ -9,16 +9,27 @@ import { ConnectedUser } from '@/types';
 import { PaginationMeta } from '@/types';
 import { PaymentStatus } from '@/types/enums/PaymentStatus';
 
-interface AgentDetailsDrawerProps {
+interface TransactionHistoryDrawerProps {
     user: ConnectedUser;
     open: boolean;
     onOpenChange: (open: boolean) => void;
     transactions: TransactionHistory;
     pagination?: PaginationMeta;
     onPageChange?: (page: number) => void;
+    title: string;
+    description: string;
 }
 
-export function AgentDetailsDrawer({ user, open, onOpenChange, transactions, pagination, onPageChange }: AgentDetailsDrawerProps) {
+export function TransactionHistoryDrawer({
+    user,
+    open,
+    onOpenChange,
+    transactions,
+    pagination,
+    onPageChange,
+    title,
+    description
+}: TransactionHistoryDrawerProps) {
     const totalProcessed = transactions.reduce((acc: any, curr: any) => acc + parseFloat(curr.amount), 0);
 
     const getStatusBadgeVariant = (status: string) => {
@@ -35,14 +46,14 @@ export function AgentDetailsDrawer({ user, open, onOpenChange, transactions, pag
         <Sheet open={open} onOpenChange={onOpenChange}>
             <SheetContent className="w-160 max-w-none! overflow-y-auto px-10 py-6">
                 <SheetHeader className="mb-4 px-0">
-                    <SheetTitle>Agent Details</SheetTitle>
+                    <SheetTitle>{title}</SheetTitle>
                     <SheetDescription>
-                        View details and transaction history for {user.legal_business_name || user.full_name}
+                        {description} {user.legal_business_name || user.full_name}
                     </SheetDescription>
                 </SheetHeader>
 
                 <div className="space-y-8">
-                    {/* Agent Info Section */}
+                    {/* User Info Section */}
                     <div className="space-y-4">
                         <h3 className="text-lg font-semibold">Information</h3>
                         <div className="grid grid-cols-2 gap-4 text-sm">
