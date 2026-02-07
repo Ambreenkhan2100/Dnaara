@@ -54,6 +54,20 @@ export async function PUT(request: Request) {
                 );
             }
 
+            const formattedAmount = new Intl.NumberFormat('en-SA', {
+                style: 'currency',
+                currency: 'SAR',
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            }).format(result.rows[0].amount);
+
+            const insertUpdateQuery = `
+                INSERT INTO updates (shipment_id, update_text, document_url, created_by)
+                VALUES ($1, $2, $3, $4)
+            `;
+            await client.query(insertUpdateQuery, [result.rows[0].shipment_id, `Payment completed for amount ${formattedAmount}`,
+            result.rows[0].payment_document_url, userId]);
+
             await client.query('COMMIT');
             const notification = {
                 recipientId: role === 'agent' ? result.rows[0].importer_id : result.rows[0].agent_id,
