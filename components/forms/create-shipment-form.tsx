@@ -91,7 +91,7 @@ export function CreateShipmentForm({ role, onSubmit, onCancel }: CreateShipmentF
         partnerId: '',
         importerId: '',
         agentId: '',
-        paymentPartner: '',
+        paymentPartner: 'agnet',
         numberOfPallets: undefined,
         trucks: [],
         emailsToNotify: [],
@@ -403,7 +403,7 @@ export function CreateShipmentForm({ role, onSubmit, onCancel }: CreateShipmentF
                     </div>
                 )}
 
-                <div className="space-y-2">
+                {/* <div className="space-y-2">
                     <Label htmlFor="paymentPartner">Payment Partner *</Label>
                     <Select
                         value={formData.paymentPartner}
@@ -426,7 +426,7 @@ export function CreateShipmentForm({ role, onSubmit, onCancel }: CreateShipmentF
                             <SelectItem value={role}>Self</SelectItem>
                         </SelectContent>
                     </Select>
-                </div>
+                </div> */}
 
                 <div className="space-y-2">
                     <Label htmlFor="portOfShipment">Port of Shipment *</Label>

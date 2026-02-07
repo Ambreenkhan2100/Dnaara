@@ -214,7 +214,6 @@ export function ReportsDashboard() {
                 <TabsList>
                     <TabsTrigger value="shipments">Shipments</TabsTrigger>
                     <TabsTrigger value="payments">Payments</TabsTrigger>
-                    <TabsTrigger value="agents">Agents</TabsTrigger>
                 </TabsList>
 
                 {/* --- Shipments Tab --- */}
@@ -420,7 +419,7 @@ export function ReportsDashboard() {
                 </TabsContent>
 
                 {/* --- Agents Tab --- */}
-                <TabsContent value="agents" className="space-y-6">
+                {/* <TabsContent value="agents" className="space-y-6">
                     <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                         <Card>
                             <CardHeader className="pb-2">
@@ -503,7 +502,7 @@ export function ReportsDashboard() {
                             </CardContent>
                         </Card>
                     </div>
-                </TabsContent>
+                </TabsContent> */}
             </Tabs>
         </div>
     );
