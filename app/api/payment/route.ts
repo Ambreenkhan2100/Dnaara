@@ -229,13 +229,13 @@ export async function PATCH(request: Request) {
             const notification = {
                 recipientId: role === 'agent' ? result.rows[0].importer_id : result.rows[0].agent_id,
                 senderId: userId,
-                title: 'Payment Completed',
-                message: `Payment for bill number ${result.rows[0].bill_number} has been completed`,
+                title: `Payment ${payment_status}`,
+                message: `Payment for bill number ${result.rows[0].bill_number} has been ${payment_status}`,
                 entityType: 'PAYMENT',
-                entityId: result.rows[0].payment_id,
+                entityId: result.rows[0].id,
                 shipmentId: result.rows[0].shipment_id,
-                emailBody: `Payment for bill number ${result.rows[0].bill_number} has been completed`,
-                type: 'PAYMENT_COMPLETED'
+                emailBody: `Payment for bill number ${result.rows[0].bill_number} has been ${payment_status}`,
+                type: `PAYMENT_${payment_status}`
             }
             await createNotification(notification)
             return NextResponse.json(result.rows[0]);
