@@ -61,7 +61,7 @@ export async function PUT(request: Request) {
                 title: 'Payment Completed',
                 message: `Payment for bill number ${result.rows[0].bill_number} has been completed`,
                 entityType: 'PAYMENT',
-                entityId: result.rows[0].payment_id,
+                entityId: result.rows[0].id,
                 shipmentId: result.rows[0].shipment_id,
                 emailBody: `Payment for bill number ${result.rows[0].bill_number} has been completed`,
                 type: 'PAYMENT_COMPLETED'
