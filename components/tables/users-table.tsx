@@ -34,7 +34,7 @@ export function UsersTable({
 
     const getUserType = (user: User): string => {
         if ('role' in user && user.role === 'admin') return 'Admin';
-        if ('businessName' in user) return 'Importer';
+        if ('businessName' in user) return 'Client';
         if ('companyName' in user) return 'Agent';
         return 'Unknown';
     };

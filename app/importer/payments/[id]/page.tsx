@@ -9,7 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
-import { ArrowLeft, Plane, Ship, Truck, FileText, MapPin, Calendar, DollarSign, Upload } from 'lucide-react';
+import { ArrowLeft, Plane, Ship, Truck, FileText, MapPin, Calendar, Upload, SaudiRiyal } from 'lucide-react';
 import { PaymentStatus } from '@/types/enums/PaymentStatus';
 import type { PaymentRequest } from '@/types';
 
@@ -207,7 +207,7 @@ export default function ImporterPaymentDetailsPage({ params }: { params: Promise
                                     {getIcon(shipment.type)}
                                     <span>{shipment.type} Shipment</span>
                                 </div>
-                                <p className="text-sm text-muted-foreground">ID: {shipment.id}</p>
+                                <p className="text-sm text-muted-foreground">ID: {shipment.shipment_id}</p>
 
                                 <Separator />
 
@@ -242,7 +242,7 @@ export default function ImporterPaymentDetailsPage({ params }: { params: Promise
                                         </div>
                                     </div>
                                     <div className="flex items-center gap-3">
-                                        <DollarSign className="h-5 w-5 text-muted-foreground" />
+                                        <SaudiRiyal className="h-5 w-5 text-muted-foreground" />
                                         <div>
                                             <p className="text-sm font-medium">Duty Charges</p>
                                             <p className="text-sm text-muted-foreground">

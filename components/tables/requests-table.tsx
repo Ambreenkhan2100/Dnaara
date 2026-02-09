@@ -33,7 +33,7 @@ export function RequestsTable({
                     accessor: 'id',
                 },
                 {
-                    header: 'Importer',
+                    header: 'Client',
                     accessor: 'importerName',
                 },
                 {

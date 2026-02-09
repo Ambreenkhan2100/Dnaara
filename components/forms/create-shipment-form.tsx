@@ -354,13 +354,13 @@ export function CreateShipmentForm({ role, onSubmit, onCancel }: CreateShipmentF
                     {role === 'admin' ? (
                         <>
                             <div className="space-y-2">
-                                <Label htmlFor="importer">Importer *</Label>
+                                <Label htmlFor="importer">Client *</Label>
                                 <Select
                                     value={formData.importerId}
                                     onValueChange={(val) => setFormData(prev => ({ ...prev, importerId: val }))}
                                 >
                                     <SelectTrigger>
-                                        <SelectValue placeholder="Select Importer" />
+                                        <SelectValue placeholder="Select Client" />
                                     </SelectTrigger>
                                     <SelectContent>
                                         {importers?.map(importer => (
@@ -388,13 +388,13 @@ export function CreateShipmentForm({ role, onSubmit, onCancel }: CreateShipmentF
                         </>
                     ) : (
                         <div className="space-y-2">
-                            <Label htmlFor="partner">{role === 'importer' ? 'Assign Agent' : 'Importer'} *</Label>
+                            <Label htmlFor="partner">{role === 'importer' ? 'Assign Agent' : 'Client'} *</Label>
                             <Select
                                 value={formData.partnerId}
                                 onValueChange={(val) => setFormData(prev => ({ ...prev, partnerId: val }))}
                             >
                                 <SelectTrigger>
-                                    <SelectValue placeholder={`Select ${role === 'importer' ? 'Agent' : 'Importer'}`} />
+                                    <SelectValue placeholder={`Select ${role === 'importer' ? 'Agent' : 'Client'}`} />
                                 </SelectTrigger>
                                 <SelectContent>
                                     {partners?.map(partner => (

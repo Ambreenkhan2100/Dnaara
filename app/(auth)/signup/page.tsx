@@ -158,7 +158,7 @@ export default function SignupPage() {
                                                             </SelectTrigger>
                                                         </FormControl>
                                                         <SelectContent>
-                                                            <SelectItem value="Importer">Importer</SelectItem>
+                                                            <SelectItem value="Importer">Client</SelectItem>
                                                             <SelectItem value="Agent">Agent</SelectItem>
                                                         </SelectContent>
                                                     </Select>

@@ -33,16 +33,16 @@ export function AgentImporterForm({ onSubmit }: AgentImporterFormProps) {
                     name="email"
                     render={({ field }) => (
                         <FormItem>
-                            <FormLabel>Importer Email</FormLabel>
+                            <FormLabel>Client Email</FormLabel>
                             <FormControl>
-                                <Input type="email" placeholder="importer@example.com" {...field} />
+                                <Input type="email" placeholder="client@example.com" {...field} />
                             </FormControl>
                             <FormMessage />
                         </FormItem>
                     )}
                 />
                 <Button type="submit" className="w-full" style={{ backgroundColor: '#0bad85' }}>
-                    Add Importer
+                    Add Client
                 </Button>
             </form>
         </Form>

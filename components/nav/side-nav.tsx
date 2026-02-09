@@ -14,7 +14,7 @@ interface NavItem {
 const adminNavItems: NavItem[] = [
     { title: 'Shipments', href: '/admin/shipments', icon: Package },
     { title: 'Agents', href: '/admin/agents', icon: Users },
-    { title: 'Importers', href: '/admin/importers', icon: Building2 },
+    { title: 'Clients', href: '/admin/importers', icon: Building2 },
     { title: 'Payments', href: '/admin/payments', icon: CreditCard },
     { title: 'Balance', href: '/admin/balance', icon: Wallet },
     { title: 'Reports', href: '/admin/reports', icon: TrendingUp },

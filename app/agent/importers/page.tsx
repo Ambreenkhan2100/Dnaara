@@ -80,21 +80,21 @@ export default function AgentImportersPage() {
         <div className="space-y-6">
             <div className="flex items-center justify-between">
                 <div>
-                    <h2 className="text-2xl font-bold tracking-tight">Importers</h2>
-                    <p className="text-muted-foreground">Manage your linked importers</p>
+                    <h2 className="text-2xl font-bold tracking-tight">Clients</h2>
+                    <p className="text-muted-foreground">Manage your linked clients</p>
                 </div>
                 <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
                     <DialogTrigger asChild>
                         <Button style={{ backgroundColor: '#0bad85' }}>
                             <Plus className="mr-2 h-4 w-4" />
-                            Add New Importer
+                            Add New Client
                         </Button>
                     </DialogTrigger>
                     <DialogContent>
                         <DialogHeader>
-                            <DialogTitle>Add New Importer</DialogTitle>
+                            <DialogTitle>Add New Client</DialogTitle>
                             <DialogDescription>
-                                Enter the importer's details to add them to your list.
+                                Enter the client's details to add them to your list.
                             </DialogDescription>
                         </DialogHeader>
                         <AgentImporterForm onSubmit={AddImporter} />
@@ -110,15 +110,15 @@ export default function AgentImportersPage() {
                         accessor: 'legal_business_name',
                     },
                     {
-                        header: 'Importer Name',
+                        header: 'Client Name',
                         accessor: 'full_name',
                     },
                     {
-                        header: 'Importer Email',
+                        header: 'Client Email',
                         accessor: 'company_email',
                     },
                     {
-                        header: 'Importer Phone',
+                        header: 'Client Phone',
                         accessor: 'phone_number',
                     },
                     {
@@ -149,7 +149,7 @@ export default function AgentImportersPage() {
                     },
                 ]}
 
-                emptyMessage="No importers linked yet"
+                emptyMessage="No clients linked yet"
             />
 
             {(drawerUser && drawerOpen) && (<TransactionHistoryDrawer
@@ -159,7 +159,7 @@ export default function AgentImportersPage() {
                 transactions={transactions}
                 pagination={paginationMeta}
                 onPageChange={(page) => showTransactionHistory(drawerUser, page)}
-                title="Importer Details"
+                title="Client Details"
                 description="View details and transaction history for"
             />)}
         </div>
