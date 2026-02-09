@@ -59,7 +59,7 @@ export function AgentPaymentForm({ prefilledImporterId, prefilledShipmentId, shi
     const form = useForm<CreatePaymentInput>({
         resolver: zodResolver(createPaymentSchema) as any,
         defaultValues: {
-            amount: (0).toString(),
+            amount: '',
             description: '',
             shipmentId: prefilledShipmentId || shipment?.id || '',
             importerId: prefilledImporterId || shipment?.importer_id || '',

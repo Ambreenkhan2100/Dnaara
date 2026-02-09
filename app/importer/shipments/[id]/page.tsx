@@ -85,7 +85,10 @@ export default function ShipmentDetailsPage() {
     const handleUpdate = async () => {
         if (!shipment) return;
 
-        if (!actionNote.length) {
+        const hasNote = actionNote.trim().length > 0;
+
+        // Importer can only add notes, cannot change status
+        if (!hasNote) {
             toast.error('Please add a note');
             return;
         }

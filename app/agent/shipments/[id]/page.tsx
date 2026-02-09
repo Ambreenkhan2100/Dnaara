@@ -145,6 +145,25 @@ export default function AgentShipmentDetailsPage() {
             return;
         }
 
+        const statusChanged = updateStatus !== shipment.status;
+        const hasNote = actionNote.trim().length > 0;
+
+        // If no status change and no note, don't submit
+        if (!statusChanged && !hasNote) {
+            toast.error('Please add a note or change the status');
+            return;
+        }
+
+        // Build the final note based on status change
+        let finalNote = actionNote;
+        if (statusChanged) {
+            if (hasNote) {
+                finalNote = `Status changed to ${updateStatus} | ${actionNote}`;
+            } else {
+                finalNote = `Status changed to ${updateStatus}`;
+            }
+        }
+
         try {
             const token = localStorage.getItem('token');
             if (!token) {
@@ -170,7 +189,7 @@ export default function AgentShipmentDetailsPage() {
                 body: JSON.stringify({
                     shipmentId: shipment.id,
                     status: updateStatus,
-                    note: actionNote,
+                    note: finalNote,
                     file: fileBase64
                 })
             });
