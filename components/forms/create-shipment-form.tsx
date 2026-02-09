@@ -573,10 +573,11 @@ export function CreateShipmentForm({ role, onSubmit, onCancel }: CreateShipmentF
                     </div>
 
                     <div className="space-y-2">
-                        <Label htmlFor="commercialInvoiceFile">Upload Commercial Invoice</Label>
+                        <Label htmlFor="commercialInvoiceFile">Upload Commercial Invoice *</Label>
                         <Input
                             id="commercialInvoiceFile"
                             type="file"
+                            required
                             className="cursor-pointer"
                             onChange={async e => {
                                 if (e.target.files?.[0]) {
@@ -621,11 +622,10 @@ export function CreateShipmentForm({ role, onSubmit, onCancel }: CreateShipmentF
                     </div>
 
                     <div className="space-y-2">
-                        <Label htmlFor="certificateOfConfirmity">Certificate of Confirmity *</Label>
+                        <Label htmlFor="certificateOfConfirmity">Certificate of Confirmity</Label>
                         <Input
                             id="certificateOfConfirmity"
                             type="file"
-                            required
                             className="cursor-pointer"
                             onChange={async e => {
                                 if (e.target.files?.[0]) {
@@ -637,11 +637,10 @@ export function CreateShipmentForm({ role, onSubmit, onCancel }: CreateShipmentF
                     </div>
 
                     <div className="space-y-2">
-                        <Label htmlFor="certificateOfOrigin">Certificate of Origin *</Label>
+                        <Label htmlFor="certificateOfOrigin">Certificate of Origin</Label>
                         <Input
                             id="certificateOfOrigin"
                             type="file"
-                            required
                             className="cursor-pointer"
                             onChange={async e => {
                                 if (e.target.files?.[0]) {
@@ -653,11 +652,10 @@ export function CreateShipmentForm({ role, onSubmit, onCancel }: CreateShipmentF
                     </div>
 
                     <div className="space-y-2">
-                        <Label htmlFor="saberCertificate">Saber Certificate *</Label>
+                        <Label htmlFor="saberCertificate">Saber Certificate</Label>
                         <Input
                             id="saberCertificate"
                             type="file"
-                            required
                             className="cursor-pointer"
                             onChange={async e => {
                                 if (e.target.files?.[0]) {

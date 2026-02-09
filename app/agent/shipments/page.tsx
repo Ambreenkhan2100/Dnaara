@@ -2,11 +2,11 @@
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useLoader } from "@/components/providers/loader-provider";
-import { FilterState, ShipmentFilter } from "@/components/shared/shipment-filter";
+import { FilterState } from "@/components/shared/shipment-filter";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { useRouterWithLoader } from "@/hooks/use-router-with-loader";
-import { Shipment } from "@/types/shipment";
+import { Shipment, ShipmentStatusEnum } from "@/types/shipment";
 import { parseISO, addDays, isAfter, isBefore, startOfDay, endOfDay, isWithinInterval } from "date-fns";
 import { Plane, Ship, Truck, FileText, MapPin, Calendar, Banknote, SaudiRiyal, Search, Plus } from "lucide-react";
 import { useState, useEffect } from "react";
@@ -17,7 +17,7 @@ import { Button } from "@/components/ui/button";
 export default function AgentShipmentsPage() {
     const router = useRouterWithLoader();
     const [searchQuery, setSearchQuery] = useState('');
-    const [filters, setFilters] = useState<FilterState>({});
+    // const [filters, setFilters] = useState<FilterState>({});
     const [shipments, setShipments] = useState<Shipment[]>([]);
     const [loading, setLoading] = useState(true);
 
@@ -65,9 +65,10 @@ export default function AgentShipmentsPage() {
         return isAfter(arrivalDate, now) && isBefore(arrivalDate, next7Days);
     });
 
-    const assignedShipments = shipments.filter(s => !s.is_accepted && !s.is_completed);
+    const assignedShipments = shipments.filter(s => !s.is_accepted && !s.is_completed && s.status !== ShipmentStatusEnum.REJECTED);
     const confirmedShipments = shipments.filter(s => s.is_accepted && !s.is_completed);
     const completedShipments = shipments.filter(s => s.is_completed);
+    const rejectedShipments = shipments.filter(s => s.status === ShipmentStatusEnum.REJECTED);
 
     const filteredShipments = (list: Shipment[]) => {
         return list.filter(s => {
@@ -78,24 +79,6 @@ export default function AgentShipmentsPage() {
                 s.id.toLowerCase().includes(searchQuery.toLowerCase());
 
             if (!matchesSearch) return false;
-
-            // Apply filters
-            if (filters.type && filters.type !== 'all') {
-                if (s.type.toLowerCase() !== filters.type.toLowerCase()) return false;
-            }
-
-            if (filters.agentId) {
-                if (s.importer_id !== filters.agentId) return false;
-            }
-
-            if (filters.dateRange?.from) {
-                const reqDate = parseISO(s.created_at);
-                const from = startOfDay(filters.dateRange.from);
-                const to = filters.dateRange.to ? endOfDay(filters.dateRange.to) : endOfDay(from);
-
-                if (!isWithinInterval(reqDate, { start: from, end: to })) return false;
-            }
-
             return true;
         });
     };
@@ -170,12 +153,12 @@ export default function AgentShipmentsPage() {
                         onChange={(e) => setSearchQuery(e.target.value)}
                     />
                 </div>
-                <ShipmentFilter
+                {/* <ShipmentFilter
                     agents={[]}
                     onFilterChange={setFilters}
                     initialFilters={filters}
                     entityLabel="Client"
-                />
+                /> */}
                 <Button onClick={() => router.push('/agent/shipments/create')}>
                     <Plus className="mr-2 h-4 w-4" />
                     Create new shipment
@@ -186,9 +169,10 @@ export default function AgentShipmentsPage() {
                 <TabsList>
                     <TabsTrigger value="at_port">AT PORT ({atPortShipments.length})</TabsTrigger>
                     <TabsTrigger value="upcoming">UPCOMING ({upcomingShipments.length})</TabsTrigger>
-                    <TabsTrigger value="assigned">SHIPMENTS ASSIGNED ({assignedShipments.length})</TabsTrigger>
-                    <TabsTrigger value="confirmed">SHIPMENTS CONFIRMED ({confirmedShipments.length})</TabsTrigger>
-                    <TabsTrigger value="completed">SHIPMENTS COMPLETED ({completedShipments.length})</TabsTrigger>
+                    <TabsTrigger value="assigned">ASSIGNED ({assignedShipments.length})</TabsTrigger>
+                    <TabsTrigger value="confirmed">CONFIRMED ({confirmedShipments.length})</TabsTrigger>
+                    <TabsTrigger value="completed">COMPLETED ({completedShipments.length})</TabsTrigger>
+                    <TabsTrigger value="rejected">REJECTED ({rejectedShipments.length})</TabsTrigger>
                     <TabsTrigger value="all">ALL SHIPMENTS</TabsTrigger>
                 </TabsList>
 
@@ -237,6 +221,16 @@ export default function AgentShipmentsPage() {
                         <div className="text-center py-8 text-muted-foreground">No completed shipments found.</div>
                     ) : (
                         filteredShipments(completedShipments).map(req => (
+                            <ShipmentCard key={req.id} request={req} />
+                        ))
+                    )}
+                </TabsContent>
+
+                <TabsContent value="rejected" className="space-y-4">
+                    {filteredShipments(rejectedShipments).length === 0 ? (
+                        <div className="text-center py-8 text-muted-foreground">No rejected shipments found.</div>
+                    ) : (
+                        filteredShipments(rejectedShipments).map(req => (
                             <ShipmentCard key={req.id} request={req} />
                         ))
                     )}

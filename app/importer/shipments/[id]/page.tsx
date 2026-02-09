@@ -28,6 +28,8 @@ export default function ShipmentDetailsPage() {
     const [actionNote, setActionNote] = useState('');
     const [updateFile, setUpdateFile] = useState<File | null>(null);
     const [updateDialogOpen, setUpdateDialogOpen] = useState(false);
+    const [completeDialogOpen, setCompleteDialogOpen] = useState(false);
+    const [completeNote, setCompleteNote] = useState('');
 
     const { userProfile } = useUserStore()
 
@@ -138,6 +140,42 @@ export default function ShipmentDetailsPage() {
         }
     };
 
+    const handleComplete = async () => {
+        if (!shipment) return;
+
+        try {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                toast.error('Authentication token not found');
+                return;
+            }
+
+            const res = await fetchFn('/api/shipment/complete', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    shipmentId: shipment.id,
+                    note: completeNote.trim() || undefined
+                })
+            });
+
+            if (!res.ok) {
+                throw new Error('Failed to complete shipment');
+            }
+
+            toast.success('Shipment marked as completed successfully');
+            setCompleteNote('');
+            setCompleteDialogOpen(false);
+            fetchShipments();
+        } catch (error) {
+            console.error('Error completing shipment:', error);
+            toast.error('Failed to complete shipment');
+        }
+    };
+
     if (error || !shipment) {
         return (
             <div className="flex flex-col items-center justify-center min-h-[50vh] gap-4">
@@ -185,6 +223,9 @@ export default function ShipmentDetailsPage() {
                     </p>
                 </div>
                 <div className="flex gap-2">
+                    {shipment.status !== 'COMPLETED' && (
+                        <Button onClick={() => setCompleteDialogOpen(true)}>Mark as Completed</Button>
+                    )}
                     <Button onClick={() => setUpdateDialogOpen(true)}>Add Update</Button>
                 </div>
             </div>
@@ -517,6 +558,29 @@ export default function ShipmentDetailsPage() {
                     </div>
                     <DialogFooter>
                         <Button onClick={handleUpdate}>Submit Update</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            <Dialog open={completeDialogOpen} onOpenChange={setCompleteDialogOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Complete Shipment</DialogTitle>
+                        <DialogDescription>Do you want to mark this shipment as completed?</DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                        <div className="space-y-2">
+                            <Label>Note (Optional)</Label>
+                            <Textarea
+                                placeholder="Add any final notes..."
+                                value={completeNote}
+                                onChange={(e) => setCompleteNote(e.target.value)}
+                            />
+                        </div>
+                    </div>
+                    <DialogFooter className="gap-2">
+                        <Button variant="outline" onClick={() => setCompleteDialogOpen(false)}>No</Button>
+                        <Button onClick={handleComplete}>Yes, Complete</Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>

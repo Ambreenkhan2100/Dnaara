@@ -15,13 +15,11 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
-import { useAgentStore } from '@/lib/store/useAgentStore';
 import { useRoleStore } from '@/lib/store/useRoleStore';
 import { ShipmentStatusEnum } from '@/types/shipment';
 import { PaymentStatus } from '@/types/enums/PaymentStatus';
 import { AgentPaymentForm } from '@/components/forms/agent-payment-form';
 import { CreatePaymentInput } from '@/lib/schemas';
-import { uploadBase64ToSupabase } from '@/lib/utils/fileupload';
 import { useUserStore } from '@/lib/store/useUserStore';
 
 export default function AgentShipmentDetailsPage() {
@@ -31,7 +29,6 @@ export default function AgentShipmentDetailsPage() {
     const [error, setError] = useState<string | null>(null);
 
     // Action States
-    const { rejectRequest } = useAgentStore();
     const currentUserId = useRoleStore((state) => state.currentUserId);
     const [actionNote, setActionNote] = useState('');
     const [updateFile, setUpdateFile] = useState<File | null>(null);
@@ -129,13 +126,33 @@ export default function AgentShipmentDetailsPage() {
         }
     };
 
-    const handleReject = () => {
+    const handleReject = async () => {
         if (!shipment) return;
-        rejectRequest(shipment.id, actionNote);
-        setActionNote('');
-        setReviewDialogOpen(false);
-        // Optimistic update or refetch might receive update from store/socket or manual refetch
-        setTimeout(fetchShipments, 1000);
+
+        try {
+
+            const res = await fetchFn('/api/shipment/update-status', {
+                method: 'POST',
+                body: JSON.stringify({
+                    shipmentId: shipment.id,
+                    status: ShipmentStatusEnum.REJECTED,
+                    note: actionNote,
+                    file: null
+                })
+            });
+
+            if (!res.ok) {
+                throw new Error('Failed to reject shipment');
+            }
+
+            toast.success('Shipment rejected successfully');
+            setActionNote('');
+            setReviewDialogOpen(false);
+            fetchShipments();
+        } catch (error) {
+            console.error('Error rejecting shipment:', error);
+            toast.error('Failed to reject shipment');
+        }
     };
 
     const handleUpdate = async () => {
@@ -317,7 +334,7 @@ export default function AgentShipmentDetailsPage() {
                 </div>
                 {/* Here add the actions */}
                 <div className="flex gap-2">
-                    {(!shipment.is_accepted && !shipment.is_completed) && (
+                    {(!shipment.is_accepted && !shipment.is_completed && shipment.status !== ShipmentStatusEnum.REJECTED) && (
                         <Button onClick={() => setReviewDialogOpen(true)}>Review Request</Button>
                     )}
                     {(shipment.is_accepted && !shipment.is_completed) && (

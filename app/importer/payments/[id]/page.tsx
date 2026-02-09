@@ -228,7 +228,7 @@ export default function ImporterPaymentDetailsPage({ params }: { params: Promise
                                         <div>
                                             <p className="text-sm font-medium">Expected Arrival</p>
                                             <p className="text-sm text-muted-foreground">
-                                                {(shipment as any).expectedArrival || (shipment as any).expectedArrivalDate || (shipment as any).expected_arrival_date || '-'}
+                                                {format((shipment as any).expected_arrival_date, 'dd/MM/yyyy') || '-'}
                                             </p>
                                         </div>
                                     </div>

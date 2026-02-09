@@ -11,7 +11,8 @@ export enum ShipmentStatusEnum {
     OTHER = 'OTHER',
     ASSIGNED = 'ASSIGNED',
     CONFIRMED = 'CONFIRMED',
-    COMPLETED = 'COMPLETED'
+    COMPLETED = 'COMPLETED',
+    REJECTED = 'REJECTED'
 }
 
 export type ShipmentStatus = ShipmentStatusEnum | null;

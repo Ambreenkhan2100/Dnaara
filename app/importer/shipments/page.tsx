@@ -10,7 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 
-import { Shipment } from '@/types/shipment';
+import { Shipment, ShipmentStatusEnum } from '@/types/shipment';
 import { ShipmentFilter, FilterState } from '@/components/shared/shipment-filter';
 import { isWithinInterval, parseISO, startOfDay, endOfDay, addDays, isBefore, isAfter } from 'date-fns';
 import { useLoader } from '@/components/providers/loader-provider';
@@ -69,9 +69,10 @@ export default function ImporterShipmentsPage() {
         return isAfter(arrivalDate, now) && isBefore(arrivalDate, next7Days);
     });
 
-    const assignedShipments = shipments.filter(s => !s.is_accepted && !s.is_completed);
+    const assignedShipments = shipments.filter(s => !s.is_accepted && !s.is_completed && s.status !== ShipmentStatusEnum.REJECTED);
     const confirmedShipments = shipments.filter(s => s.is_accepted && !s.is_completed);
     const completedShipments = shipments.filter(s => s.is_completed);
+    const rejectedShipments = shipments.filter(s => s.status === ShipmentStatusEnum.REJECTED);
 
     const filteredShipments = (list: Shipment[]) => {
         return list.filter(s => {
@@ -200,6 +201,7 @@ export default function ImporterShipmentsPage() {
                     <TabsTrigger value="assigned">ASSIGNED ({assignedShipments.length})</TabsTrigger>
                     <TabsTrigger value="confirmed">CONFIRMED ({confirmedShipments.length})</TabsTrigger>
                     <TabsTrigger value="completed">COMPLETED ({completedShipments.length})</TabsTrigger>
+                    <TabsTrigger value="rejected">REJECTED ({rejectedShipments.length})</TabsTrigger>
                     <TabsTrigger value="all">ALL SHIPMENTS</TabsTrigger>
                 </TabsList>
 
@@ -248,6 +250,16 @@ export default function ImporterShipmentsPage() {
                         <div className="text-center py-8 text-muted-foreground">No completed shipments found.</div>
                     ) : (
                         filteredShipments(completedShipments).map(req => (
+                            <ShipmentCard key={req.id} request={req} />
+                        ))
+                    )}
+                </TabsContent>
+
+                <TabsContent value="rejected" className="space-y-4">
+                    {filteredShipments(rejectedShipments).length === 0 ? (
+                        <div className="text-center py-8 text-muted-foreground">No rejected shipments found.</div>
+                    ) : (
+                        filteredShipments(rejectedShipments).map(req => (
                             <ShipmentCard key={req.id} request={req} />
                         ))
                     )}
