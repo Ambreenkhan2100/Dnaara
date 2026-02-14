@@ -26,8 +26,13 @@ function Overlay({
 
 export const Loader = () => {
     const { isLoading, isPageLoading } = useLoader();
+    const [mounted, setMounted] = React.useState(false);
 
-    if (!isLoading && !isPageLoading) return null;
+    React.useEffect(() => {
+        setMounted(true);
+    }, []);
+
+    if (!mounted || (!isLoading && !isPageLoading)) return null;
 
     return (
         <DialogPrimitive.Root open={true}>

@@ -12,13 +12,21 @@ export async function GET(req: Request) {
 
     let isClosed = false;
 
+    let heartbeat: NodeJS.Timeout;
+    let listener: (event: any) => void;
+
     const stream = new ReadableStream({
         start(controller) {
-            const heartbeat = setInterval(() => {
+            heartbeat = setInterval(() => {
                 if (!isClosed) {
-                    controller.enqueue(": ping\n\n");
+                    try {
+                        controller.enqueue(": ping\n\n");
+                    } catch {
+                        cleanup();
+                    }
                 }
             }, 25000);
+
             const send = (payload: any) => {
                 if (isClosed) return;
                 try {
@@ -26,25 +34,29 @@ export async function GET(req: Request) {
                         `data: ${JSON.stringify(payload)}\n\n`
                     );
                 } catch {
-                    isClosed = true;
+                    cleanup();
                 }
             };
 
-            const listener = (event: any) => {
+            listener = (event: any) => {
                 if (event.userId === userId) {
                     send(event.data);
                 }
             };
 
             notificationEmitter.on("notify", listener);
-
-            return () => {
-                isClosed = true;
-                clearInterval(heartbeat);
-                notificationEmitter.off("notify", listener);
-            };
+        },
+        cancel() {
+            cleanup();
         },
     });
+
+    function cleanup() {
+        if (isClosed) return;
+        isClosed = true;
+        clearInterval(heartbeat);
+        notificationEmitter.off("notify", listener);
+    }
 
     return new Response(stream, {
         headers: {

@@ -15,9 +15,16 @@ export function AuthGuard({ children, allowedRoles }: AuthGuardProps) {
     const router = useRouter();
     const pathname = usePathname();
     const { setRole, clearRole, currentRole } = useRoleStore();
+    const [mounted, setMounted] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
     const { fetchFn: fetchWithLoader } = useLoader();
+
     useEffect(() => {
+        setMounted(true);
+    }, []);
+
+    useEffect(() => {
+        if (!mounted) return;
         const checkAuth = async () => {
             const token = localStorage.getItem('token');
             if (!token) {
@@ -73,7 +80,7 @@ export function AuthGuard({ children, allowedRoles }: AuthGuardProps) {
         checkAuth();
     }, [router, pathname, setRole, clearRole, JSON.stringify(allowedRoles)]);
 
-    if (isLoading) {
+    if (!mounted || isLoading) {
         return (
             <div className="flex min-h-screen items-center justify-center bg-gray-50">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>

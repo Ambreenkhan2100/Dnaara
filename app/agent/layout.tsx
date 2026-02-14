@@ -59,7 +59,7 @@ export default function AgentLayout({
                                 </div>
                             </div>
 
-                            <Tabs defaultValue={tab} onValueChange={onTabChange} className="space-y-6">
+                            <Tabs value={tab} onValueChange={onTabChange} className="space-y-6">
                                 <TabsList className="grid w-full grid-cols-5 lg:w-[600px]">
                                     <TabsTrigger value="shipments">SHIPMENTS</TabsTrigger>
                                     <TabsTrigger value="importers">IMPORTERS</TabsTrigger>
